@@ -32,7 +32,7 @@ FIXPATH = $(subst /,\,$1)
 RM			:= del /q /f
 MD	:= mkdir
 else
-MAIN	:= dash
+MAIN	:= mash
 SOURCEDIRS	:= $(shell find $(SRC) -type d)
 INCLUDEDIRS	:= $(shell find $(INCLUDE) -type d)
 LIBDIRS		:= $(shell find $(LIB) -type d)
