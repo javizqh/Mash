@@ -1,0 +1,8 @@
+#!/bin/bash
+
+NAME="Mash" 
+
+make clean
+
+rm /usr/bin/$NAME
+#rm /usr/share/man/man1/$NAME.1.gz

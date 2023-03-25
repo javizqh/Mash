@@ -1,0 +1,11 @@
+\contentsline {part}{I\hspace {1em}Introduction}{2}{part.1}%
+\contentsline {part}{II\hspace {1em}Code}{4}{part.2}%
+\contentsline {chapter}{\numberline {1}Shell}{5}{chapter.1}%
+\contentsline {chapter}{\numberline {2}Builtin commands}{6}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Alias}{6}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Exit}{6}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Cd}{6}{section.2.3}%
+\contentsline {section}{\numberline {2.4}Test}{6}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Ifok}{6}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Ifnot}{6}{section.2.6}%
+\contentsline {part}{III\hspace {1em}Dash Scripting}{7}{part.3}%
