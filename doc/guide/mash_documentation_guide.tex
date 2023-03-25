@@ -1,0 +1,68 @@
+\documentclass[12pt,a4paper]{report}
+\usepackage{graphicx} %LaTeX package to import graphics
+\usepackage{enumitem}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=black, filecolor=magenta, urlcolor=cyan,}
+\urlstyle{same}
+\usepackage{amsmath}
+\geometry{lmargin=30mm}
+\usepackage[export]{adjustbox}
+\usepackage{titlesec}
+\titleformat{\chapter}{\normalfont\huge}{\thechapter}{20pt}{\huge\bf}
+\graphicspath{{media/}} %configuring the graphicx package
+\title{mash documentation guide}
+\author{Javier Izquierdo Hernández}
+\date{\today}
+\begin{document}
+	\begin{titlepage}
+		\centering
+		{\includegraphics[width=0.3\textwidth]{logo}\par}
+		\vspace{1cm}
+		{\bfseries\LARGE Universidad Rey Juan Carlos \par}
+		\vspace{1cm}
+		{\scshape\Large Ingeniería de robótica software \par}
+		\vspace{3cm}
+		{\scshape\Huge Sistemas Operativos \par}
+		\vspace{3cm}
+		{\itshape\Large MASH Documentation Guide \par}
+		\vfill
+		{\Large Author: \par}
+		{\Large Javier Izquierdo Hernández \par}
+		\vfill
+		{\Large \today \par}
+	\end{titlepage}
+	\newpage
+	\tableofcontents
+	\newpage
+\part{Introduction}
+Introduction on the mash shell
+\part{Code}
+\chapter{Shell}
+Orden de busqueda de comandos: alias - builtin - script in directory - path
+\chapter{Builtin commands}
+Explicacion de los builtins
+\section{Alias}
+Alias builtin
+\section{Exit}
+Exit builtin
+\section{Cd}
+Cd builtin
+\section{Test}
+Test builtin
+\section{Ifok}
+Ifok builtin
+\section{Ifnot}
+Ifnot builtin
+\part{Dash Scripting}
+Explanation of how to mash script
+\begin{thebibliography}{100} % 100 is a random guess of the total number of
+	%references
+	\bibitem{Boney96} Boney, L., Tewfik, A.H., and Hamdy, K.N., ``Digital
+	Watermarks for Audio Signals," \emph{Proceedings of the Third IEEE
+		International Conference on Multimedia}, pp. 473-480, June 1996.
+\end{thebibliography}
+\end{document}
