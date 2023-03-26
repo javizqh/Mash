@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "builtin/command.h"
+
 enum {
 	LINE_SIZE = 1024,	// In bytes
 	ALIAS_MAX = 256,	// In bytes
@@ -31,3 +33,5 @@ extern int add_alias(const char *line, struct alias **aliases);
 extern char* get_alias(const char* name, struct alias **aliases);
 
 extern struct alias **init_aliases(const char *alias_file);
+
+int set_alias_in_cmd(struct command *command, struct alias **aliases);

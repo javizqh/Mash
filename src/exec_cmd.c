@@ -14,8 +14,6 @@
 
 #include "exec_cmd.h"
 
-int set_alias_in_cmd(struct command *command, struct alias **aliases);
-
 int
 find_path(struct command *command)
 {

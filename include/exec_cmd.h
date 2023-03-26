@@ -22,12 +22,8 @@
 #include <stdlib.h>
 #include "builtin/export.h"
 #include "builtin/alias.h"
-#include "builtin/command.h"
-
-int set_alias_in_cmd(struct command *command, struct alias **aliases);
 
 extern int find_path(struct command *command);
-
 extern int command_exists(char *path);
 
 extern int exec_command(struct command *command);
@@ -61,5 +57,4 @@ int close_all_fd_cmd(struct command *command, struct command *start_command);
 
 // BUILTIN
 int find_builtin2(struct command *command);
-
 void exec_builtin(struct command *command);

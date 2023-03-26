@@ -115,3 +115,5 @@ init_aliases(const char *alias_file)
 	}
 	return aliases;
 }
+
+int set_alias_in_cmd(struct command *command, struct alias **aliases);
