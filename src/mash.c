@@ -460,7 +460,7 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 					  file_info, sub_info, aliases);
 			if (set_file_cmd
 			    (cmd_array->commands[cmd_array->n_cmd - 1],
-			     INPUT_READ, file_info->buffer)) {
+			     INPUT_READ, file_info->buffer) < 0) {
 				return -1;
 			}
 			parse_info->copy = new_cmd->current_arg;

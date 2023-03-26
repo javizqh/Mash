@@ -14,7 +14,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "builtin/command.h"
+#include "exec_cmd.h"
 
 enum {
 	MAX_COMMANDS_PER_LINE = 32

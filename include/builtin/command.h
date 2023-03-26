@@ -20,9 +20,6 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include "builtin/export.h"
-#include "builtin/alias.h"
-//#include "builtin/builtin.h"
 #include "open_files.h"
 
 enum {
@@ -80,18 +77,3 @@ extern int set_to_background_cmd(struct command *command);
 struct command * get_last_command(struct command *command);
 
 extern int pipe_command(struct command *in_command, struct command * out_command);
-
-int set_alias_in_cmd(struct command * command, struct alias **aliases);
-
-extern int find_path(struct command *command);
-
-extern int command_exists(char *path);
-
-extern int exec_command(struct command *command);
-
-int close_fd(int fd);
-
-// BUILTIN
-int find_builtin2(struct command *command);
-
-void exec_builtin(struct command *command);
