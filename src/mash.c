@@ -23,12 +23,14 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 	// Then set aliases
-	struct alias **aliases = init_aliases("env/aliases.dash");
 
-	if (aliases == NULL) {
-		printf("Error while setting the aliases\n");
-		exit(EXIT_FAILURE);
-	}
+	//find_command("mash <env/aliases.dash >/dev/null\n\0", NULL);
+	//struct alias **aliases = init_aliases("env/aliases.dash");
+	//
+	//if (aliases == NULL) {
+	//      printf("Error while setting the aliases\n");
+	//      exit(EXIT_FAILURE);
+	//}
 	// ---------- Read command line
 	// ------ Buffer
 	// Initialize buffer
@@ -44,8 +46,8 @@ main(int argc, char **argv)
 
 	printf("\033[01;35m%s \033[0m", getenv("PROMPT"));
 	while (fgets(buf, 1024, stdin)) {	/* break with ^D or ^Z */
-		if (find_command(buf, aliases, NULL) == -1) {
-			exit_dash(aliases);
+		if (find_command(buf, NULL) == -1) {
+			exit_dash();
 			free(buf);
 			return 0;
 		}
@@ -53,7 +55,7 @@ main(int argc, char **argv)
 		// Print Prompt
 		printf("\033[01;35m%s \033[0m", getenv("PROMPT"));
 	}
-	exit_dash(aliases);
+	exit_dash();
 	free(buf);
 	return 0;
 }
@@ -88,7 +90,7 @@ set_env(const char *env_file)
 // ----------- Builtin -------------
 
 int
-find_builtin(struct command *command, struct alias **aliases)
+find_builtin(struct command *command)
 {
 	// If the argc is 1 and contains = then export
 	//if (command->argc == 1 && strrchr(command->argv[0], '=')) {
@@ -97,7 +99,7 @@ find_builtin(struct command *command, struct alias **aliases)
 //
 	//if (strcmp(command->argv[0], "alias") == 0) {
 	//      // If doesn't contain alias
-	//      add_alias(command->argv[0] + strlen("alias") + 1, aliases);
+	//      add_alias(command->argv[0] + strlen("alias") + 1);
 	//      return 0;
 	//} else if (strcmp(command->argv[0], "export") == 0) {
 	//      // If doesn't contain alias
@@ -201,7 +203,7 @@ do_not_wait_commands(struct cmd_array *cmd_array)
 }
 
 struct cmd_array *
-set_commands(char *line, struct alias **aliases)
+set_commands(char *line)
 {
 	// Parsing information
 	struct parse_info *parse_info = new_parse_info();
@@ -216,8 +218,7 @@ set_commands(char *line, struct alias **aliases)
 	struct file_info *file_info = new_file_info();
 
 // ---------------------------------------------------------------
-	if (cmd_tokenize
-	    (line, parse_info, commands, file_info, sub_info, aliases) < 0) {
+	if (cmd_tokenize(line, parse_info, commands, file_info, sub_info) < 0) {
 		commands->status = -1;
 	}
 	free(parse_info);
@@ -227,9 +228,9 @@ set_commands(char *line, struct alias **aliases)
 }
 
 int
-find_command(char *line, struct alias **aliases, char *buffer)
+find_command(char *line, char *buffer)
 {
-	struct cmd_array *commands = set_commands(line, aliases);
+	struct cmd_array *commands = set_commands(line);
 
 	if (commands->status < 0) {
 		free_cmd_array(commands);
@@ -254,7 +255,7 @@ find_command(char *line, struct alias **aliases, char *buffer)
 		switch (commands->commands[i]->prev_status_needed_to_exec) {
 			// TODO: add check for exit
 		case DO_NOT_MATTER_TO_EXEC:
-			status = find_builtin(commands->commands[i], aliases);
+			status = find_builtin(commands->commands[i]);
 			if (status > 0) {
 				status = exec_command(commands->commands[i]);
 			} else if (status == -1) {
@@ -264,9 +265,7 @@ find_command(char *line, struct alias **aliases, char *buffer)
 			break;
 		case EXECUTE_IN_SUCCESS:
 			if (status == 0) {
-				status =
-				    find_builtin(commands->commands[i],
-						 aliases);
+				status = find_builtin(commands->commands[i]);
 				if (status > 0) {
 					status =
 					    exec_command(commands->commands[i]);
@@ -278,9 +277,7 @@ find_command(char *line, struct alias **aliases, char *buffer)
 			break;
 		case EXECUTE_IN_FAILURE:
 			if (status != 0) {
-				status =
-				    find_builtin(commands->commands[i],
-						 aliases);
+				status = find_builtin(commands->commands[i]);
 				if (status > 0) {
 					status =
 					    exec_command(commands->commands[i]);
@@ -293,7 +290,7 @@ find_command(char *line, struct alias **aliases, char *buffer)
 			}
 			break;
 		}
-		//command_with_path = get_alias(commands->commands[i]->argv[0], aliases);
+		//command_with_path = get_alias(commands->commands[i]->argv[0]);
 
 	}
 	free_cmd_array(commands);
@@ -373,14 +370,14 @@ new_file_info()
 // ------------ Exit ---------------
 
 int
-exit_dash(struct alias **aliases)
+exit_dash()
 {
 	int i;
 
 	for (i = 0; i < 2; i++) {
 		free(aliases[i]);
 	}
-	free(aliases);
+	//free(aliases);
 	return 0;
 }
 
@@ -389,7 +386,7 @@ exit_dash(struct alias **aliases)
 int
 cmd_tokenize(char *line, struct parse_info *parse_info,
 	     struct cmd_array *cmd_array, struct file_info *file_info,
-	     struct sub_info *sub_info, struct alias **aliases)
+	     struct sub_info *sub_info)
 {
 	// Can call the other
 	struct command *old_cmd;
@@ -418,7 +415,7 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 				return error_token('&', ptr);
 			ptr =
 			    soft_apost_tokenize(++ptr, parse_info, cmd_array,
-						file_info, sub_info, aliases);
+						file_info, sub_info);
 			parse_info->has_arg_started = PARSE_ARG_STARTED;
 			break;
 		case '\'':
@@ -457,7 +454,7 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			parse_info->copy = file_info->buffer;
 			ptr =
 			    file_tokenize(++ptr, parse_info, cmd_array,
-					  file_info, sub_info, aliases);
+					  file_info, sub_info);
 			if (set_file_cmd
 			    (cmd_array->commands[cmd_array->n_cmd - 1],
 			     INPUT_READ, file_info->buffer) < 0) {
@@ -470,7 +467,7 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			parse_info->copy = file_info->buffer;
 			ptr =
 			    file_tokenize(++ptr, parse_info, cmd_array,
-					  file_info, sub_info, aliases);
+					  file_info, sub_info);
 			if (set_file_cmd
 			    (cmd_array->commands[cmd_array->n_cmd - 1],
 			     OUTPUT_WRITE, file_info->buffer) < 0) {
@@ -498,7 +495,7 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 				return error_token('&', ptr);
 			ptr =
 			    substitution_tokenize(++ptr, parse_info, cmd_array,
-						  file_info, sub_info, aliases);
+						  file_info, sub_info);
 			// Copy now sub_info to parse_info->copy
 			if (copy_substitution(parse_info, sub_info->buffer) < 0) {
 				return -1;
@@ -602,7 +599,7 @@ hard_apost_tokenize(char *line, struct parse_info *parse_info)
 char *
 soft_apost_tokenize(char *line, struct parse_info *parse_info,
 		    struct cmd_array *cmd_array, struct file_info *file_info,
-		    struct sub_info *sub_info, struct alias **aliases)
+		    struct sub_info *sub_info)
 {
 	// Can call only substitution
 	char *ptr;
@@ -632,7 +629,7 @@ soft_apost_tokenize(char *line, struct parse_info *parse_info,
 				ptr =
 				    substitution_tokenize(ptr, parse_info,
 							  cmd_array, file_info,
-							  sub_info, aliases);
+							  sub_info);
 				// Copy now sub_info to parse_info->copy
 				if (copy_substitution
 				    (parse_info, sub_info->buffer) < 0) {
@@ -661,7 +658,7 @@ soft_apost_tokenize(char *line, struct parse_info *parse_info,
 char *
 substitution_tokenize(char *line, struct parse_info *parse_info,
 		      struct cmd_array *cmd_array, struct file_info *file_info,
-		      struct sub_info *sub_info, struct alias **aliases)
+		      struct sub_info *sub_info)
 {
 	sub_info->ptr = sub_info->buffer;
 	// Can't call any other function
@@ -694,7 +691,7 @@ substitution_tokenize(char *line, struct parse_info *parse_info,
 			*--sub_info->ptr = '\0';
 			ptr =
 			    execute_token(++ptr, parse_info, cmd_array,
-					  file_info, sub_info, aliases);
+					  file_info, sub_info);
 			ptr--;
 			break;
 		case ')':
@@ -740,7 +737,7 @@ copy_substitution(struct parse_info *parse_info, const char *sub_buffer)
 char *
 file_tokenize(char *line, struct parse_info *parse_info,
 	      struct cmd_array *cmd_array, struct file_info *file_info,
-	      struct sub_info *sub_info, struct alias **aliases)
+	      struct sub_info *sub_info)
 {
 	// Check if next char is \0
 	char *ptr;
@@ -750,7 +747,7 @@ file_tokenize(char *line, struct parse_info *parse_info,
 		case '"':
 			ptr =
 			    soft_apost_tokenize(++ptr, parse_info, cmd_array,
-						file_info, sub_info, aliases);
+						file_info, sub_info);
 			break;
 		case '\'':
 			ptr = hard_apost_tokenize(++ptr, parse_info);
@@ -767,7 +764,7 @@ file_tokenize(char *line, struct parse_info *parse_info,
 		case '$':
 			ptr =
 			    substitution_tokenize(++ptr, parse_info, cmd_array,
-						  file_info, sub_info, aliases);
+						  file_info, sub_info);
 			// Copy now sub_info to parse_info->copy
 			if (copy_substitution(parse_info, sub_info->buffer) < 0) {
 				return NULL;
@@ -802,7 +799,7 @@ file_tokenize(char *line, struct parse_info *parse_info,
 char *
 execute_token(char *line, struct parse_info *parse_info,
 	      struct cmd_array *cmd_array, struct file_info *file_info,
-	      struct sub_info *sub_info, struct alias **aliases)
+	      struct sub_info *sub_info)
 {
 	// Read again and parse until )
 	char *buffer = malloc(sizeof(char) * 1024);
@@ -846,9 +843,8 @@ execute_token(char *line, struct parse_info *parse_info,
 		}
 	}
 	// Copy result into sub_info->buffer
-	find_command(line_buf, aliases, buffer);
-	cmd_tokenize(buffer, parse_info, cmd_array, file_info, sub_info,
-		     aliases);
+	find_command(line_buf, buffer);
+	cmd_tokenize(buffer, parse_info, cmd_array, file_info, sub_info);
 	free(line_buf);
 	free(buffer);
 	return ptr;

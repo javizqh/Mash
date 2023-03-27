@@ -462,7 +462,7 @@ exec_builtin(struct command *command)
 {
 	if (strcmp(command->argv[0], "alias") == 0) {
 		// If doesn't contain alias
-		// add_alias(command->argv[0] + strlen("alias") + 1, aliases);
+		add_alias(command);
 	} else if (strcmp(command->argv[0], "export") == 0) {
 		// If doesn't contain alias
 		add_env(command->argv[0] + strlen("export") + 1);

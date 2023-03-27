@@ -58,19 +58,19 @@ struct parse_info {
 
 struct parse_info *new_parse_info();
 
-struct cmd_array *set_commands(char *line, struct alias **aliases);
+struct cmd_array *set_commands(char *line);
 
 // --------------- End Parse Arguments -----------
 
 // --------- Command ----------
 
-int find_command(char *line, struct alias **aliases, char *buffer);
+int find_command(char *line, char *buffer);
 
 int set_command_file(struct cmd_array *commands, int file_type, char *file);
 
 // -------- Builtin -----------
 
-int find_builtin(struct command *command, struct alias **aliases);
+int find_builtin(struct command *command);
 
 // ------- Substitution -------
 
@@ -95,7 +95,7 @@ struct file_info *new_file_info();
 
 // ---------- Exit ------------
 
-int exit_dash(struct alias **aliases);
+int exit_dash();
 
 // New TOKENIZATION Recursive
 
@@ -106,7 +106,7 @@ enum token {
 
 int cmd_tokenize(char *line, struct parse_info *parse_info,
 		 struct cmd_array *cmd_array, struct file_info *file_info,
-		 struct sub_info *sub_info, struct alias **aliases);
+		 struct sub_info *sub_info);
 
 // Tokenize types
 char *hard_apost_tokenize(char *line, struct parse_info *parse_info);
@@ -114,22 +114,22 @@ char *hard_apost_tokenize(char *line, struct parse_info *parse_info);
 char *soft_apost_tokenize(char *line, struct parse_info *parse_info,
 			  struct cmd_array *cmd_array,
 			  struct file_info *file_info,
-			  struct sub_info *sub_info, struct alias **aliases);
+			  struct sub_info *sub_info);
 
 char *substitution_tokenize(char *line, struct parse_info *parse_info,
 			    struct cmd_array *cmd_array,
 			    struct file_info *file_info,
-			    struct sub_info *sub_info, struct alias **aliases);
+			    struct sub_info *sub_info);
 
 int copy_substitution(struct parse_info *parse_info, const char *sub_buffer);
 
 char *file_tokenize(char *line, struct parse_info *parse_info,
 		    struct cmd_array *cmd_array, struct file_info *file_info,
-		    struct sub_info *sub_info, struct alias **aliases);
+		    struct sub_info *sub_info);
 
 char *execute_token(char *line, struct parse_info *parse_info,
 		    struct cmd_array *cmd_array, struct file_info *file_info,
-		    struct sub_info *sub_info, struct alias **aliases);
+		    struct sub_info *sub_info);
 
 void request_new_line(char *line);
 
