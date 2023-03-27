@@ -21,17 +21,19 @@ enum {
 	ALIAS_MAX_REFERENCE = 128	// In bytes
 };
 
+extern struct alias *aliases[ALIAS_MAX];
+
 struct alias {
 	char command[ALIAS_MAX_COMMAND];
-	char reference[ALIAS_MAX_REFERENCE];
+	struct command *reference;
 };
 
-extern struct alias *new_alias(const char *command, const char *reference);
+extern struct alias *new_alias(const char *command, struct command *reference);
 
-extern int add_alias(const char *line, struct alias **aliases);
+extern int add_alias(struct command *reference);
 
-extern char* get_alias(const char* name, struct alias **aliases);
+extern char* get_alias(const char* name);
 
-extern struct alias **init_aliases(const char *alias_file);
+extern struct alias **init_aliases();
 
-int set_alias_in_cmd(struct command *command, struct alias **aliases);
+int set_alias_in_cmd(struct command *command);
