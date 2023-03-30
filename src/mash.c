@@ -51,7 +51,6 @@ main(int argc, char **argv)
 			free(buf);
 			return 0;
 		}
-		//fwrite(buf, 1, strlen(buf), stdout);
 		// Print Prompt
 		printf("\033[01;35m%s \033[0m", getenv("PROMPT"));
 	}
