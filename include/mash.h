@@ -22,6 +22,10 @@ enum {
 
 int main(int argc, char **argv);
 
+// ------- Source files -------
+
+int read_source_file(char *filename);
+
 // ------- Enviroment ---------
 
 int set_env(const char *env_file);

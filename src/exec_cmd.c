@@ -165,6 +165,7 @@ exec_child(struct command *command, struct command *start_command,
 		redirect_stderr(command, last_command);
 
 		exec_builtin(command);
+		exit(EXIT_SUCCESS);
 	} else {
 		// FIND PATH
 		if (!find_path(command)) {
@@ -469,7 +470,7 @@ exec_builtin(struct command *command)
 		add_alias(command);
 	} else if (strcmp(command->argv[0], "export") == 0) {
 		// If doesn't contain alias
-		add_env(command->argv[0] + strlen("export") + 1);
+		add_env(command->argv[1]);
 	} else if (strcmp(command->argv[0], "echo") == 0) {
 		// If doesn't contain alias
 		int i;
