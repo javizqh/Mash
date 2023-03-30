@@ -17,20 +17,9 @@
 int
 main(int argc, char **argv)
 {
-	// First set all enviroment variables
-	if (set_env("env/env_variables.dash")) {
-		printf("Error while setting the enviroment variables\n");
-		exit(EXIT_FAILURE);
-	}
-	// Then set aliases
-
-	//find_command("mash <env/aliases.dash >/dev/null\n\0", NULL);
-	//struct alias **aliases = init_aliases("env/aliases.dash");
-	//
-	//if (aliases == NULL) {
-	//      printf("Error while setting the aliases\n");
-	//      exit(EXIT_FAILURE);
-	//}
+	// TODO: add source reading and remove until
+	read_source_file("env/aliases.dash");
+	// TODO: here
 	// ---------- Read command line
 	// ------ Buffer
 	// Initialize buffer
@@ -45,7 +34,7 @@ main(int argc, char **argv)
 	// ------------
 
 	printf("\033[01;35m%s \033[0m", getenv("PROMPT"));
-	while (fgets(buf, 1024, stdin)) {	/* break with ^D or ^Z */
+	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
 		if (find_command(buf, NULL) == -1) {
 			exit_dash();
 			free(buf);
@@ -57,6 +46,31 @@ main(int argc, char **argv)
 	exit_dash();
 	free(buf);
 	return 0;
+}
+
+int
+read_source_file(char *filename)
+{
+	char *buf = malloc(sizeof(char[1024]));
+
+	if (buf == NULL)
+		err(EXIT_FAILURE, "malloc failed");
+	memset(buf, 0, 1024);
+	FILE *f = fopen(filename, "r");
+
+	while (fgets(buf, 1024, f) != NULL) {	/* break with ^D or ^Z */
+		puts(buf);
+		if (find_command(buf, NULL) == -1) {
+			//exit_dash();
+			fclose(f);
+			free(buf);
+			return 0;
+		}
+		fflush(NULL);
+	}
+	fclose(f);
+	free(buf);
+	return 1;
 }
 
 // --------- Enviroment ------------
@@ -91,36 +105,6 @@ set_env(const char *env_file)
 int
 find_builtin(struct command *command)
 {
-	// If the argc is 1 and contains = then export
-	//if (command->argc == 1 && strrchr(command->argv[0], '=')) {
-	//      return add_env(command->argv[0]);
-	//}
-//
-	//if (strcmp(command->argv[0], "alias") == 0) {
-	//      // If doesn't contain alias
-	//      add_alias(command->argv[0] + strlen("alias") + 1);
-	//      return 0;
-	//} else if (strcmp(command->argv[0], "export") == 0) {
-	//      // If doesn't contain alias
-	//      return add_env(command->argv[0] + strlen("export") + 1);
-	//} else if (strcmp(command->argv[0], "echo") == 0) {
-	//      // If doesn't contain alias
-	//      int i;
-//
-	//      for (i = 1; i < command->argc; i++) {
-	//              if (i > 1) {
-	//                      dprintf(command->output, " %s",
-	//                              command->argv[i]);
-	//              } else {
-	//                      dprintf(command->output, "%s",
-	//                              command->argv[i]);
-	//              }
-	//      }
-	//      if (command->output == STDOUT_FILENO) {
-	//              printf("\n");
-	//      }
-	//      return 0;
-	//} else 
 	if (strcmp(command->argv[0], "exit") == 0) {
 		// If doesn't contain alias
 		return -1;
