@@ -247,9 +247,11 @@ read_from_file(struct command *start_command)
 	memset(buffer_stdin, 0, MAX_BUFFER_IO_SIZE);
 	do {
 		bytes_stdin = read(start_command->input, buffer_stdin, count);
-		write(STDOUT_FILENO, buffer_stdin, bytes_stdin);
+		write(start_command->fd_pipe_input[1], buffer_stdin,
+		      bytes_stdin);
 	} while (bytes_stdin > 0);
 
+	close_fd(start_command->fd_pipe_input[1]);
 	free(buffer_stdin);
 }
 
@@ -393,7 +395,9 @@ close_all_fd(struct command *start_command, struct command *last_command)
 
 	while (command != NULL) {
 		close_fd(command->fd_pipe_input[0]);
-		close_fd(command->fd_pipe_input[1]);
+		if (command->pid != start_command->pid) {
+			close_fd(command->fd_pipe_input[1]);
+		}
 		if (command->pid != last_command->pid) {
 			close_fd(command->fd_pipe_output[0]);
 		}
