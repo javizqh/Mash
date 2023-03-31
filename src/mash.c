@@ -18,13 +18,8 @@ int
 main(int argc, char **argv)
 {
 	// TODO: add source reading and remove until
-	read_source_file("env/aliases.dash");
-	// First set all enviroment variables
-	if (set_env("env/env_variables.dash")) {
-		printf("Error while setting the enviroment variables\n");
-		exit(EXIT_FAILURE);
-	}
-	// TODO: here
+	read_source_file("env/.dashrc");
+
 	// ---------- Read command line
 	// ------ Buffer
 	// Initialize buffer
@@ -48,7 +43,10 @@ main(int argc, char **argv)
 		// Print Prompt
 		printf("\033[01;35m%s \033[0m", getenv("PROMPT"));
 	}
-	
+	if (ferror(stdin)) {
+		err(EXIT_FAILURE, "fgets failed");
+	}
+
 	exit_dash();
 	free(buf);
 	return 0;
@@ -64,10 +62,7 @@ read_source_file(char *filename)
 	memset(buf, 0, 1024);
 	FILE *f = fopen(filename, "r");
 
-	fprintf(stderr, "Fichero: %s\n", filename);
-
 	while (fgets(buf, 1024, f) != NULL) {	/* break with ^D or ^Z */
-		fprintf(stderr, "%d He leido una linea: %s\n", getpid(), buf);
 		if (find_command(buf, NULL) == -1) {
 			//exit_dash();
 			fclose(f);
@@ -115,7 +110,20 @@ set_env(const char *env_file)
 int
 find_builtin(struct command *command)
 {
-	if (strcmp(command->argv[0], "exit") == 0) {
+	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
+		add_env(command->argv[0]);
+		return 0;
+	}
+
+	if (strcmp(command->argv[0], "alias") == 0) {
+		// If doesn't contain alias
+		add_alias(command);
+		return 0;
+	} else if (strcmp(command->argv[0], "export") == 0) {
+		// If doesn't contain alias
+		add_env(command->argv[1]);
+		return 0;
+	} else if (strcmp(command->argv[0], "exit") == 0) {
 		// If doesn't contain alias
 		return -1;
 	}
