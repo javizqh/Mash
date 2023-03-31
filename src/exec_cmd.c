@@ -154,6 +154,7 @@ void
 exec_child(struct command *command, struct command *start_command,
 	   struct command *last_command)
 {
+	// FIX: close f when reading source file
 	int i;
 	char *args[command->argc];
 
@@ -447,16 +448,7 @@ close_all_fd_cmd(struct command *command, struct command *start_command)
 int
 find_builtin2(struct command *command)
 {
-// If the argc is 1 and contains = then export
-	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
-		return 1;
-	}
-
-	if (strcmp(command->argv[0], "alias") == 0) {
-		return 1;
-	} else if (strcmp(command->argv[0], "export") == 0) {
-		return 1;
-	} else if (strcmp(command->argv[0], "echo") == 0) {
+	if (strcmp(command->argv[0], "echo") == 0) {
 		return 1;
 	}
 	return 0;
@@ -465,17 +457,7 @@ find_builtin2(struct command *command)
 void
 exec_builtin(struct command *command)
 {
-	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
-		add_env(command->argv[0]);
-	}
-
-	if (strcmp(command->argv[0], "alias") == 0) {
-		// If doesn't contain alias
-		add_alias(command);
-	} else if (strcmp(command->argv[0], "export") == 0) {
-		// If doesn't contain alias
-		add_env(command->argv[1]);
-	} else if (strcmp(command->argv[0], "echo") == 0) {
+	if (strcmp(command->argv[0], "echo") == 0) {
 		// If doesn't contain alias
 		int i;
 

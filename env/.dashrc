@@ -1,3 +1,4 @@
+alias 'la=/usr/bin/ls -a'
 export 'PATH=/usr/local/bin/:/usr/bin/:/home/javier/Code/Mash/build/'
 export 'PWD=/usr/local/'
 export 'PROMPT=javier@javier-ROG-Strix-G513IH-G513IH:~ $'
