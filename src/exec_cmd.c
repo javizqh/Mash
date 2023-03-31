@@ -465,6 +465,10 @@ find_builtin2(struct command *command)
 void
 exec_builtin(struct command *command)
 {
+	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
+		add_env(command->argv[0]);
+	}
+
 	if (strcmp(command->argv[0], "alias") == 0) {
 		// If doesn't contain alias
 		add_alias(command);

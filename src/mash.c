@@ -19,6 +19,11 @@ main(int argc, char **argv)
 {
 	// TODO: add source reading and remove until
 	read_source_file("env/aliases.dash");
+	// First set all enviroment variables
+	if (set_env("env/env_variables.dash")) {
+		printf("Error while setting the enviroment variables\n");
+		exit(EXIT_FAILURE);
+	}
 	// TODO: here
 	// ---------- Read command line
 	// ------ Buffer
@@ -43,6 +48,7 @@ main(int argc, char **argv)
 		// Print Prompt
 		printf("\033[01;35m%s \033[0m", getenv("PROMPT"));
 	}
+	
 	exit_dash();
 	free(buf);
 	return 0;
@@ -58,15 +64,19 @@ read_source_file(char *filename)
 	memset(buf, 0, 1024);
 	FILE *f = fopen(filename, "r");
 
+	fprintf(stderr, "Fichero: %s\n", filename);
+
 	while (fgets(buf, 1024, f) != NULL) {	/* break with ^D or ^Z */
-		puts(buf);
+		fprintf(stderr, "%d He leido una linea: %s\n", getpid(), buf);
 		if (find_command(buf, NULL) == -1) {
 			//exit_dash();
 			fclose(f);
 			free(buf);
 			return 0;
 		}
-		fflush(NULL);
+	}
+	if (ferror(f)) {
+		err(EXIT_FAILURE, "fgets failed");
 	}
 	fclose(f);
 	free(buf);
