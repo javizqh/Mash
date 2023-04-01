@@ -12,24 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-enum {
-	LINE_SIZE = 1024,	// In bytes
-	ALIAS_MAX = 256,
-	ALIAS_MAX_COMMAND = 64,	// In bytes
-	ALIAS_MAX_REFERENCE = 128	// In bytes
-};
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <err.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
 
-extern struct alias *aliases[ALIAS_MAX];
 
-struct alias {
-	char command[ALIAS_MAX_COMMAND];
-	char reference[ALIAS_MAX_REFERENCE];
-};
-
-extern struct alias *new_alias(const char *command, char *reference);
-
-extern int add_alias(char *command);
-
-extern char* get_alias(const char* name);
-
-extern struct alias **init_aliases();

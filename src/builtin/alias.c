@@ -19,16 +19,16 @@
 #include <stdlib.h>
 #include "builtin/alias.h"
 
+struct alias *aliases[ALIAS_MAX];
+
 struct alias *
-new_alias(const char *command, const char *reference)
+new_alias(const char *command, char *reference)
 {
 	struct alias *alias = (struct alias *)malloc(sizeof(struct alias));
-
 	// Check if malloc failed
 	if (alias == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-
 	strcpy(alias->command, command);
 	strcpy(alias->reference, reference);
 
@@ -36,12 +36,12 @@ new_alias(const char *command, const char *reference)
 }
 
 int
-add_alias(const char *line, struct alias **aliases)
+add_alias(char *command)
 {
 	char *p, *eol;
 	int index;
 
-	p = strchr(line, '=');
+	p = strchr(command, '=');
 	if (p != NULL) {
 		*p = '\0';
 		// Remove '\n'
@@ -49,7 +49,7 @@ add_alias(const char *line, struct alias **aliases)
 		if (eol != NULL) {
 			*eol = '\0';
 		}
-		struct alias *alias = new_alias(line, p);
+		struct alias *alias = new_alias(command, p);
 
 		for (index = 0; index < ALIAS_MAX; index++) {
 			if (aliases[index] == NULL) {
@@ -64,10 +64,11 @@ add_alias(const char *line, struct alias **aliases)
 	return 1;
 }
 
-char* get_alias(const char* name, struct alias **aliases) {
+char* get_alias(const char* name) {
 	int i;
 	// TODO:
-	for (i = 0; i < 2; i++) {
+	for (i = 0; i < ALIAS_MAX; i++) {
+		if (aliases[i] == NULL) break;
 		if (strcmp(aliases[i]->command,name) == 0) {
 			return aliases[i]->reference;
 		}
@@ -76,42 +77,21 @@ char* get_alias(const char* name, struct alias **aliases) {
 }
 
 struct alias **
-init_aliases(const char *alias_file)
+init_aliases()
 {
 	// Open and read env file
-	FILE *fd_env = fopen(alias_file, "r");
+	//FILE *fd_env = fopen(alias_file, "r");
 
 	// Create Aliases array
-	struct alias **aliases =
+	struct alias **newAliases =
 	    (struct alias **)malloc(ALIAS_MAX * sizeof(struct alias *));
 
 	// Check if malloc failed
-	if (aliases == NULL) {
+	if (newAliases == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
 	// Initialize buffer to 0
-	memset(aliases, 0, ALIAS_MAX);
+	memset(newAliases, 0, ALIAS_MAX);
 
-	// Create Buffer
-	char line[LINE_SIZE];
-
-	// ----------- Read file and write
-	char *p;
-
-	while (fgets(line, sizeof(line), fd_env)) {
-		/* note that fgets don't strip the terminating \n, checking its
-		   presence would allow to handle lines longer that sizeof(line) */
-		// Check if contains alias
-		p = strstr(line, "alias");
-		if (p != NULL) {
-			// If doesn't contain alias
-			add_alias(line + 6, aliases);
-		}
-	}
-	// -----------------------------------------
-
-	if (fclose(fd_env)) {
-		err(EXIT_FAILURE, "close failed");
-	}
-	return aliases;
+	return newAliases;
 }
