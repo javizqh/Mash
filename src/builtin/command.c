@@ -54,11 +54,21 @@ free_command(struct command *command) {
   }
 }
 
+extern int check_alias_cmd(struct command *command) {
+  if (command->argc == 0) {
+    if (get_alias(command->argv[0]) != NULL) {
+      // Substitute
+      command->argc--;
+      return 1;
+    }
+  }
+  return 0;
+};
+
 int
 add_arg(struct command *command)
 {
-	if (++command->argc > MAX_ARGUMENTS)
-		return 0;
+	if (++command->argc > MAX_ARGUMENTS) return 0;
 	command->current_arg = command->argv[command->argc];
 	return 1;
 }

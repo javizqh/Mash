@@ -75,6 +75,7 @@ int is_exit(struct command *command);
 // ------- Substitution -------
 
 struct sub_info {
+	char last_alias[ALIAS_MAX_COMMAND];
 	char *ptr;
 	char buffer[MAX_ENV_SIZE];
 };
@@ -132,5 +133,9 @@ char *execute_token(char *line, struct parse_info *parse_info,
 		    struct sub_info *sub_info);
 
 void request_new_line(char *line);
+
+void new_argument(struct command *current_cmd, struct parse_info *parse_info,
+		  struct cmd_array *cmd_array, struct file_info *file_info,
+		  struct sub_info *sub_info);
 
 int error_token(char token, char *line);

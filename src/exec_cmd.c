@@ -177,7 +177,7 @@ exec_in_shell(struct command *command, struct command *start_command,
 		redirect_stdout(command, last_command);
 		redirect_stderr(command, last_command);
 
-		return add_alias(command);
+		return add_alias(command->argv[1]);
 	} else if (strcmp(command->argv[0], "export") == 0) {
 
 		redirect_stdin(command, start_command);

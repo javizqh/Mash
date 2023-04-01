@@ -21,7 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "builtin/export.h"
-#include "builtin/alias.h"
+#include "builtin/command.h"
 
 extern int find_path(struct command *command);
 extern int command_exists(char *path);
