@@ -26,7 +26,18 @@
 extern int find_path(struct command *command);
 extern int command_exists(char *path);
 
-extern int exec_command(struct command *command);
+extern int exec_command(struct command *command, FILE * src_file);
+
+int execution(struct command *command);
+
+/**
+ * @brief Executes builtins that need to be executed in the parent process
+ * 
+ * @param command 
+ * @return 1 = Need to execute in child | 0 = Executed in parent process
+ */
+int exec_in_shell(struct command *command, struct command *start_command,
+		  struct command *last_command);
 
 void exec_child(struct command *command, struct command *start_command,
 		struct command *last_command);
@@ -56,5 +67,5 @@ int close_all_fd(struct command *start_command, struct command *last_command);
 int close_all_fd_cmd(struct command *command, struct command *start_command);
 
 // BUILTIN
-int find_builtin2(struct command *command);
+int find_builtin(struct command *command);
 void exec_builtin(struct command *command);
