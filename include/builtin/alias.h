@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "builtin/command.h"
-
 enum {
 	LINE_SIZE = 1024,	// In bytes
-	ALIAS_MAX = 256,	// In bytes
+	ALIAS_MAX = 256,
 	ALIAS_MAX_COMMAND = 64,	// In bytes
 	ALIAS_MAX_REFERENCE = 128	// In bytes
 };
@@ -25,15 +23,13 @@ extern struct alias *aliases[ALIAS_MAX];
 
 struct alias {
 	char command[ALIAS_MAX_COMMAND];
-	struct command *reference;
+	char reference[ALIAS_MAX_REFERENCE];
 };
 
-extern struct alias *new_alias(const char *command, struct command *reference);
+extern struct alias *new_alias(const char *command, char *reference);
 
-extern int add_alias(struct command *reference);
+extern int add_alias(char *command);
 
 extern char* get_alias(const char* name);
 
 extern struct alias **init_aliases();
-
-int set_alias_in_cmd(struct command *command);

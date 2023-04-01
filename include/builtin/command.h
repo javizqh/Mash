@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "open_files.h"
+#include "builtin/alias.h"
 
 enum {
 	MAX_ARGUMENT_SIZE = 128,
@@ -67,6 +68,8 @@ struct command {
 extern struct command *new_command();
 
 extern void free_command(struct command *command);
+
+extern int check_alias_cmd(struct command *command);
 
 extern int add_arg(struct command *command);
 

@@ -363,9 +363,17 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			fprintf(stderr, "Failed to add command");
 		}
 	} else {
-		new_cmd = cmd_array->commands[cmd_array->n_cmd - 1];
-		if (*new_cmd->current_arg != '\0') {
-			add_arg(new_cmd);
+		if (cmd_array->commands[cmd_array->n_cmd - 1]->pipe_next != NULL
+		    && cmd_array->commands[cmd_array->n_cmd -
+					   1]->pipe_next->argc < 0) {
+			new_argument(new_cmd, parse_info, cmd_array, file_info,
+				     sub_info);
+		} else {
+			new_cmd = cmd_array->commands[cmd_array->n_cmd - 1];
+			if (*new_cmd->current_arg != '\0') {
+				new_argument(new_cmd, parse_info, cmd_array,
+					     file_info, sub_info);
+			}
 		}
 	}
 	parse_info->copy = new_cmd->current_arg;
@@ -467,8 +475,10 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			parse_info->has_arg_started = PARSE_ARG_STARTED;
 			break;
 		case ' ':
+		case '\t':
 			if (parse_info->has_arg_started == PARSE_ARG_STARTED) {
-				add_arg(new_cmd);
+				new_argument(new_cmd, parse_info, cmd_array,
+					     file_info, sub_info);
 				parse_info->copy = new_cmd->current_arg;
 				parse_info->has_arg_started =
 				    PARSE_ARG_NOT_STARTED;
@@ -476,7 +486,8 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			break;
 		case '\n':
 			if (parse_info->has_arg_started == PARSE_ARG_STARTED) {
-				add_arg(new_cmd);
+				new_argument(new_cmd, parse_info, cmd_array,
+					     file_info, sub_info);
 				parse_info->copy = new_cmd->current_arg;
 				parse_info->has_arg_started =
 				    PARSE_ARG_NOT_STARTED;
@@ -499,7 +510,9 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 				old_cmd = new_cmd;
 				if (parse_info->has_arg_started ==
 				    PARSE_ARG_STARTED) {
-					add_arg(old_cmd);
+					new_argument(new_cmd, parse_info,
+						     cmd_array, file_info,
+						     sub_info);
 				}
 				// New command
 				new_cmd = new_command();
@@ -533,7 +546,8 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 	}
 	// End of substitution
 	if (new_cmd->current_arg[0] != '\0') {
-		add_arg(new_cmd);
+		new_argument(new_cmd, parse_info, cmd_array, file_info,
+			     sub_info);
 	}
 	return 0;
 }
@@ -634,6 +648,7 @@ substitution_tokenize(char *line, struct parse_info *parse_info,
 		case '"':
 		case '\'':
 		case ' ':
+		case '\t':
 		case ';':
 		case '<':
 		case '>':
@@ -735,6 +750,7 @@ file_tokenize(char *line, struct parse_info *parse_info,
 			}
 			break;
 		case ' ':
+		case '\t':
 			if (parse_info->has_arg_started == PARSE_ARG_STARTED) {
 				*parse_info->copy++ = '\0';
 				return --ptr;
@@ -820,6 +836,24 @@ request_new_line(char *line)
 {
 	printf("> ");
 	fgets(line, 1024, stdin);
+}
+
+void
+new_argument(struct command *current_cmd, struct parse_info *parse_info,
+	     struct cmd_array *cmd_array, struct file_info *file_info,
+	     struct sub_info *sub_info)
+{
+	if (strcmp(sub_info->last_alias, current_cmd->argv[0]) != 0) {
+		if (check_alias_cmd(current_cmd)) {
+			strcpy(sub_info->last_alias, current_cmd->argv[0]);
+			cmd_tokenize(get_alias
+				     (current_cmd->argv[0]),
+				     parse_info,
+				     cmd_array, file_info, sub_info);
+			return;
+		}
+	}
+	add_arg(current_cmd);
 }
 
 int
