@@ -101,7 +101,7 @@ command_exists(char *path)
 }
 
 int
-exec_command(struct command *command)
+exec_command(struct command *command, FILE * src_file)
 {
 
 	int cmd_to_wait = 0;
@@ -120,7 +120,13 @@ exec_command(struct command *command)
 		if (cmd_to_wait > 0) {
 			current_command = current_command->pipe_next;
 		}
-		current_command->pid = fork();
+		if (exec_in_shell(current_command, command,
+				  current_command->pipe_next)) {
+			current_command->pid = fork();
+		} else {
+			current_command->pid = getpid();
+			cmd_to_wait--;
+		}
 		cmd_to_wait++;
 	} while (current_command->pid != 0
 		 && current_command->pipe_next != NULL);
@@ -134,6 +140,8 @@ exec_command(struct command *command)
 		err(EXIT_FAILURE, "Failed to fork");
 		break;
 	case 0:
+		if (src_file != stdin)
+			fclose(src_file);
 		exec_child(current_command, command,
 			   current_command->pipe_next);
 		err(EXIT_FAILURE, "Failed to exec");
@@ -150,6 +158,37 @@ exec_command(struct command *command)
 	return EXIT_FAILURE;
 }
 
+int
+exec_in_shell(struct command *command, struct command *start_command,
+	      struct command *last_command)
+{
+	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
+
+		redirect_stdin(command, start_command);
+		redirect_stdout(command, last_command);
+		redirect_stderr(command, last_command);
+
+		return add_env(command->argv[0]);
+	}
+
+	if (strcmp(command->argv[0], "alias") == 0) {
+
+		redirect_stdin(command, start_command);
+		redirect_stdout(command, last_command);
+		redirect_stderr(command, last_command);
+
+		return add_alias(command);
+	} else if (strcmp(command->argv[0], "export") == 0) {
+
+		redirect_stdin(command, start_command);
+		redirect_stdout(command, last_command);
+		redirect_stderr(command, last_command);
+
+		return add_env(command->argv[1]);
+	}
+	return 1;
+}
+
 void
 exec_child(struct command *command, struct command *start_command,
 	   struct command *last_command)
@@ -160,7 +199,7 @@ exec_child(struct command *command, struct command *start_command,
 
 	close_all_fd_cmd(command, start_command);
 	// Check if builtin
-	if (find_builtin2(command)) {
+	if (find_builtin(command)) {
 		redirect_stdin(command, start_command);
 		redirect_stdout(command, last_command);
 		redirect_stderr(command, last_command);
@@ -446,7 +485,7 @@ close_all_fd_cmd(struct command *command, struct command *start_command)
 // BUILTIN
 
 int
-find_builtin2(struct command *command)
+find_builtin(struct command *command)
 {
 	if (strcmp(command->argv[0], "echo") == 0) {
 		return 1;

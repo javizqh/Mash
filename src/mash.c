@@ -18,7 +18,7 @@ int
 main(int argc, char **argv)
 {
 	// TODO: add source reading and remove until
-	read_source_file("env/.dashrc");
+	read_source_file("env/.mashrc");
 
 	// ---------- Read command line
 	// ------ Buffer
@@ -35,7 +35,7 @@ main(int argc, char **argv)
 
 	printf("\033[01;35m%s \033[0m", getenv("PROMPT"));
 	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
-		if (find_command(buf, NULL) == -1) {
+		if (find_command(buf, NULL, stdin) == -1) {
 			exit_dash();
 			free(buf);
 			return 0;
@@ -63,7 +63,7 @@ read_source_file(char *filename)
 	FILE *f = fopen(filename, "r");
 
 	while (fgets(buf, 1024, f) != NULL) {	/* break with ^D or ^Z */
-		if (find_command(buf, NULL) == -1) {
+		if (find_command(buf, NULL, f) == -1) {
 			//exit_dash();
 			fclose(f);
 			free(buf);
@@ -78,53 +78,12 @@ read_source_file(char *filename)
 	return 1;
 }
 
-// --------- Enviroment ------------
-
-int
-set_env(const char *env_file)
-{
-	// Open and read env file
-	FILE *fd_env = fopen(env_file, "r");
-
-	// Create Buffer
-	char line[LINE_SIZE];
-
-	// ----------- Read file and write
-
-	while (fgets(line, sizeof(line), fd_env)) {
-		/* note that fgets don't strip the terminating \n, checking its
-		   presence would allow to handle lines longer that sizeof(line) */
-		// If NULL then not matched
-		add_env(line + strlen("export") + 1);
-	}
-	// -----------------------------------------
-
-	if (fclose(fd_env)) {
-		err(EXIT_FAILURE, "close failed");
-	}
-	return 0;
-}
-
 // ----------- Builtin -------------
 
 int
-find_builtin(struct command *command)
+is_exit(struct command *command)
 {
-	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
-		add_env(command->argv[0]);
-		return 0;
-	}
-
-	if (strcmp(command->argv[0], "alias") == 0) {
-		// If doesn't contain alias
-		add_alias(command);
-		return 0;
-	} else if (strcmp(command->argv[0], "export") == 0) {
-		// If doesn't contain alias
-		add_env(command->argv[1]);
-		return 0;
-	} else if (strcmp(command->argv[0], "exit") == 0) {
-		// If doesn't contain alias
+	if (strcmp(command->argv[0], "exit") == 0) {
 		return -1;
 	}
 	return 1;
@@ -229,7 +188,7 @@ set_commands(char *line)
 }
 
 int
-find_command(char *line, char *buffer)
+find_command(char *line, char *buffer, FILE * src_file)
 {
 	struct cmd_array *commands = set_commands(line);
 
@@ -256,9 +215,11 @@ find_command(char *line, char *buffer)
 		switch (commands->commands[i]->prev_status_needed_to_exec) {
 			// TODO: add check for exit
 		case DO_NOT_MATTER_TO_EXEC:
-			status = find_builtin(commands->commands[i]);
+			status = is_exit(commands->commands[i]);
 			if (status > 0) {
-				status = exec_command(commands->commands[i]);
+				status =
+				    exec_command(commands->commands[i],
+						 src_file);
 			} else if (status == -1) {
 				free_cmd_array(commands);
 				return status;
@@ -266,10 +227,11 @@ find_command(char *line, char *buffer)
 			break;
 		case EXECUTE_IN_SUCCESS:
 			if (status == 0) {
-				status = find_builtin(commands->commands[i]);
+				status = is_exit(commands->commands[i]);
 				if (status > 0) {
 					status =
-					    exec_command(commands->commands[i]);
+					    exec_command(commands->commands[i],
+							 src_file);
 				} else if (status == -1) {
 					free_cmd_array(commands);
 					return status;
@@ -278,10 +240,11 @@ find_command(char *line, char *buffer)
 			break;
 		case EXECUTE_IN_FAILURE:
 			if (status != 0) {
-				status = find_builtin(commands->commands[i]);
+				status = is_exit(commands->commands[i]);
 				if (status > 0) {
 					status =
-					    exec_command(commands->commands[i]);
+					    exec_command(commands->commands[i],
+							 src_file);
 				} else if (status == -1) {
 					free_cmd_array(commands);
 					return status;
@@ -844,7 +807,8 @@ execute_token(char *line, struct parse_info *parse_info,
 		}
 	}
 	// Copy result into sub_info->buffer
-	find_command(line_buf, buffer);
+	// FIX: fix find_command call
+	find_command(line_buf, buffer, stdin);
 	cmd_tokenize(buffer, parse_info, cmd_array, file_info, sub_info);
 	free(line_buf);
 	free(buffer);

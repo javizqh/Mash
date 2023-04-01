@@ -26,10 +26,6 @@ int main(int argc, char **argv);
 
 int read_source_file(char *filename);
 
-// ------- Enviroment ---------
-
-int set_env(const char *env_file);
-
 // --------------- Parse Arguments -----------
 // -------- Command Array -----------
 
@@ -68,13 +64,13 @@ struct cmd_array *set_commands(char *line);
 
 // --------- Command ----------
 
-int find_command(char *line, char *buffer);
+int find_command(char *line, char *buffer, FILE * src_file);
 
 int set_command_file(struct cmd_array *commands, int file_type, char *file);
 
-// -------- Builtin -----------
-
-int find_builtin(struct command *command);
+// -------- Exit -----------
+// TODO: temporary solution
+int is_exit(struct command *command);
 
 // ------- Substitution -------
 
