@@ -21,7 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "open_files.h"
-#include "builtin/alias.h"
+#include "builtin/exit.h"
 
 enum {
 	MAX_ARGUMENT_SIZE = 128,

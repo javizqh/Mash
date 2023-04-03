@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdio.h>
+#include <string.h>
+#include <err.h>
+#include <unistd.h>
+#include <stdlib.h>
+
 enum {
 	LINE_SIZE = 1024,	// In bytes
 	ALIAS_MAX = 256,
@@ -31,5 +37,3 @@ extern struct alias *new_alias(const char *command, char *reference);
 extern int add_alias(char *command);
 
 extern char* get_alias(const char* name);
-
-extern struct alias **init_aliases();

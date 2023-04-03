@@ -13,3 +13,71 @@
 // limitations under the License.
 
 #include "builtin/source.h"
+
+struct source_file *sources[MAX_SOURCE_FILES];
+
+struct source_file *new_source_file(char *source_file_name)
+{
+	struct source_file *source_file = (struct source_file *)malloc(sizeof(struct source_file));
+	// Check if malloc failed
+	if (source_file == NULL) {
+		err(EXIT_FAILURE, "malloc failed");
+	}
+	strcpy(source_file->file, source_file_name);
+
+	return source_file;
+}
+
+int
+add_source(char *source_file_name)
+{
+	int index;
+  struct source_file *source_file = new_source_file(source_file_name);
+
+  for (index = 0; index < MAX_SOURCE_FILES; index++) {
+    if (sources[index] == NULL) {
+      sources[index] = source_file;
+      return 0;
+    }
+  }
+  perror("Failed to add new source. Already at limit.\n");
+	return 1;
+}
+
+int exec_sources() {
+  int index;
+
+  for (index = 0; index < MAX_SOURCE_FILES; index++) {
+    if (sources[index] == NULL) {
+      break;
+    }
+    read_source_file(sources[index]->file);
+  }
+  return 0;
+}
+
+int
+read_source_file(char *filename)
+{
+	char *buf = malloc(sizeof(char[1024]));
+
+	if (buf == NULL)
+		err(EXIT_FAILURE, "malloc failed");
+	memset(buf, 0, 1024);
+	FILE *f = fopen(filename, "r");
+
+	while (fgets(buf, 1024, f) != NULL) {	/* break with ^D or ^Z */
+		if (find_command(buf, NULL, f) == -1) {
+			//exit_dash();
+			fclose(f);
+			free(buf);
+			return 0;
+		}
+	}
+	if (ferror(f)) {
+		err(EXIT_FAILURE, "fgets failed");
+	}
+	fclose(f);
+	free(buf);
+	return 1;
+}

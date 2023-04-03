@@ -13,3 +13,23 @@
 // limitations under the License.
 
 #include "builtin/exit.h"
+
+void
+exit_mash()
+{
+	int i;
+
+  for (i = 0; i < ALIAS_MAX; i++) {
+		if (aliases[i] == NULL) break;
+		free(aliases[i]);
+	}
+
+  //for (i = 0; i < MAX_SOURCE_FILES; i++) {
+  //  if (sources[i] == NULL) {
+  //    break;
+  //  }
+  //  free(sources[i]);
+  //}
+
+	exit(EXIT_SUCCESS);
+}
