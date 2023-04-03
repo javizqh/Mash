@@ -18,7 +18,8 @@ int
 main(int argc, char **argv)
 {
 	// TODO: add source reading and remove until
-	read_source_file("env/.mashrc");
+	add_source("env/.mashrc");
+	exec_sources();
 
 	// ---------- Read command line
 	// ------ Buffer
@@ -35,11 +36,7 @@ main(int argc, char **argv)
 
 	printf("\033[01;35m%s \033[0m", getenv("PROMPT"));
 	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
-		if (find_command(buf, NULL, stdin) == -1) {
-			exit_dash();
-			free(buf);
-			return 0;
-		}
+		find_command(buf, NULL, stdin);
 		// Print Prompt
 		printf("\033[01;35m%s \033[0m", getenv("PROMPT"));
 	}
@@ -47,46 +44,9 @@ main(int argc, char **argv)
 		err(EXIT_FAILURE, "fgets failed");
 	}
 
-	exit_dash();
+	exit_mash();
 	free(buf);
 	return 0;
-}
-
-int
-read_source_file(char *filename)
-{
-	char *buf = malloc(sizeof(char[1024]));
-
-	if (buf == NULL)
-		err(EXIT_FAILURE, "malloc failed");
-	memset(buf, 0, 1024);
-	FILE *f = fopen(filename, "r");
-
-	while (fgets(buf, 1024, f) != NULL) {	/* break with ^D or ^Z */
-		if (find_command(buf, NULL, f) == -1) {
-			//exit_dash();
-			fclose(f);
-			free(buf);
-			return 0;
-		}
-	}
-	if (ferror(f)) {
-		err(EXIT_FAILURE, "fgets failed");
-	}
-	fclose(f);
-	free(buf);
-	return 1;
-}
-
-// ----------- Builtin -------------
-
-int
-is_exit(struct command *command)
-{
-	if (strcmp(command->argv[0], "exit") == 0) {
-		return -1;
-	}
-	return 1;
 }
 
 // ------ Parse info --------
@@ -215,40 +175,18 @@ find_command(char *line, char *buffer, FILE * src_file)
 		switch (commands->commands[i]->prev_status_needed_to_exec) {
 			// TODO: add check for exit
 		case DO_NOT_MATTER_TO_EXEC:
-			status = is_exit(commands->commands[i]);
-			if (status > 0) {
-				status =
-				    exec_command(commands->commands[i],
-						 src_file);
-			} else if (status == -1) {
-				free_cmd_array(commands);
-				return status;
-			}
+			status = exec_command(commands->commands[i], src_file);
 			break;
 		case EXECUTE_IN_SUCCESS:
 			if (status == 0) {
-				status = is_exit(commands->commands[i]);
-				if (status > 0) {
-					status =
-					    exec_command(commands->commands[i],
-							 src_file);
-				} else if (status == -1) {
-					free_cmd_array(commands);
-					return status;
-				}
+				status = exec_command(commands->commands[i],
+						      src_file);
 			}
 			break;
 		case EXECUTE_IN_FAILURE:
 			if (status != 0) {
-				status = is_exit(commands->commands[i]);
-				if (status > 0) {
-					status =
-					    exec_command(commands->commands[i],
-							 src_file);
-				} else if (status == -1) {
-					free_cmd_array(commands);
-					return status;
-				}
+				status = exec_command(commands->commands[i],
+						      src_file);
 			} else {
 				status = 0;
 			}
@@ -329,20 +267,6 @@ new_file_info()
 	file_info->ptr = file_info->buffer;
 
 	return file_info;
-}
-
-// ------------ Exit ---------------
-
-int
-exit_dash()
-{
-	int i;
-
-	for (i = 0; i < 2; i++) {
-		free(aliases[i]);
-	}
-	//free(aliases);
-	return 0;
 }
 
 // New TOKENIZATION Recursive

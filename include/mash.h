@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "builtin/source.h"
 #include "exec_cmd.h"
 
 enum {

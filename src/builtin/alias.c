@@ -12,11 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdio.h>
-#include <string.h>
-#include <err.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include "builtin/alias.h"
 
 struct alias *aliases[ALIAS_MAX];
@@ -74,24 +69,4 @@ char* get_alias(const char* name) {
 		}
 	}
 	return NULL;
-}
-
-struct alias **
-init_aliases()
-{
-	// Open and read env file
-	//FILE *fd_env = fopen(alias_file, "r");
-
-	// Create Aliases array
-	struct alias **newAliases =
-	    (struct alias **)malloc(ALIAS_MAX * sizeof(struct alias *));
-
-	// Check if malloc failed
-	if (newAliases == NULL) {
-		err(EXIT_FAILURE, "malloc failed");
-	}
-	// Initialize buffer to 0
-	memset(newAliases, 0, ALIAS_MAX);
-
-	return newAliases;
 }

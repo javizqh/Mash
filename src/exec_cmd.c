@@ -185,6 +185,14 @@ exec_in_shell(struct command *command, struct command *start_command,
 		redirect_stderr(command, last_command);
 
 		return add_env(command->argv[1]);
+	} else if (strcmp(command->argv[0], "exit") == 0) {
+		exit_mash();
+	} else if (strcmp(command->argv[0], "source") == 0) {
+		redirect_stdin(command, start_command);
+		redirect_stdout(command, last_command);
+		redirect_stderr(command, last_command);
+
+		return add_source(command->argv[1]);
 	}
 	return 1;
 }
@@ -193,7 +201,6 @@ void
 exec_child(struct command *command, struct command *start_command,
 	   struct command *last_command)
 {
-	// FIX: close f when reading source file
 	int i;
 	char *args[command->argc];
 

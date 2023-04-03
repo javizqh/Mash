@@ -20,5 +20,21 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
+enum {
+	MAX_SOURCE_FILES = 64,	// In bytes
+	MAX_FILE_LENGTH = 256  // In bytes
+};
 
+struct source_file {
+	char file[MAX_FILE_LENGTH];
+};
+
+struct source_file *new_source_file(char *source_file_name);
+
+extern int add_source(char *source_file_name);
+
+extern int exec_sources();
+
+int read_source_file(char *filename);
