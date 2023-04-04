@@ -140,3 +140,5 @@ void new_argument(struct command *current_cmd, struct parse_info *parse_info,
 		  struct sub_info *sub_info);
 
 int error_token(char token, char *line);
+
+int check_here_doc(char *line, struct cmd_array *cmd_array);

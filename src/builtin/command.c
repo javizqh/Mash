@@ -75,6 +75,13 @@ add_arg(struct command *command)
 
 int set_file_cmd(struct command *command,int file_type, char *file) {
   switch (file_type) {
+  case HERE_DOC_READ:
+    if (command->input != STDIN_FILENO) {
+			close(command->input);
+		}
+    command->input = HERE_DOC_FILENO;
+    return 1;
+    break;
 	case INPUT_READ:
 		if (command->input != STDIN_FILENO) {
 			close(command->input);

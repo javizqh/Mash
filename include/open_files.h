@@ -18,13 +18,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <err.h>
 
 enum read_mode {
 	NO_FILE_READ,
+	HERE_DOC_READ,
 	INPUT_READ,
 	OUTPUT_WRITE
 };
 
+enum here_doc {
+	HERE_DOC_FILENO = -1,
+	MAX_HERE_DOC_BUFFER = 1024 * 64
+};
+
 extern int open_read_file(char *filename);
 extern int open_write_file(char *filename);
+
+extern char *new_here_doc_buffer();

@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <signal.h>
 #include <unistd.h>
 #include <err.h>
 #include <errno.h>
@@ -50,6 +51,7 @@ enum iobuffer {
 	MAX_BUFFER_IO_SIZE = 1024 * 4
 };
 
+void read_from_here_doc(struct command *start_command);
 void read_from_file(struct command *start_command);
 void write_to_file_or_buffer(struct command *last_command);
 

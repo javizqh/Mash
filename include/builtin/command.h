@@ -39,13 +39,6 @@ enum status {
 	EXECUTE_IN_FAILURE
 };
 
-enum pipe{
-	READ_FROM_SHELL = 0,
-	READ_FROM_PIPE = 1,
-	WRITE_TO_SHELL = 0,
-	WRITE_TO_PIPE = 1
-};
-
 struct command {
 	char argv[MAX_ARGUMENTS][MAX_ARGUMENT_SIZE];
 	int argc;
