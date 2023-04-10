@@ -158,7 +158,7 @@ find_command(char *line, char *buffer, FILE * src_file)
 	}
 
 	if (buffer != NULL) {
-		commands->commands[commands->n_cmd - 1]->output_buffer = buffer;
+		set_buffer_cmd(commands->commands[commands->n_cmd - 1], buffer);
 	}
 	// char *command_with_path;
 	int status = 0;
@@ -288,12 +288,14 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 		}
 	} else {
 		if (cmd_array->commands[cmd_array->n_cmd - 1]->pipe_next != NULL
-		    && cmd_array->commands[cmd_array->n_cmd -
-					   1]->pipe_next->argc < 0) {
+		    && get_last_command(cmd_array->commands[cmd_array->n_cmd -
+							    1])->argc < 0) {
 			new_argument(new_cmd, parse_info, cmd_array, file_info,
 				     sub_info);
 		} else {
-			new_cmd = cmd_array->commands[cmd_array->n_cmd - 1];
+			new_cmd =
+			    get_last_command(cmd_array->commands
+					     [cmd_array->n_cmd - 1]);
 			if (*new_cmd->current_arg != '\0') {
 				new_argument(new_cmd, parse_info, cmd_array,
 					     file_info, sub_info);
@@ -340,6 +342,7 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 				    EXECUTE_IN_FAILURE;
 			} else {
 				// Update old_cmd pipe
+				strcpy(sub_info->last_alias, "");
 				pipe_command(old_cmd, new_cmd);
 				ptr--;
 			}

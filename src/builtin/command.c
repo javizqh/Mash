@@ -103,6 +103,11 @@ int set_file_cmd(struct command *command,int file_type, char *file) {
 	return -1;
 }
 
+int set_buffer_cmd(struct command *command, char *buffer) {
+  get_last_command(command)->output_buffer = buffer;
+  return 1;
+}
+
 int set_to_background_cmd(struct command *command) {
   command->do_wait = DO_NOT_WAIT_TO_FINISH;
   if (command->input == STDIN_FILENO) {
@@ -130,5 +135,6 @@ int pipe_command(struct command *in_command, struct command * out_command) {
   in_command->fd_pipe_output[1] = fd[1];
   out_command->fd_pipe_input[0] = fd[0];
   out_command->fd_pipe_input[1] = fd[1];
+  out_command->output_buffer = in_command->output_buffer;
   return 1;
 }

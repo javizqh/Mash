@@ -271,6 +271,7 @@ wait_childs(struct command *start_command, struct command *last_command,
 				}
 			}
 		} else if (WIFSIGNALED(wstatus)) {
+			// TODO: remove later
 			printf("Killed by signal %d\n", WTERMSIG(wstatus));
 			return EXIT_FAILURE;
 		}
@@ -335,8 +336,10 @@ read_from_file(struct command *start_command)
 	memset(buffer_stdin, 0, MAX_BUFFER_IO_SIZE);
 	do {
 		bytes_stdin = read(start_command->input, buffer_stdin, count);
-		write(start_command->fd_pipe_input[1], buffer_stdin,
-		      bytes_stdin);
+		if (write(start_command->fd_pipe_input[1], buffer_stdin,
+			  bytes_stdin) < 0) {
+			break;
+		}
 	} while (bytes_stdin > 0);
 
 	close_fd(start_command->fd_pipe_input[1]);
@@ -521,14 +524,14 @@ close_all_fd_cmd(struct command *command, struct command *start_command)
 			close_fd(new_cmd->fd_pipe_input[1]);
 			close_fd(new_cmd->fd_pipe_output[0]);
 		} else {
+			// Close if the cmd output is not the next input
 			if (new_cmd->fd_pipe_input[1] !=
-			    command->fd_pipe_output[1]
-			    && new_cmd == command->pipe_next) {
+			    command->fd_pipe_output[1]) {
 				close_fd(new_cmd->fd_pipe_input[1]);
 			}
+			// Close if the cmd input is not the prev output
 			if (new_cmd->fd_pipe_output[0] !=
-			    command->fd_pipe_input[0]
-			    && new_cmd->pipe_next == command) {
+			    command->fd_pipe_input[0]) {
 				close_fd(new_cmd->fd_pipe_output[0]);
 			}
 			close_fd(new_cmd->fd_pipe_input[0]);

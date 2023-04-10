@@ -68,6 +68,8 @@ extern int add_arg(struct command *command);
 
 extern int set_file_cmd(struct command *command,int file_type, char *file);
 
+extern int set_buffer_cmd(struct command *command, char *buffer);
+
 extern int set_to_background_cmd(struct command *command);
 
 struct command * get_last_command(struct command *command);
