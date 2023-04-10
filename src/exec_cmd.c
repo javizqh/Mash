@@ -148,8 +148,11 @@ exec_command(struct command *command, FILE * src_file)
 		break;
 	default:
 		close_all_fd(command, current_command);
-
-		read_from_file(command);
+		if (command->input == HERE_DOC_FILENO) {
+			read_from_here_doc(command);
+		} else {
+			read_from_file(command);
+		}
 		write_to_file_or_buffer(current_command);
 
 		return wait_childs(command, current_command, cmd_to_wait);
@@ -268,6 +271,7 @@ wait_childs(struct command *start_command, struct command *last_command,
 				}
 			}
 		} else if (WIFSIGNALED(wstatus)) {
+			// TODO: remove later
 			printf("Killed by signal %d\n", WTERMSIG(wstatus));
 			return EXIT_FAILURE;
 		}
@@ -277,6 +281,43 @@ wait_childs(struct command *start_command, struct command *last_command,
 }
 
 // Redirect input and output: Parent
+
+void
+read_from_here_doc(struct command *start_command)
+{
+	// Create stdin buffer
+	ssize_t count = MAX_BUFFER_IO_SIZE;
+	ssize_t bytes_stdin;
+
+	char *buffer_stdin = malloc(sizeof(char[MAX_BUFFER_IO_SIZE]));
+
+	if (buffer_stdin == NULL)
+		err(EXIT_FAILURE, "malloc failed");
+	memset(buffer_stdin, 0, MAX_BUFFER_IO_SIZE);
+
+	char *here_doc_buffer = new_here_doc_buffer();
+
+	// FIX: store in buffer until }
+	do {
+		bytes_stdin = read(STDIN_FILENO, buffer_stdin, count);
+		if (*buffer_stdin == '}') {
+			if (*++buffer_stdin == '\n') {
+				--buffer_stdin;
+				break;
+			}
+			--buffer_stdin;
+		}
+		strcat(here_doc_buffer, buffer_stdin);
+	} while (bytes_stdin > 0);
+
+	write(start_command->fd_pipe_input[1], here_doc_buffer,
+	      strlen(here_doc_buffer));
+
+	close_fd(start_command->fd_pipe_input[1]);
+	free(buffer_stdin);
+	free(here_doc_buffer);
+}
+
 void
 read_from_file(struct command *start_command)
 {
@@ -295,11 +336,14 @@ read_from_file(struct command *start_command)
 	memset(buffer_stdin, 0, MAX_BUFFER_IO_SIZE);
 	do {
 		bytes_stdin = read(start_command->input, buffer_stdin, count);
-		write(start_command->fd_pipe_input[1], buffer_stdin,
-		      bytes_stdin);
+		if (write(start_command->fd_pipe_input[1], buffer_stdin,
+			  bytes_stdin) < 0) {
+			break;
+		}
 	} while (bytes_stdin > 0);
 
 	close_fd(start_command->fd_pipe_input[1]);
+	close_fd(start_command->input);
 	free(buffer_stdin);
 }
 
@@ -342,6 +386,9 @@ write_to_file_or_buffer(struct command *last_command)
 	} while (bytes_stdout > 0);
 	free(buffer_stdout);
 	close_fd(last_command->fd_pipe_output[0]);
+	if (last_command->output != STDOUT_FILENO) {
+		close_fd(last_command->output);
+	}
 }
 
 // Redirect input and output: Child
@@ -466,19 +513,25 @@ close_all_fd_cmd(struct command *command, struct command *start_command)
 	struct command *new_cmd = start_command;
 
 	while (new_cmd != NULL) {
+		if (new_cmd->input != STDIN_FILENO) {
+			close_fd(new_cmd->input);
+		}
+		if (new_cmd->output != STDOUT_FILENO) {
+			close_fd(new_cmd->output);
+		}
 		// IF fd is the same don't close it
 		if (new_cmd == command) {
 			close_fd(new_cmd->fd_pipe_input[1]);
 			close_fd(new_cmd->fd_pipe_output[0]);
 		} else {
+			// Close if the cmd output is not the next input
 			if (new_cmd->fd_pipe_input[1] !=
-			    command->fd_pipe_output[1]
-			    && new_cmd == command->pipe_next) {
+			    command->fd_pipe_output[1]) {
 				close_fd(new_cmd->fd_pipe_input[1]);
 			}
+			// Close if the cmd input is not the prev output
 			if (new_cmd->fd_pipe_output[0] !=
-			    command->fd_pipe_input[0]
-			    && new_cmd->pipe_next == command) {
+			    command->fd_pipe_input[0]) {
 				close_fd(new_cmd->fd_pipe_output[0]);
 			}
 			close_fd(new_cmd->fd_pipe_input[0]);

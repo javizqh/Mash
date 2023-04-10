@@ -158,7 +158,7 @@ find_command(char *line, char *buffer, FILE * src_file)
 	}
 
 	if (buffer != NULL) {
-		commands->commands[commands->n_cmd - 1]->output_buffer = buffer;
+		set_buffer_cmd(commands->commands[commands->n_cmd - 1], buffer);
 	}
 	// char *command_with_path;
 	int status = 0;
@@ -288,12 +288,14 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 		}
 	} else {
 		if (cmd_array->commands[cmd_array->n_cmd - 1]->pipe_next != NULL
-		    && cmd_array->commands[cmd_array->n_cmd -
-					   1]->pipe_next->argc < 0) {
+		    && get_last_command(cmd_array->commands[cmd_array->n_cmd -
+							    1])->argc < 0) {
 			new_argument(new_cmd, parse_info, cmd_array, file_info,
 				     sub_info);
 		} else {
-			new_cmd = cmd_array->commands[cmd_array->n_cmd - 1];
+			new_cmd =
+			    get_last_command(cmd_array->commands
+					     [cmd_array->n_cmd - 1]);
 			if (*new_cmd->current_arg != '\0') {
 				new_argument(new_cmd, parse_info, cmd_array,
 					     file_info, sub_info);
@@ -340,6 +342,7 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 				    EXECUTE_IN_FAILURE;
 			} else {
 				// Update old_cmd pipe
+				strcpy(sub_info->last_alias, "");
 				pipe_command(old_cmd, new_cmd);
 				ptr--;
 			}
@@ -456,12 +459,24 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			break;
 		case '(':
 		case ')':
+		case '{':
+		case '}':
 			return error_token(*ptr, ptr);
 			break;
 		default:
+			// FIX: add error struct to handle differen error tokens
 			if (parse_info->do_not_expect_new_cmd)
 				return error_token('&', ptr);
-			*parse_info->copy++ = *ptr;
+			if (check_here_doc(ptr, cmd_array)) {
+				parse_info->do_not_expect_new_cmd = 1;	// End parsing
+				ptr++;
+				ptr++;
+				ptr++;
+				ptr++;
+				new_cmd->argc--;
+			} else {
+				*parse_info->copy++ = *ptr;
+			}
 			parse_info->has_arg_started = PARSE_ARG_STARTED;
 			break;
 		}
@@ -598,6 +613,8 @@ substitution_tokenize(char *line, struct parse_info *parse_info,
 			ptr--;
 			break;
 		case ')':
+		case '{':
+		case '}':
 			error_token(*ptr, ptr);
 			return NULL;
 			break;
@@ -686,6 +703,8 @@ file_tokenize(char *line, struct parse_info *parse_info,
 			break;
 		case '(':
 		case ')':
+		case '{':
+		case '}':
 			error_token(*ptr, ptr);
 			return NULL;
 			break;
@@ -787,4 +806,21 @@ error_token(char token, char *line)
 		"dash: syntax error in '%c' near unexpected token `%s", token,
 		line);
 	return -1;
+}
+
+int
+check_here_doc(char *line, struct cmd_array *cmd_array)
+{
+	char *ptr = line;
+
+	if (*ptr++ == 'H' && *ptr++ == 'E' && *ptr++ == 'R' && *ptr++ == 'E'
+	    && *ptr == '{') {
+		// TODO: check input
+		if (set_file_cmd
+		    (cmd_array->commands[cmd_array->n_cmd - 1],
+		     HERE_DOC_READ, "") >= 0) {
+			return 1;
+		}
+	}
+	return 0;
 }

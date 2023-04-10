@@ -45,3 +45,15 @@ open_write_file(char *filename)
 	}
 	return fd;
 }
+
+char *
+new_here_doc_buffer()
+{
+	char *hd_buffer = malloc(MAX_HERE_DOC_BUFFER);
+
+	if (hd_buffer == NULL)
+		err(EXIT_FAILURE, "malloc failed");
+	memset(hd_buffer, 0, MAX_HERE_DOC_BUFFER);
+
+	return hd_buffer;
+}
