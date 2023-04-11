@@ -196,6 +196,12 @@ exec_in_shell(struct command *command, struct command *start_command,
 		redirect_stderr(command, last_command);
 
 		return add_source(command->argv[1]);
+	} else if (strcmp(command->argv[0], "cd") == 0) {
+		redirect_stdin(command, start_command);
+		redirect_stdout(command, last_command);
+		redirect_stderr(command, last_command);
+
+		return cd(command);
 	}
 	return 1;
 }
@@ -299,7 +305,6 @@ read_from_here_doc(struct command *start_command)
 
 	char *here_doc_buffer = new_here_doc_buffer();
 
-	// FIX: store in buffer until }
 	do {
 		bytes_stdin = read(STDIN_FILENO, buffer_stdin, count);
 		if (*buffer_stdin == '}') {

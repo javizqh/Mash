@@ -13,3 +13,26 @@
 // limitations under the License.
 
 #include "builtin/cd.h"
+
+int usage() {
+  fprintf(stderr, "Usage: cd [directory]\n");
+  return EXIT_FAILURE;
+}
+
+int cd(struct command * command) {
+  if (command->argc > 2) {
+    return usage();
+  }
+  if (strcmp(command->argv[1],"--help") == 0 || strcmp(command->argv[1],"-h") == 0) {
+    return usage();
+  }
+  if (command->argc == 1) {
+    // FIX: get it from home
+    strcpy(command->argv[1], getpwuid(getuid())->pw_dir);
+  }
+  if (chdir(command->argv[1]) < 0) {
+    fprintf(stderr,"mash: cd: %s: No such directory\n", command->argv[1]);
+    return EXIT_FAILURE;
+  }
+  return EXIT_SUCCESS;
+}

@@ -29,3 +29,7 @@ int add_env(const char * line) {
   }
   return 1;
 }
+
+int add_env_by_name(const char *key, const char *value) {
+  return setenv(key, value, 1);
+}
