@@ -22,28 +22,28 @@ find_path(struct command *command)
 		return command_exists(command->argv[0]);
 	}
 	// THEN CHECK IN PWD
-	char *pwd = malloc(sizeof(char) * MAX_ENV_SIZE);
+	char *cwd = malloc(MAX_ENV_SIZE);
 
-	if (pwd == NULL) {
+	if (cwd == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-	memset(pwd, 0, sizeof(char) * MAX_ENV_SIZE);
+	memset(cwd, 0, MAX_ENV_SIZE);
 	// Copy the path
-	strcpy(pwd, getenv("PWD"));
-	if (pwd == NULL) {
-		free(pwd);
+	if (getcwd(cwd, MAX_ENV_SIZE) == NULL) {
+		free(cwd);
 		return -1;
 	}
-	char *pwd_ptr = pwd;
+	char *cwd_ptr = cwd;
 
-	strcat(pwd_ptr, command->argv[0]);
+	strcat(cwd_ptr, "/");
+	strcat(cwd_ptr, command->argv[0]);
 
-	if (command_exists(pwd_ptr)) {
-		strcpy(command->argv[0], pwd_ptr);
-		free(pwd);
+	if (command_exists(cwd_ptr)) {
+		strcpy(command->argv[0], cwd_ptr);
+		free(cwd);
 		return 1;
 	}
-	free(pwd);
+	free(cwd);
 	// First get the path from env PATH
 	char *path = malloc(sizeof(char) * MAX_ENV_SIZE);
 
