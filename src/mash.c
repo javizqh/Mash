@@ -376,6 +376,11 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			parse_info->copy = new_cmd->current_arg;
 			parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
 			break;
+		case '*':
+			// TODO: add globbing here
+			ptr = glob_tokenize(ptr, parse_info, cmd_array,
+					    file_info, sub_info);
+			break;
 		case '\\':
 			if (parse_info->do_not_expect_new_cmd)
 				return error_token('&', ptr);
@@ -396,8 +401,13 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			    substitution_tokenize(++ptr, parse_info, cmd_array,
 						  file_info, sub_info);
 			// Copy now sub_info to parse_info->copy
-			if (copy_substitution(parse_info, sub_info->buffer) < 0) {
-				return -1;
+			if (strlen(sub_info->buffer) > 0) {
+				if (copy_substitution
+				    (parse_info, sub_info->buffer) < 0) {
+					return -1;
+				}
+			} else {
+				ptr++;
 			}
 			parse_info->has_arg_started = PARSE_ARG_STARTED;
 			break;
@@ -548,9 +558,14 @@ soft_apost_tokenize(char *line, struct parse_info *parse_info,
 							  cmd_array, file_info,
 							  sub_info);
 				// Copy now sub_info to parse_info->copy
-				if (copy_substitution
-				    (parse_info, sub_info->buffer) < 0) {
-					return NULL;
+				if (strlen(sub_info->buffer) > 0) {
+					if (copy_substitution
+					    (parse_info,
+					     sub_info->buffer) < 0) {
+						return NULL;
+					}
+				} else {
+					ptr++;
 				}
 			} else {
 				*parse_info->copy++ = *--ptr;
@@ -591,6 +606,7 @@ substitution_tokenize(char *line, struct parse_info *parse_info,
 		case ';':
 		case '<':
 		case '>':
+		case '*':
 		case '\n':
 			// Copy the $
 			*--sub_info->ptr = '\0';
@@ -720,10 +736,119 @@ file_tokenize(char *line, struct parse_info *parse_info,
 }
 
 char *
+glob_tokenize(char *line, struct parse_info *parse_info,
+	      struct cmd_array *cmd_array, struct file_info *file_info,
+	      struct sub_info *sub_info)
+{
+	int exit = 0;
+
+	// Store all in line_buf
+	char *line_buf = malloc(1024);
+
+	if (line_buf == NULL) {
+		err(EXIT_FAILURE, "malloc failed");
+	}
+	memset(line_buf, 0, 1024);
+	// Can call only substitution
+	char *old_ptr = parse_info->copy;
+
+	parse_info->copy = line_buf;
+	char *ptr;
+
+	for (ptr = line; *ptr != '\0'; ptr++) {
+		switch (*ptr) {
+		case '"':
+			ptr =
+			    soft_apost_tokenize(++ptr, parse_info, cmd_array,
+						file_info, sub_info);
+			break;
+		case '\'':
+			ptr = hard_apost_tokenize(++ptr, parse_info);
+			break;
+		case '\\':
+			// Do NOT return if escape \n
+			if (*++ptr == '\n') {
+				request_new_line(line);
+				ptr = line;
+				ptr--;
+			}
+			// Do return if escape ' '
+			if (*ptr == '$' || *ptr == '"') {
+				*parse_info->copy++ = *ptr;
+			} else {
+				*parse_info->copy++ = *--ptr;
+				*parse_info->copy++ = *++ptr;
+			}
+			break;
+		case '$':
+			ptr =
+			    substitution_tokenize(++ptr, parse_info, cmd_array,
+						  file_info, sub_info);
+			// Copy now sub_info to parse_info->copy
+			if (strlen(sub_info->buffer) > 0) {
+				if (copy_substitution
+				    (parse_info, sub_info->buffer) < 0) {
+					return NULL;
+				}
+			} else {
+				ptr++;
+			}
+			break;
+		case '\n':
+			// End line
+			*parse_info->copy = '\0';
+			exit = 1;
+			ptr++;
+			break;
+		case ' ':
+			// End line
+			*parse_info->copy = '\0';
+			exit = 1;
+			break;
+		default:
+			*parse_info->copy++ = *ptr;
+			break;
+		}
+		if (exit)
+			break;
+	}
+	// Append the things in command
+	strcat(cmd_array->commands[cmd_array->n_cmd - 1]->current_arg,
+	       line_buf);
+	free(line_buf);
+
+	// Do substitution and update command
+	glob_t gstruct;
+
+	sizeof(glob_t);
+
+	if (glob(cmd_array->commands[cmd_array->n_cmd - 1]->current_arg,
+		 GLOB_ERR, NULL, &gstruct) == GLOB_NOESCAPE) {
+		//TODO: add error
+		return NULL;
+	}
+	char **found;
+
+	found = gstruct.gl_pathv;
+	while (*found != NULL) {
+		strcpy(cmd_array->commands[cmd_array->n_cmd - 1]->current_arg,
+		       *found);
+		add_arg(cmd_array->commands[cmd_array->n_cmd - 1]);
+		found++;
+	}
+	globfree(&gstruct);
+	// Ask for new line
+	parse_info->copy = old_ptr;
+	return --ptr;
+}
+
+char *
 execute_token(char *line, struct parse_info *parse_info,
 	      struct cmd_array *cmd_array, struct file_info *file_info,
 	      struct sub_info *sub_info)
 {
+	int n_parenthesis = 0;
+
 	// Read again and parse until )
 	char *buffer = malloc(sizeof(char) * 1024);
 
@@ -745,23 +870,33 @@ execute_token(char *line, struct parse_info *parse_info,
 	char *line_buf_ptr = line_buf;
 	char *ptr;
 
-	for (ptr = line; *ptr != '\0'; ptr++) {
+	for (ptr = line; ptr != NULL; ptr++) {
 		switch (*ptr) {
 		case '\\':
 			*line_buf_ptr++ = *++ptr;
 			break;
-		case ')':
-			*line_buf_ptr = '\0';
-			*ptr-- = '\0';
-			break;
+		case '\0':
 		case '\n':
 			*line_buf_ptr = '\0';
 			request_new_line(line);
 			ptr = line;
 			ptr--;
 			break;
+		case '(':
+			n_parenthesis++;
+			*line_buf_ptr++ = *ptr;
+			break;
+		case ')':
+			n_parenthesis--;
+			*line_buf_ptr++ = *ptr;
+			break;
 		default:
 			*line_buf_ptr++ = *ptr;
+			break;
+		}
+		if (n_parenthesis < 0) {
+			*--line_buf_ptr = '\0';
+			*ptr = '\0';
 			break;
 		}
 	}
