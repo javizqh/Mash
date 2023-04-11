@@ -232,7 +232,9 @@ exec_child(struct command *command, struct command *start_command,
 		redirect_stderr(command, last_command);
 
 		for (i = 0; i < command->argc; i++) {
-			args[i] = command->argv[i];
+			if (strlen(command->argv[i]) > 0) {
+				args[i] = command->argv[i];
+			}
 		}
 		args[command->argc] = NULL;
 

@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <glob.h>
 #include "builtin/source.h"
 #include "exec_cmd.h"
 
@@ -128,6 +129,10 @@ int copy_substitution(struct parse_info *parse_info, const char *sub_buffer);
 char *file_tokenize(char *line, struct parse_info *parse_info,
 		    struct cmd_array *cmd_array, struct file_info *file_info,
 		    struct sub_info *sub_info);
+
+char *glob_tokenize(char *line, struct parse_info *parse_info,
+		    struct cmd_array *cmd_array,
+		    struct file_info *file_info, struct sub_info *sub_info);
 
 char *execute_token(char *line, struct parse_info *parse_info,
 		    struct cmd_array *cmd_array, struct file_info *file_info,
