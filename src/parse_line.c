@@ -201,10 +201,9 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 		    && get_last_command(cmd_array->commands[cmd_array->n_cmd -
 							    1])->argc < 0) {
 			new_argument(get_last_command
-				     (cmd_array->
-				      commands[cmd_array->n_cmd - 1]),
-				     parse_info, cmd_array, file_info,
-				     sub_info);
+				     (cmd_array->commands
+				      [cmd_array->n_cmd - 1]), parse_info,
+				     cmd_array, file_info, sub_info);
 		} else {
 			new_cmd =
 			    get_last_command(cmd_array->commands

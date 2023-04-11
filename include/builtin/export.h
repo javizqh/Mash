@@ -22,3 +22,5 @@ enum {
 };
 
 extern int add_env(const char * line);
+
+extern int add_env_by_name(const char *key, const char *value);
