@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include "builtin/export.h"
 #include "builtin/command.h"
+#include "builtin/source.h"
 
 extern int find_path(struct command *command);
 extern int command_exists(char *path);
