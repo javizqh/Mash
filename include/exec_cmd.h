@@ -40,6 +40,9 @@ int execution(struct command *command);
  */
 int exec_in_shell(struct command *command, struct command *start_command,
 		  struct command *last_command);
+int has_builtin_exec_in_shell(struct command *command,
+			      struct command *start_command,
+			      struct command *last_command);
 
 void exec_child(struct command *command, struct command *start_command,
 		struct command *last_command);

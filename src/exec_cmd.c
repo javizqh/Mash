@@ -120,12 +120,11 @@ exec_command(struct command *command, FILE * src_file)
 		if (cmd_to_wait > 0) {
 			current_command = current_command->pipe_next;
 		}
-		if (exec_in_shell(current_command, command,
-				  current_command->pipe_next)) {
-			current_command->pid = fork();
-		} else {
+		if (has_builtin_exec_in_shell(current_command, command,
+					      current_command->pipe_next)) {
 			current_command->pid = getpid();
-			cmd_to_wait--;
+		} else {
+			current_command->pid = fork();
 		}
 		cmd_to_wait++;
 	} while (current_command->pid != 0
@@ -166,44 +165,53 @@ exec_in_shell(struct command *command, struct command *start_command,
 	      struct command *last_command)
 {
 	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
-
-		redirect_stdin(command, start_command);
-		redirect_stdout(command, last_command);
-		redirect_stderr(command, last_command);
-
 		return add_env(command->argv[0]);
 	}
 
 	if (strcmp(command->argv[0], "alias") == 0) {
-
-		redirect_stdin(command, start_command);
-		redirect_stdout(command, last_command);
-		redirect_stderr(command, last_command);
-
 		return add_alias(command->argv[1]);
 	} else if (strcmp(command->argv[0], "export") == 0) {
-
-		redirect_stdin(command, start_command);
-		redirect_stdout(command, last_command);
-		redirect_stderr(command, last_command);
-
 		return add_env(command->argv[1]);
 	} else if (strcmp(command->argv[0], "exit") == 0) {
 		exit_mash();
 	} else if (strcmp(command->argv[0], "source") == 0) {
-		redirect_stdin(command, start_command);
-		redirect_stdout(command, last_command);
-		redirect_stderr(command, last_command);
-
 		return add_source(command->argv[1]);
 	} else if (strcmp(command->argv[0], "cd") == 0) {
-		redirect_stdin(command, start_command);
-		redirect_stdout(command, last_command);
-		redirect_stderr(command, last_command);
-
 		return cd(command);
 	}
 	return 1;
+}
+
+int
+has_builtin_exec_in_shell(struct command *command,
+			  struct command *start_command,
+			  struct command *last_command)
+{
+	int found_match = 0;
+
+	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
+		found_match = 1;
+	}
+
+	if (strcmp(command->argv[0], "alias") == 0) {
+		found_match = 1;
+	} else if (strcmp(command->argv[0], "export") == 0) {
+		found_match = 1;
+	} else if (strcmp(command->argv[0], "exit") == 0) {
+		exit_mash();
+	} else if (strcmp(command->argv[0], "source") == 0) {
+		found_match = 1;
+	} else if (strcmp(command->argv[0], "cd") == 0) {
+		found_match = 1;
+	}
+
+	if (found_match) {
+		//redirect_stdin(command, start_command);
+		//redirect_stdout(command, last_command);
+		//redirect_stderr(command, last_command);
+	}
+
+	return found_match;
 }
 
 void
@@ -266,6 +274,13 @@ wait_childs(struct command *start_command, struct command *last_command,
 
 	// REVIEW: PROBLEM WITH NOT WAITING FOR COMMANDS AFTER USING BACKGROUND BECAUSE IS WAITING FOR BACKGROUND
 	for (proc_finished = 0; proc_finished < n_cmds; proc_finished++) {
+		if (current_command->pid == getpid()) {
+			// FIX: here exec builtin
+			exec_in_shell(current_command, start_command,
+				      current_command->pipe_next);
+			current_command = current_command->pipe_next;
+			continue;
+		}
 		wait_pid = waitpid(current_command->pid, &wstatus, WUNTRACED);
 		if (wait_pid == -1) {
 			perror("waitpid failed");
@@ -278,10 +293,6 @@ wait_childs(struct command *start_command, struct command *last_command,
 					return WEXITSTATUS(wstatus);
 				}
 			}
-		} else if (WIFSIGNALED(wstatus)) {
-			// TODO: remove later
-			printf("Killed by signal %d\n", WTERMSIG(wstatus));
-			return EXIT_FAILURE;
 		}
 		current_command = current_command->pipe_next;
 	}
