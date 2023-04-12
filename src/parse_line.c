@@ -66,6 +66,7 @@ find_command(char *line, char *buffer, FILE * src_file)
 {
 	int i;
 	int status = 0;
+	char cwd[MAX_ENV_SIZE];
 	struct cmd_array *commands = get_commands(line);
 
 	if (commands->status < 0) {
@@ -103,7 +104,11 @@ find_command(char *line, char *buffer, FILE * src_file)
 			}
 			break;
 		}
-
+		// Update cwd
+		if (getcwd(cwd, MAX_ENV_SIZE) == NULL) {
+			// TODO: error, load from home
+		}
+		add_env_by_name("PWD", cwd);
 	}
 	free_cmd_array(commands);
 	return status;

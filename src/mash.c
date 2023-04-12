@@ -46,10 +46,6 @@ main(int argc, char **argv)
 	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
 		find_command(buf, NULL, stdin);
 		// Print Prompt
-		if (getcwd(cwd, MAX_ENV_SIZE) == NULL) {
-			// TODO: error, load from home
-		}
-		add_env_by_name("PWD", cwd);
 		printf("\033[01;35m%s~%s $ \033[0m", getenv("PROMPT"),
 		       getenv("PWD"));
 	}
