@@ -843,8 +843,9 @@ glob_tokenize(char *line, struct parse_info *parse_info,
 		add_arg(cmd_array->commands[cmd_array->n_cmd - 1]);
 	} else {
 		while (*found != NULL) {
-			strcpy(cmd_array->commands[cmd_array->n_cmd - 1]->
-			       current_arg, *found);
+			strcpy(cmd_array->
+			       commands[cmd_array->n_cmd - 1]->current_arg,
+			       *found);
 			add_arg(cmd_array->commands[cmd_array->n_cmd - 1]);
 			found++;
 		}
@@ -867,10 +868,8 @@ execute_token(char *line, struct parse_info *parse_info,
 	// Read again and parse until )
 	char *buffer = malloc(sizeof(char) * 1024);
 
-	// Check if malloc failed
-	if (buffer == NULL) {
+	if (buffer == NULL)
 		err(EXIT_FAILURE, "malloc failed");
-	}
 	memset(buffer, 0, sizeof(char) * 1024);
 
 	// Store all in line_buf

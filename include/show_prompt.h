@@ -13,3 +13,5 @@
 // limitations under the License.
 
 int prompt();
+
+int parse_prompt(char* prompt);
