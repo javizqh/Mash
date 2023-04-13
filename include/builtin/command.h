@@ -12,17 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <err.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include "open_files.h"
-#include "builtin/exit.h"
-
 enum {
 	MAX_ARGUMENT_SIZE = 128,
 	MAX_ARGUMENTS = 64
@@ -51,6 +40,7 @@ struct command {
 	// Pipes
 	int input;
 	int output;
+	int err_output;
 	int fd_pipe_input[2];
 	int fd_pipe_output[2];
 	struct command *pipe_next;
@@ -58,20 +48,20 @@ struct command {
 	char * output_buffer;
 };
 
-extern struct command *new_command();
+struct command *new_command();
 
-extern void free_command(struct command *command);
+void free_command(struct command *command);
 
-extern int check_alias_cmd(struct command *command);
+int check_alias_cmd(struct command *command);
 
-extern int add_arg(struct command *command);
+int add_arg(struct command *command);
 
-extern int set_file_cmd(struct command *command,int file_type, char *file);
+int set_file_cmd(struct command *command,int file_type, char *file);
 
-extern int set_buffer_cmd(struct command *command, char *buffer);
+int set_buffer_cmd(struct command *command, char *buffer);
 
-extern int set_to_background_cmd(struct command *command);
+int set_to_background_cmd(struct command *command);
 
 struct command * get_last_command(struct command *command);
 
-extern int pipe_command(struct command *in_command, struct command * out_command);
+int pipe_command(struct command *in_command, struct command * out_command);

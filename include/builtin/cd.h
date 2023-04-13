@@ -12,16 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <pwd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include "builtin/command.h"
-
 int usage();
 
-extern int cd(struct command * command);
+int cd(struct command * command);
 
 int check_if_dir_exists(const char *dir);

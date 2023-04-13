@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdio.h>
-#include <string.h>
-#include <err.h>
-#include <unistd.h>
-#include <stdlib.h>
-
 enum {
 	LINE_SIZE = 1024,	// In bytes
 	ALIAS_MAX = 256,

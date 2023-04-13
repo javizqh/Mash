@@ -12,7 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <unistd.h>
+#include <err.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "open_files.h"
+#include "builtin/command.h"
+#include "builtin/export.h"
+#include "builtin/source.h"
+#include "builtin/alias.h"
+#include "builtin/exit.h"
 #include "exec_cmd.h"
+#include "builtin/cd.h"
 
 int
 find_path(struct command *command)
@@ -120,8 +137,7 @@ exec_command(struct command *command, FILE * src_file)
 		if (cmd_to_wait > 0) {
 			current_command = current_command->pipe_next;
 		}
-		if (has_builtin_exec_in_shell(current_command, command,
-					      current_command->pipe_next)) {
+		if (has_builtin_exec_in_shell(current_command)) {
 			current_command->pid = getpid();
 		} else {
 			current_command->pid = fork();
@@ -161,8 +177,7 @@ exec_command(struct command *command, FILE * src_file)
 }
 
 int
-exec_in_shell(struct command *command, struct command *start_command,
-	      struct command *last_command)
+exec_in_shell(struct command *command)
 {
 	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
 		return add_env(command->argv[0]);
@@ -173,7 +188,7 @@ exec_in_shell(struct command *command, struct command *start_command,
 	} else if (strcmp(command->argv[0], "export") == 0) {
 		return add_env(command->argv[1]);
 	} else if (strcmp(command->argv[0], "exit") == 0) {
-		exit_mash();
+		return exit_mash();
 	} else if (strcmp(command->argv[0], "source") == 0) {
 		return add_source(command->argv[1]);
 	} else if (strcmp(command->argv[0], "cd") == 0) {
@@ -183,9 +198,7 @@ exec_in_shell(struct command *command, struct command *start_command,
 }
 
 int
-has_builtin_exec_in_shell(struct command *command,
-			  struct command *start_command,
-			  struct command *last_command)
+has_builtin_exec_in_shell(struct command *command)
 {
 	int found_match = 0;
 
@@ -198,7 +211,7 @@ has_builtin_exec_in_shell(struct command *command,
 	} else if (strcmp(command->argv[0], "export") == 0) {
 		found_match = 1;
 	} else if (strcmp(command->argv[0], "exit") == 0) {
-		exit_mash();
+		found_match = 1;
 	} else if (strcmp(command->argv[0], "source") == 0) {
 		found_match = 1;
 	} else if (strcmp(command->argv[0], "cd") == 0) {
@@ -242,7 +255,6 @@ exec_child(struct command *command, struct command *start_command,
 
 		redirect_stdin(command, start_command);
 		redirect_stdout(command, last_command);
-		// TODO: add check to close fd
 		redirect_stderr(command, last_command);
 
 		for (i = 0; i < command->argc; i++) {
@@ -275,9 +287,10 @@ wait_childs(struct command *start_command, struct command *last_command,
 	// REVIEW: PROBLEM WITH NOT WAITING FOR COMMANDS AFTER USING BACKGROUND BECAUSE IS WAITING FOR BACKGROUND
 	for (proc_finished = 0; proc_finished < n_cmds; proc_finished++) {
 		if (current_command->pid == getpid()) {
-			// FIX: here exec builtin
-			exec_in_shell(current_command, start_command,
-				      current_command->pipe_next);
+			// if the number of commands in pipe is greater than 1 DO NOT EXEC
+			if (n_cmds == 1) {
+				exec_in_shell(current_command);
+			}
 			current_command = current_command->pipe_next;
 			continue;
 		}
@@ -442,9 +455,12 @@ redirect_stderr(struct command *command, struct command *last_command)
 	// NOT LAST COMMAND OR LAST COMMAND WITH FILE OR BUFFER
 	if (last_command != NULL || command->output_buffer != NULL
 	    || command->output != STDOUT_FILENO) {
-		// redirect stderr
-		if (dup2(command->fd_pipe_output[1], STDERR_FILENO) == -1) {
-			err(EXIT_FAILURE, "Failed to dup stderr");
+		if (command->err_output == STDOUT_FILENO) {
+			// redirect stderr
+			if (dup2(command->fd_pipe_output[1], STDERR_FILENO) ==
+			    -1) {
+				err(EXIT_FAILURE, "Failed to dup stderr");
+			}
 		}
 		close_fd(command->fd_pipe_output[1]);
 	}
@@ -574,6 +590,7 @@ find_builtin(struct command *command)
 void
 exec_builtin(struct command *command)
 {
+	// FIX: solve valgrind warnings
 	if (strcmp(command->argv[0], "echo") == 0) {
 		// If doesn't contain alias
 		int i;

@@ -12,6 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <err.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "builtin/command.h"
+#include "builtin/export.h"
+#include "builtin/alias.h"
+#include "parse_line.h"
 #include "builtin/source.h"
 
 struct source_file *sources[MAX_SOURCE_FILES];
@@ -26,6 +39,17 @@ struct source_file *new_source_file(char *source_file_name)
 	strcpy(source_file->file, source_file_name);
 
 	return source_file;
+}
+
+
+void free_source_file() {
+	int i;
+	for (i = 0; i < MAX_SOURCE_FILES; i++) {
+		if (sources[i] == NULL) {
+			break;
+		}
+		free(sources[i]);
+  }
 }
 
 int

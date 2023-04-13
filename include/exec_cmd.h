@@ -12,23 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <signal.h>
-#include <unistd.h>
-#include <err.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include "builtin/export.h"
-#include "builtin/source.h"
-#include "builtin/cd.h"
+int find_path(struct command *command);
+int command_exists(char *path);
 
-extern int find_path(struct command *command);
-extern int command_exists(char *path);
-
-extern int exec_command(struct command *command, FILE * src_file);
+int exec_command(struct command *command, FILE * src_file);
 
 int execution(struct command *command);
 
@@ -38,11 +25,8 @@ int execution(struct command *command);
  * @param command 
  * @return 1 = Need to execute in child | 0 = Executed in parent process
  */
-int exec_in_shell(struct command *command, struct command *start_command,
-		  struct command *last_command);
-int has_builtin_exec_in_shell(struct command *command,
-			      struct command *start_command,
-			      struct command *last_command);
+int exec_in_shell(struct command *command);
+int has_builtin_exec_in_shell(struct command *command);
 
 void exec_child(struct command *command, struct command *start_command,
 		struct command *last_command);

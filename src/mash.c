@@ -12,11 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <err.h>
+#include <string.h>
+#include "builtin/command.h"
+#include "builtin/export.h"
+#include "builtin/alias.h"
+#include "builtin/source.h"
+#include "parse_line.h"
+#include "show_prompt.h"
+#include "builtin/exit.h"
 #include "mash.h"
 
 int
 main(int argc, char **argv)
 {
+	argc--;
+	argv++;
 	add_source("env/.mashrc");
 	exec_sources();
 
@@ -31,29 +47,27 @@ main(int argc, char **argv)
 
 	// ---------- Read command line
 	// ------ Buffer
-	// Initialize buffer
-	char *buf = malloc(sizeof(char[1024]));
+	char *buf = malloc(1024);
 
-	// Check if malloc failed
 	if (buf == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-	// Initialize buffer to 0
 	memset(buf, 0, 1024);
 	// ------------
-
-	printf("\033[01;35m%s~%s $ \033[0m", getenv("PROMPT"), getenv("PWD"));
+	prompt();
 	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
 		find_command(buf, NULL, stdin);
-		// Print Prompt
-		printf("\033[01;35m%s~%s $ \033[0m", getenv("PROMPT"),
-		       getenv("PWD"));
+
+		if (has_to_exit)
+			break;
+
+		prompt();
 	}
+
 	if (ferror(stdin)) {
 		err(EXIT_FAILURE, "fgets failed");
 	}
 
-	exit_mash();
 	free(buf);
 	return 0;
 }

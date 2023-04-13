@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdio.h>
+#include <string.h>
+#include <err.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include "builtin/alias.h"
 
 struct alias *aliases[ALIAS_MAX];
@@ -61,7 +66,6 @@ add_alias(char *command)
 
 char* get_alias(const char* name) {
 	int i;
-	// TODO:
 	for (i = 0; i < ALIAS_MAX; i++) {
 		if (aliases[i] == NULL) break;
 		if (strcmp(aliases[i]->command,name) == 0) {

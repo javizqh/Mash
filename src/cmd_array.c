@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <glob.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <err.h>
+#include "builtin/command.h"
+#include "exec_cmd.h"
 #include "cmd_array.h"
 
 // -------- Command Array -----------
