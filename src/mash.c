@@ -24,13 +24,15 @@
 #include "builtin/alias.h"
 #include "builtin/source.h"
 #include "parse_line.h"
-#include "exit.h"
+#include "show_prompt.h"
+#include "builtin/exit.h"
 #include "mash.h"
 
 int
 main(int argc, char **argv)
 {
-	argc--; argv++;
+	argc--;
+	argv++;
 	add_source("env/.mashrc");
 	exec_sources();
 
@@ -52,27 +54,20 @@ main(int argc, char **argv)
 	}
 	memset(buf, 0, 1024);
 	// ------------
-	long size = ftell(stdin);
-
-	if (size < 0) {
-		printf("\033[01;35mFirst Prompt:%s~%s $%ld \033[0m",
-		       getenv("PROMPT"), getenv("PWD"),size);
-	}
+	prompt();
 	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
 		find_command(buf, NULL, stdin);
-		// Print Prompt
-		size = ftell(stdin);
 
-		if (size <= 0) {
-			printf("\033[01;35m%s~%s $%ld \033[0m", getenv("PROMPT"),
-			       getenv("PWD"),size);
-		}
+		if (has_to_exit)
+			break;
+
+		prompt();
 	}
+
 	if (ferror(stdin)) {
 		err(EXIT_FAILURE, "fgets failed");
 	}
 
-	exit_mash();
 	free(buf);
 	return 0;
 }

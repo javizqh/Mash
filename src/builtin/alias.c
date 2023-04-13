@@ -66,7 +66,6 @@ add_alias(char *command)
 
 char* get_alias(const char* name) {
 	int i;
-	// TODO:
 	for (i = 0; i < ALIAS_MAX; i++) {
 		if (aliases[i] == NULL) break;
 		if (strcmp(aliases[i]->command,name) == 0) {

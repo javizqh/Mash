@@ -42,6 +42,7 @@ new_command()
   command->do_wait = WAIT_TO_FINISH;
 	command->input = STDIN_FILENO;
 	command->output = STDOUT_FILENO;
+  command->err_output = STDERR_FILENO;
   command->fd_pipe_input[0] = -1;
   command->fd_pipe_input[1] = -1;
 	command->fd_pipe_output[0] = -1;
@@ -109,6 +110,12 @@ int set_file_cmd(struct command *command,int file_type, char *file) {
 		last_cmd->output = open_write_file(file);
 		return last_cmd->output;
 		break;
+  case ERROR_WRITE:
+    // GO TO LAST CMD IN PIPE
+    struct command * last_err_cmd = get_last_command(command);
+    last_err_cmd->err_output = last_err_cmd->output;
+		return last_err_cmd->err_output;
+    break;
 	}
 	return -1;
 }

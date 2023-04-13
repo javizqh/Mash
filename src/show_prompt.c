@@ -12,6 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern int has_to_exit;
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "show_prompt.h"
 
-int exit_mash();
+int
+prompt()
+{
+	long size = ftell(stdin);
+	char *prompt = getenv("PROMPT");
+	char *cwd = getenv("PWD");
+
+	if (size < 0) {
+		printf("\033[01;35m%s:~%s $ \033[0m", prompt, cwd);
+	}
+	return 1;
+}

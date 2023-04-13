@@ -40,6 +40,7 @@ struct command {
 	// Pipes
 	int input;
 	int output;
+	int err_output;
 	int fd_pipe_input[2];
 	int fd_pipe_output[2];
 	struct command *pipe_next;

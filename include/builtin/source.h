@@ -23,8 +23,10 @@ struct source_file {
 
 struct source_file *new_source_file(char *source_file_name);
 
-extern int add_source(char *source_file_name);
+void free_source_file();
 
-extern int exec_sources();
+int add_source(char *source_file_name);
+
+int exec_sources();
 
 int read_source_file(char *filename);

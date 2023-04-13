@@ -41,6 +41,17 @@ struct source_file *new_source_file(char *source_file_name)
 	return source_file;
 }
 
+
+void free_source_file() {
+	int i;
+	for (i = 0; i < MAX_SOURCE_FILES; i++) {
+		if (sources[i] == NULL) {
+			break;
+		}
+		free(sources[i]);
+  }
+}
+
 int
 add_source(char *source_file_name)
 {

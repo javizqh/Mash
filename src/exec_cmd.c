@@ -188,7 +188,7 @@ exec_in_shell(struct command *command)
 	} else if (strcmp(command->argv[0], "export") == 0) {
 		return add_env(command->argv[1]);
 	} else if (strcmp(command->argv[0], "exit") == 0) {
-		exit_mash();
+		return exit_mash();
 	} else if (strcmp(command->argv[0], "source") == 0) {
 		return add_source(command->argv[1]);
 	} else if (strcmp(command->argv[0], "cd") == 0) {
@@ -211,7 +211,7 @@ has_builtin_exec_in_shell(struct command *command)
 	} else if (strcmp(command->argv[0], "export") == 0) {
 		found_match = 1;
 	} else if (strcmp(command->argv[0], "exit") == 0) {
-		exit_mash();
+		found_match = 1;
 	} else if (strcmp(command->argv[0], "source") == 0) {
 		found_match = 1;
 	} else if (strcmp(command->argv[0], "cd") == 0) {
@@ -255,7 +255,6 @@ exec_child(struct command *command, struct command *start_command,
 
 		redirect_stdin(command, start_command);
 		redirect_stdout(command, last_command);
-		// TODO: add check to close fd
 		redirect_stderr(command, last_command);
 
 		for (i = 0; i < command->argc; i++) {
@@ -288,8 +287,10 @@ wait_childs(struct command *start_command, struct command *last_command,
 	// REVIEW: PROBLEM WITH NOT WAITING FOR COMMANDS AFTER USING BACKGROUND BECAUSE IS WAITING FOR BACKGROUND
 	for (proc_finished = 0; proc_finished < n_cmds; proc_finished++) {
 		if (current_command->pid == getpid()) {
-			// FIX: here exec builtin
-			exec_in_shell(current_command);
+			// if the number of commands in pipe is greater than 1 DO NOT EXEC
+			if (n_cmds == 1) {
+				exec_in_shell(current_command);
+			}
 			current_command = current_command->pipe_next;
 			continue;
 		}
@@ -454,9 +455,12 @@ redirect_stderr(struct command *command, struct command *last_command)
 	// NOT LAST COMMAND OR LAST COMMAND WITH FILE OR BUFFER
 	if (last_command != NULL || command->output_buffer != NULL
 	    || command->output != STDOUT_FILENO) {
-		// redirect stderr
-		if (dup2(command->fd_pipe_output[1], STDERR_FILENO) == -1) {
-			err(EXIT_FAILURE, "Failed to dup stderr");
+		if (command->err_output == STDOUT_FILENO) {
+			// redirect stderr
+			if (dup2(command->fd_pipe_output[1], STDERR_FILENO) ==
+			    -1) {
+				err(EXIT_FAILURE, "Failed to dup stderr");
+			}
 		}
 		close_fd(command->fd_pipe_output[1]);
 	}
@@ -586,6 +590,7 @@ find_builtin(struct command *command)
 void
 exec_builtin(struct command *command)
 {
+	// FIX: solve valgrind warnings
 	if (strcmp(command->argv[0], "echo") == 0) {
 		// If doesn't contain alias
 		int i;

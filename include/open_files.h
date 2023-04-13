@@ -16,7 +16,8 @@ enum read_mode {
 	NO_FILE_READ,
 	HERE_DOC_READ,
 	INPUT_READ,
-	OUTPUT_WRITE
+	OUTPUT_WRITE,
+	ERROR_WRITE
 };
 
 enum here_doc {
