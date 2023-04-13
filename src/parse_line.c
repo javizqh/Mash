@@ -843,9 +843,8 @@ glob_tokenize(char *line, struct parse_info *parse_info,
 		add_arg(cmd_array->commands[cmd_array->n_cmd - 1]);
 	} else {
 		while (*found != NULL) {
-			strcpy(cmd_array->
-			       commands[cmd_array->n_cmd - 1]->current_arg,
-			       *found);
+			strcpy(cmd_array->commands[cmd_array->n_cmd - 1]->
+			       current_arg, *found);
 			add_arg(cmd_array->commands[cmd_array->n_cmd - 1]);
 			found++;
 		}

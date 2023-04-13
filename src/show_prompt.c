@@ -74,6 +74,7 @@ parse_prompt(char *prompt)
 			printf("\033[0m%s", token);
 			match = 1;
 		} else if (strstr(token, "branch") == token) {
+			//FIX: solve error message and space issue
 			// Execute this git branch | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/'
 			char *buffer = malloc(sizeof(char) * 1024);
 
@@ -91,9 +92,22 @@ parse_prompt(char *prompt)
 			match = 1;
 		} else if (strstr(token, "where") == token) {
 			char *cwd = getenv("PWD");
+			char *tmp = malloc(1024);
+			char *tmp_s = tmp;
+
+			if (tmp == NULL)
+				err(EXIT_FAILURE, "malloc failed");
+			memset(tmp, 0, 1024);
+			strcpy(tmp, cwd);
+			// FIX: read from HOME
+			if (strstr(tmp,"/home/javier") == tmp) {
+				tmp += strlen("/home/javier");
+				*--tmp = '~';
+			}
 
 			token += strlen("where");
-			printf("%s%s", cwd, token);
+			printf("%s%s", tmp, token);
+			free(tmp_s);
 			match = 1;
 		} else if (strstr(token, "host") == token) {
 			char hostname[1024];
