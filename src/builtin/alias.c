@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdio.h>
+#include <string.h>
+#include <err.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include "builtin/alias.h"
 
 struct alias *aliases[ALIAS_MAX];

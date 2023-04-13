@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
-#include <glob.h>
-#include "exec_cmd.h"
-
 enum {
 	MAX_COMMANDS_PER_LINE = 32
 };

@@ -12,6 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <err.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "builtin/command.h"
+#include "builtin/export.h"
+#include "builtin/alias.h"
+#include "parse_line.h"
 #include "builtin/source.h"
 
 struct source_file *sources[MAX_SOURCE_FILES];

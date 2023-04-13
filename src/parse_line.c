@@ -12,7 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/types.h>
+#include <unistd.h>
+#include <glob.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <err.h>
+#include "builtin/command.h"
+#include "builtin/export.h"
+#include "builtin/alias.h"
+#include "cmd_array.h"
+#include "open_files.h"
 #include "parse_line.h"
+#include "exec_cmd.h"
 
 // ------ Parse info --------
 
@@ -317,6 +330,23 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			ptr =
 			    substitution_tokenize(++ptr, parse_info, cmd_array,
 						  file_info, sub_info);
+			// Copy now sub_info to parse_info->copy
+			if (strlen(sub_info->buffer) > 0) {
+				if (copy_substitution
+				    (parse_info, sub_info->buffer) < 0) {
+					return -1;
+				}
+			} else {
+				ptr++;
+			}
+			parse_info->has_arg_started = PARSE_ARG_STARTED;
+			break;
+		case '~':
+			// TODO: check if next is ' ' then ok
+			if (parse_info->do_not_expect_new_cmd)
+				return error_token('&', ptr);
+			substitution_tokenize("HOME", parse_info, cmd_array,
+					      file_info, sub_info);
 			// Copy now sub_info to parse_info->copy
 			if (strlen(sub_info->buffer) > 0) {
 				if (copy_substitution

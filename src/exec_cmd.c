@@ -12,7 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <unistd.h>
+#include <err.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "open_files.h"
+#include "builtin/command.h"
+#include "builtin/export.h"
+#include "builtin/source.h"
+#include "builtin/alias.h"
+#include "builtin/exit.h"
 #include "exec_cmd.h"
+#include "builtin/cd.h"
 
 int
 find_path(struct command *command)
@@ -120,8 +137,7 @@ exec_command(struct command *command, FILE * src_file)
 		if (cmd_to_wait > 0) {
 			current_command = current_command->pipe_next;
 		}
-		if (has_builtin_exec_in_shell(current_command, command,
-					      current_command->pipe_next)) {
+		if (has_builtin_exec_in_shell(current_command)) {
 			current_command->pid = getpid();
 		} else {
 			current_command->pid = fork();
@@ -161,8 +177,7 @@ exec_command(struct command *command, FILE * src_file)
 }
 
 int
-exec_in_shell(struct command *command, struct command *start_command,
-	      struct command *last_command)
+exec_in_shell(struct command *command)
 {
 	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
 		return add_env(command->argv[0]);
@@ -183,9 +198,7 @@ exec_in_shell(struct command *command, struct command *start_command,
 }
 
 int
-has_builtin_exec_in_shell(struct command *command,
-			  struct command *start_command,
-			  struct command *last_command)
+has_builtin_exec_in_shell(struct command *command)
 {
 	int found_match = 0;
 
@@ -276,8 +289,7 @@ wait_childs(struct command *start_command, struct command *last_command,
 	for (proc_finished = 0; proc_finished < n_cmds; proc_finished++) {
 		if (current_command->pid == getpid()) {
 			// FIX: here exec builtin
-			exec_in_shell(current_command, start_command,
-				      current_command->pipe_next);
+			exec_in_shell(current_command);
 			current_command = current_command->pipe_next;
 			continue;
 		}

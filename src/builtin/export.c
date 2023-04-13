@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "builtin/export.h"
 
 int add_env(const char * line) {
