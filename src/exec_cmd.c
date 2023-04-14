@@ -132,6 +132,10 @@ exec_command(struct command *command, FILE * src_file)
 	if (set_output_shell_pipe(command) < 0) {
 		return -1;
 	}
+
+	if (set_err_output_shell_pipe(command) < 0) {
+		return -1;
+	}
 	// Make a loop fork each command
 	do {
 		if (cmd_to_wait > 0) {
@@ -240,6 +244,12 @@ exec_child(struct command *command, struct command *start_command,
 		redirect_stdin(command, start_command);
 		redirect_stdout(command, last_command);
 		redirect_stderr(command, last_command);
+		if (last_command != NULL || command->output_buffer != NULL
+		    || command->output != STDOUT_FILENO
+		    || command->err_output != STDERR_FILENO
+		    || command->output != command->err_output) {
+			close_fd(command->fd_pipe_output[1]);
+		}
 
 		exec_builtin(command);
 		exit(EXIT_SUCCESS);
@@ -256,7 +266,12 @@ exec_child(struct command *command, struct command *start_command,
 		redirect_stdin(command, start_command);
 		redirect_stdout(command, last_command);
 		redirect_stderr(command, last_command);
-
+		if (last_command != NULL || command->output_buffer != NULL
+		    || command->output != STDOUT_FILENO
+		    || command->err_output != STDERR_FILENO
+		    || command->output != command->err_output) {
+			close_fd(command->fd_pipe_output[1]);
+		}
 		for (i = 0; i < command->argc; i++) {
 			if (strlen(command->argv[i]) > 0) {
 				args[i] = command->argv[i];
@@ -381,8 +396,9 @@ read_from_file(struct command *start_command)
 void
 write_to_file_or_buffer(struct command *last_command)
 {
-	if (last_command->output == STDOUT_FILENO
-	    && last_command->output_buffer == NULL) {
+	if ((last_command->output == STDOUT_FILENO
+	     && last_command->output_buffer == NULL)
+	    && last_command->err_output == STDERR_FILENO) {
 		return;
 	}
 
@@ -401,16 +417,28 @@ write_to_file_or_buffer(struct command *last_command)
 		bytes_stdout =
 		    read(last_command->fd_pipe_output[0], buffer_stdout, count);
 		if (bytes_stdout > 0) {
-			if (last_command->output_buffer == NULL) {
-				write(last_command->output, buffer_stdout,
+			if (last_command->err_output != STDERR_FILENO
+			    && last_command->err_output !=
+			    last_command->output) {
+				write(last_command->err_output, buffer_stdout,
 				      bytes_stdout);
 			} else {
-				if (strlen(last_command->output_buffer) > 0) {
-					strcat(last_command->output_buffer,
-					       buffer_stdout);
+				if (last_command->output_buffer == NULL) {
+					write(last_command->output,
+					      buffer_stdout, bytes_stdout);
 				} else {
-					strcpy(last_command->output_buffer,
-					       buffer_stdout);
+					if (strlen(last_command->output_buffer)
+					    > 0) {
+						strcat
+						    (last_command->
+						     output_buffer,
+						     buffer_stdout);
+					} else {
+						strcpy
+						    (last_command->
+						     output_buffer,
+						     buffer_stdout);
+					}
 				}
 			}
 		}
@@ -419,6 +447,10 @@ write_to_file_or_buffer(struct command *last_command)
 	close_fd(last_command->fd_pipe_output[0]);
 	if (last_command->output != STDOUT_FILENO) {
 		close_fd(last_command->output);
+	}
+	if (last_command->err_output != STDERR_FILENO
+	    && last_command->err_output != last_command->output) {
+		close_fd(last_command->err_output);
 	}
 }
 
@@ -453,16 +485,12 @@ void
 redirect_stderr(struct command *command, struct command *last_command)
 {
 	// NOT LAST COMMAND OR LAST COMMAND WITH FILE OR BUFFER
-	if (last_command != NULL || command->output_buffer != NULL
-	    || command->output != STDOUT_FILENO) {
-		if (command->err_output == STDOUT_FILENO) {
-			// redirect stderr
-			if (dup2(command->fd_pipe_output[1], STDERR_FILENO) ==
-			    -1) {
-				err(EXIT_FAILURE, "Failed to dup stderr");
-			}
+	if (last_command != NULL || command->err_output != STDERR_FILENO) {
+		// redirect stderr
+		if (dup2(command->fd_pipe_output[1], STDERR_FILENO) == -1) {
+			err(EXIT_FAILURE, "Failed to dup stderr %i",
+			    command->fd_pipe_input[1]);
 		}
-		close_fd(command->fd_pipe_output[1]);
 	}
 }
 
@@ -494,6 +522,27 @@ set_output_shell_pipe(struct command *start_command)
 
 	if (last_command->output != STDOUT_FILENO
 	    || last_command->output_buffer != NULL) {
+		int fd_read_shell[2] = { -1, -1 };
+		if (pipe(fd_read_shell) < 0) {
+			// TODO: add error message
+			err(EXIT_FAILURE, "Failed to pipe");
+			return -1;
+		}
+		last_command->fd_pipe_output[0] = fd_read_shell[0];
+		last_command->fd_pipe_output[1] = fd_read_shell[1];
+	}
+	return 0;
+}
+
+int
+set_err_output_shell_pipe(struct command *start_command)
+{
+	// SET OUTOUT PIPE
+	// Find last one and add it
+	struct command *last_command = get_last_command(start_command);
+
+	if (last_command->err_output != STDERR_FILENO
+	    && last_command->err_output != last_command->output) {
 		int fd_read_shell[2] = { -1, -1 };
 		if (pipe(fd_read_shell) < 0) {
 			// TODO: add error message

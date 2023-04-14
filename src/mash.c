@@ -31,8 +31,15 @@
 int
 main(int argc, char **argv)
 {
+	int shell_mode = NON_INTERACTIVE;
+
 	argc--;
 	argv++;
+	// TODO: add proper check
+	if (argc == 1 && strcmp(argv[0], "-i") == 0) {
+		shell_mode = INTERACTIVE_MODE;
+	}
+
 	add_source("env/.mashrc");
 	exec_sources();
 
@@ -54,14 +61,14 @@ main(int argc, char **argv)
 	}
 	memset(buf, 0, 1024);
 	// ------------
-	prompt();
+	prompt(shell_mode);
 	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
 		find_command(buf, NULL, stdin);
 
 		if (has_to_exit)
 			break;
 
-		prompt();
+		prompt(shell_mode);
 	}
 
 	if (ferror(stdin)) {

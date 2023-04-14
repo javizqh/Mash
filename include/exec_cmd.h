@@ -51,6 +51,7 @@ void redirect_stderr(struct command *command, struct command *last_command);
 // File descriptor
 int set_input_shell_pipe(struct command *command);
 int set_output_shell_pipe(struct command *command);
+int set_err_output_shell_pipe(struct command *command);
 
 int close_fd(int fd);
 int close_all_fd(struct command *start_command, struct command *last_command);
