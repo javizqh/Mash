@@ -1,0 +1,17 @@
+test_file=tmp/m
+
+echo "Testing time to execute script $test_file 1000 times"
+echo -n "BASH:"
+time for i in {1..1000}; do 
+  bash <$test_file >/dev/null
+done
+echo
+echo -n "MASH:"
+time for i in {1..1000}; do 
+  build/mash <$test_file >/dev/null
+done
+echo
+echo -n "DASH:"
+time for i in {1..1000}; do 
+  dash <$test_file >/dev/null
+done
