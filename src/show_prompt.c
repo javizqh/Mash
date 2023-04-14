@@ -29,13 +29,15 @@
 int
 prompt(int mode)
 {
+	char *result = getenv("result");
+
 	if (mode == INTERACTIVE_MODE) {
 		char *prompt = getenv("PROMPT");
 
 		parse_prompt(prompt);
 		fflush(stdout);
 	}
-
+	add_env_by_name("result", result);
 	return 1;
 }
 
@@ -83,7 +85,6 @@ parse_prompt(char *prompt)
 			if (buffer == NULL)
 				err(EXIT_FAILURE, "malloc failed");
 			memset(buffer, 0, sizeof(char) * 1024);
-			char *result = getenv("result");
 
 			if (find_command
 			    ("git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/(\\1)/'",
@@ -95,7 +96,7 @@ parse_prompt(char *prompt)
 			} else {
 				printf("%s", token);
 			}
-			add_env_by_name("result", result);
+
 			free(buffer);
 			match = 1;
 		} else if (strstr(token, "where") == token) {
