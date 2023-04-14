@@ -83,13 +83,19 @@ parse_prompt(char *prompt)
 			if (buffer == NULL)
 				err(EXIT_FAILURE, "malloc failed");
 			memset(buffer, 0, sizeof(char) * 1024);
+			char *result = getenv("result");
 
-			find_command
+			if (find_command
 			    ("git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/(\\1)/'",
-			     buffer, stdin);
-			strtok(buffer, "\n");
-			token += strlen("branch");
-			printf("%s%s", buffer, token);
+			     buffer, stdin) == 0) {
+
+				strtok(buffer, "\n");
+				token += strlen("branch");
+				printf("%s%s", buffer, token);
+			} else {
+				printf("%s", token);
+			}
+			add_env_by_name("result", result);
 			free(buffer);
 			match = 1;
 		} else if (strstr(token, "where") == token) {

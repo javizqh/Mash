@@ -81,6 +81,7 @@ find_command(char *line, char *buffer, FILE * src_file)
 	int i;
 	int status = 0;
 	char cwd[MAX_ENV_SIZE];
+	char result[4];
 	struct cmd_array *commands = get_commands(line);
 
 	if (commands->status < 0) {
@@ -102,17 +103,23 @@ find_command(char *line, char *buffer, FILE * src_file)
 		switch (commands->commands[i]->prev_status_needed_to_exec) {
 		case DO_NOT_MATTER_TO_EXEC:
 			status = exec_command(commands->commands[i], src_file);
+			sprintf(result, "%d", status);
+			add_env_by_name("result", result);
 			break;
 		case EXECUTE_IN_SUCCESS:
 			if (status == 0) {
 				status = exec_command(commands->commands[i],
 						      src_file);
 			}
+			sprintf(result, "%d", status);
+			add_env_by_name("result", result);
 			break;
 		case EXECUTE_IN_FAILURE:
 			if (status != 0) {
 				status = exec_command(commands->commands[i],
 						      src_file);
+				sprintf(result, "%d", status);
+				add_env_by_name("result", result);
 			} else {
 				status = 0;
 			}
@@ -165,6 +172,11 @@ substitute(const char *to_substitute)
 		// Could be ? or $ or # or @
 		if (*to_substitute == '$') {
 			sprintf(ret, "%d", getpid());
+			return ret;
+		} else if (*to_substitute == '?') {
+			char *result = getenv("result");
+
+			sprintf(ret, "%s", result);
 			return ret;
 		}
 	} else if (strlen(to_substitute) == 0) {
@@ -882,8 +894,9 @@ glob_tokenize(char *line, struct parse_info *parse_info,
 		add_arg(cmd_array->commands[cmd_array->n_cmd - 1]);
 	} else {
 		while (*found != NULL) {
-			strcpy(cmd_array->commands[cmd_array->n_cmd - 1]->
-			       current_arg, *found);
+			strcpy(cmd_array->
+			       commands[cmd_array->n_cmd - 1]->current_arg,
+			       *found);
 			add_arg(cmd_array->commands[cmd_array->n_cmd - 1]);
 			found++;
 		}
