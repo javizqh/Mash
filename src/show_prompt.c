@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <err.h>
 #include "builtin/command.h"
 #include "builtin/export.h"
 #include "builtin/alias.h"
@@ -26,14 +27,17 @@
 #include "show_prompt.h"
 
 int
-prompt()
+prompt(int mode)
 {
-	long size = ftell(stdin);
-	char *prompt = getenv("PROMPT");
+	char *result = getenv("result");
 
-	if (size < 0) {
+	if (mode == INTERACTIVE_MODE) {
+		char *prompt = getenv("PROMPT");
+
 		parse_prompt(prompt);
+		fflush(stdout);
 	}
+	add_env_by_name("result", result);
 	return 1;
 }
 
@@ -75,19 +79,24 @@ parse_prompt(char *prompt)
 			match = 1;
 		} else if (strstr(token, "branch") == token) {
 			//FIX: solve error message and space issue
-			// Execute this git branch | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/'
+			// Execute this git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/'
 			char *buffer = malloc(sizeof(char) * 1024);
 
 			if (buffer == NULL)
 				err(EXIT_FAILURE, "malloc failed");
 			memset(buffer, 0, sizeof(char) * 1024);
 
-			find_command
-			    ("git branch | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/(\\1)/'",
-			     buffer, stdin);
-			strtok(buffer, "\n");
-			token += strlen("branch");
-			printf("%s%s", buffer, token);
+			if (find_command
+			    ("git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/(\\1)/'",
+			     buffer, stdin) == 0) {
+
+				strtok(buffer, "\n");
+				token += strlen("branch");
+				printf("%s%s", buffer, token);
+			} else {
+				printf("%s", token);
+			}
+
 			free(buffer);
 			match = 1;
 		} else if (strstr(token, "where") == token) {
@@ -100,7 +109,7 @@ parse_prompt(char *prompt)
 			memset(tmp, 0, 1024);
 			strcpy(tmp, cwd);
 			// FIX: read from HOME
-			if (strstr(tmp,"/home/javier") == tmp) {
+			if (strstr(tmp, "/home/javier") == tmp) {
 				tmp += strlen("/home/javier");
 				*--tmp = '~';
 			}
@@ -130,4 +139,5 @@ parse_prompt(char *prompt)
 	}
 
 	free(rest_start);
+	return 1;
 }

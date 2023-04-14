@@ -113,8 +113,18 @@ int set_file_cmd(struct command *command,int file_type, char *file) {
   case ERROR_WRITE:
     // GO TO LAST CMD IN PIPE
     struct command * last_err_cmd = get_last_command(command);
-    last_err_cmd->err_output = last_err_cmd->output;
+		if (last_err_cmd->err_output !=
+		    STDERR_FILENO) {
+			close(last_err_cmd->err_output);
+		}
+		last_err_cmd->err_output = open_write_file(file);
 		return last_err_cmd->err_output;
+    break;
+  case ERROR_AND_OUTPUT_WRITE:
+    // GO TO LAST CMD IN PIPE
+    struct command * last_err_out_cmd = get_last_command(command);
+    last_err_out_cmd->err_output = last_err_out_cmd->output;
+		return last_err_out_cmd->err_output;
     break;
 	}
 	return -1;

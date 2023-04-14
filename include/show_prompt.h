@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-int prompt();
+enum prompt {
+  NON_INTERACTIVE,
+  INTERACTIVE_MODE,
+};
+
+int prompt(int mode);
 
 int parse_prompt(char* prompt);
