@@ -432,11 +432,13 @@ write_to_file_or_buffer(struct command *last_command)
 					if (strlen(last_command->output_buffer)
 					    > 0) {
 						strcat
-						    (last_command->output_buffer,
+						    (last_command->
+						     output_buffer,
 						     buffer_stdout);
 					} else {
 						strcpy
-						    (last_command->output_buffer,
+						    (last_command->
+						     output_buffer,
 						     buffer_stdout);
 					}
 				}

@@ -595,6 +595,11 @@ substitution_tokenize(char *line, struct parse_info *parse_info,
 		case '}':
 			return error_token(*ptr, ptr);
 			break;
+		case '|':
+		case '/':
+			*--sub_info->ptr = '\0';
+			return --ptr;
+			break;
 		case '$':
 		case '?':
 		case '@':
