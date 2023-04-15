@@ -275,9 +275,11 @@ exec_child(struct command *command, struct command *start_command,
 		for (i = 0; i < command->argc; i++) {
 			if (strlen(command->argv[i]) > 0) {
 				args[i] = command->argv[i];
+			} else {
+				args[i] = NULL;
 			}
 		}
-		args[command->argc] = NULL;
+		args[i] = NULL;
 
 		execv(command->argv[0], args);
 	}
@@ -654,6 +656,7 @@ exec_builtin(struct command *command)
 		if (command->output == STDOUT_FILENO) {
 			printf("\n");
 		}
+		free_command(command);
 		exit(EXIT_SUCCESS);
 	}
 	return;

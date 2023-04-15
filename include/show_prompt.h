@@ -12,11 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+extern int shell_mode;
+
 enum prompt {
   NON_INTERACTIVE,
   INTERACTIVE_MODE,
 };
 
-int prompt(int mode);
+void set_prompt_mode(int mode);
+
+int prompt();
+
+int prompt_request();
 
 int parse_prompt(char* prompt);

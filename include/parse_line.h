@@ -26,16 +26,15 @@ struct parse_info {
 };
 
 struct parse_info *new_parse_info();
+void restore_parse_info(struct parse_info *parse_info);
 
-struct cmd_array *get_commands(char *line);
+struct command *get_pipe(char *line);
 
 // --------------- End Parse Arguments -----------
 
 // --------- Command ----------
 
 int find_command(char *line, char *buffer, FILE * src_file);
-
-int set_command_file(struct cmd_array *commands, int file_type, char *file);
 
 // ------- Substitution -------
 
@@ -46,6 +45,7 @@ struct sub_info {
 };
 
 struct sub_info *new_sub_info();
+void restore_sub_info(struct sub_info *sub_info);
 
 char *substitute(const char *to_substitute);
 
@@ -58,6 +58,7 @@ struct file_info {
 };
 
 struct file_info *new_file_info();
+void restore_file_info(struct file_info *file_info);
 
 // New TOKENIZATION Recursive
 
@@ -66,43 +67,54 @@ enum token {
 	USE_PREVIOUS_COMMAND_TO_START
 };
 
-int cmd_tokenize(char *line, struct parse_info *parse_info,
-		 struct cmd_array *cmd_array, struct file_info *file_info,
+char * cmd_tokenize(char *line, struct parse_info *parse_info,
+		 struct command *command, struct file_info *file_info,
 		 struct sub_info *sub_info);
 
 // Tokenize types
 char *hard_apost_tokenize(char *line, struct parse_info *parse_info);
 
 char *soft_apost_tokenize(char *line, struct parse_info *parse_info,
-			  struct cmd_array *cmd_array,
+			  struct command *command,
 			  struct file_info *file_info,
 			  struct sub_info *sub_info);
 
 char *substitution_tokenize(char *line, struct parse_info *parse_info,
-			    struct cmd_array *cmd_array,
+			    struct command *command,
 			    struct file_info *file_info,
 			    struct sub_info *sub_info);
 
 int copy_substitution(struct parse_info *parse_info, const char *sub_buffer);
 
 char *file_tokenize(char *line, struct parse_info *parse_info,
-		    struct cmd_array *cmd_array, struct file_info *file_info,
+		    struct command *command, struct file_info *file_info,
 		    struct sub_info *sub_info);
 
 char *glob_tokenize(char *line, struct parse_info *parse_info,
-		    struct cmd_array *cmd_array,
+		    struct command *command,
 		    struct file_info *file_info, struct sub_info *sub_info);
 
 char *execute_token(char *line, struct parse_info *parse_info,
-		    struct cmd_array *cmd_array, struct file_info *file_info,
+		    struct command *command, struct file_info *file_info,
 		    struct sub_info *sub_info);
 
 void request_new_line(char *line);
 
-void new_argument(struct command *current_cmd, struct parse_info *parse_info,
-		  struct cmd_array *cmd_array, struct file_info *file_info,
-		  struct sub_info *sub_info);
+void new_argument(struct command *current_cmd, struct parse_info *parse_info, 
+			struct file_info *file_info, struct sub_info *sub_info);
 
-int error_token(char token, char *line);
+char * error_token(char token, char *line);
 
-int check_here_doc(char *line, struct cmd_array *cmd_array);
+int check_here_doc(char *line, struct command *command);
+
+char * cmdtok_redirect_in(char *line, struct parse_info *parse_info,
+		    struct command *command, struct file_info *file_info,
+		    struct sub_info *sub_info);
+
+char * cmdtok_redirect_out(char *line, struct parse_info *parse_info,
+		    struct command *command, struct file_info *file_info,
+		    struct sub_info *sub_info);
+
+char * tilde_tokenize(char *line, struct parse_info *parse_info,
+			  struct command *command, struct file_info *file_info,
+			  struct sub_info *sub_info);

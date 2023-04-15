@@ -22,10 +22,10 @@
 #include "builtin/command.h"
 #include "builtin/export.h"
 #include "builtin/alias.h"
-#include "cmd_array.h"
 #include "builtin/exit.h"
 #include "open_files.h"
 #include "parse_line.h"
+#include "show_prompt.h"
 #include "exec_cmd.h"
 
 // ------ Parse info --------
@@ -48,16 +48,24 @@ new_parse_info()
 	return parse_info;
 }
 
+void
+restore_parse_info(struct parse_info *parse_info)
+{
+	parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
+	parse_info->do_not_expect_new_cmd = 0;
+	parse_info->copy = NULL;
+};
+
 // ---------- Commands -------------
 
-struct cmd_array *
-get_commands(char *line)
+struct command *
+get_pipe(char *line)
 {
 	// Parsing information
 	struct parse_info *parse_info = new_parse_info();
 
 	// Commands 
-	struct cmd_array *commands = new_commands();
+	struct command *command = new_command();
 
 	// Substitution variables
 	struct sub_info *sub_info = new_sub_info();
@@ -66,76 +74,82 @@ get_commands(char *line)
 	struct file_info *file_info = new_file_info();
 
 // ---------------------------------------------------------------
-	if (cmd_tokenize(line, parse_info, commands, file_info, sub_info) < 0) {
-		commands->status = -1;
+	line = cmd_tokenize(line, parse_info, command, file_info, sub_info);
+	if (line == NULL) {
+		free(parse_info);
+		free(file_info);
+		free(sub_info);
+		return NULL;
 	}
 	free(parse_info);
 	free(file_info);
 	free(sub_info);
-	return commands;
+	return command;
 }
 
 int
 find_command(char *line, char *buffer, FILE * src_file)
 {
-	int i;
 	int status = 0;
+	int status_for_next_cmd = DO_NOT_MATTER_TO_EXEC;
+	pid_t pid;
 	char cwd[MAX_ENV_SIZE];
 	char result[4];
-	struct cmd_array *commands = get_commands(line);
-
-	if (commands->status < 0) {
-		free_cmd_array(commands);
-		return 1;
-	}
+	struct command *command = new_command();
 
 	if (buffer != NULL) {
-		set_buffer_cmd(commands->commands[commands->n_cmd - 1], buffer);
+		set_buffer_cmd(command, buffer);
 	}
-	// Alias -> builtin -> PWD -> PATH -> exec
-	// If alias check if exists command
-	for (i = 0; i < commands->n_cmd; i++) {
-		// Check if the cmd array is empty
-		if (*commands->commands[i]->argv[0] == '\0') {
-			free_cmd_array(commands);
-			return 1;
-		}
-		switch (commands->commands[i]->prev_status_needed_to_exec) {
+	// Parsing information
+	struct parse_info *parse_info = new_parse_info();
+	struct sub_info *sub_info = new_sub_info();
+	struct file_info *file_info = new_file_info();
+
+// ---------------------------------------------------------------
+
+	while ((line =
+		cmd_tokenize(line, parse_info, command, file_info, sub_info))) {
+		switch (status_for_next_cmd) {
 		case DO_NOT_MATTER_TO_EXEC:
-			status = exec_command(commands->commands[i], src_file);
-			sprintf(result, "%d", status);
-			add_env_by_name("result", result);
+			status = exec_command(command, src_file);
 			break;
 		case EXECUTE_IN_SUCCESS:
 			if (status == 0) {
-				status = exec_command(commands->commands[i],
-						      src_file);
+				status = exec_command(command, src_file);
 			}
-			sprintf(result, "%d", status);
-			add_env_by_name("result", result);
 			break;
 		case EXECUTE_IN_FAILURE:
 			if (status != 0) {
-				status = exec_command(commands->commands[i],
-						      src_file);
-				sprintf(result, "%d", status);
-				add_env_by_name("result", result);
+				status = exec_command(command, src_file);
 			} else {
 				status = 0;
 			}
 			break;
 		}
+		status_for_next_cmd = command->next_status_needed_to_exec;
+		sprintf(result, "%d", status);
+		add_env_by_name("result", result);
 		// Update cwd
 		if (getcwd(cwd, MAX_ENV_SIZE) == NULL) {
 			// TODO: error, load from home
 		}
 		add_env_by_name("PWD", cwd);
-
 		if (has_to_exit) {
 			break;
 		}
+		reset_command(command);
+		restore_parse_info(parse_info);
+		restore_file_info(file_info);
+		restore_sub_info(sub_info);
 	}
-	free_cmd_array(commands);
+
+	sprintf(result, "%d", status);
+	add_env_by_name("result", result);
+
+	free(parse_info);
+	free(file_info);
+	free(sub_info);
+	free_command(command);
 	return status;
 }
 
@@ -155,6 +169,14 @@ new_sub_info()
 	sub_info->ptr = sub_info->buffer;
 
 	return sub_info;
+}
+
+void
+restore_sub_info(struct sub_info *sub_info)
+{
+	memset(sub_info->last_alias, 0, MAX_ARGUMENT_SIZE);
+	memset(sub_info->buffer, 0, MAX_ENV_SIZE);
+	sub_info->ptr = sub_info->buffer;
 }
 
 char *
@@ -214,52 +236,44 @@ new_file_info()
 	return file_info;
 }
 
+void
+restore_file_info(struct file_info *file_info)
+{
+	file_info->mode = NO_FILE_READ;
+	memset(file_info->buffer, 0, MAX_ARGUMENT_SIZE);
+	file_info->ptr = file_info->buffer;
+}
+
 // New TOKENIZATION Recursive
 
-int
-cmd_tokenize(char *line, struct parse_info *parse_info,
-	     struct cmd_array *cmd_array, struct file_info *file_info,
+char *
+cmd_tokenize(char *ptr, struct parse_info *parse_info,
+	     struct command *command, struct file_info *file_info,
 	     struct sub_info *sub_info)
 {
-	// Can call the other
-	struct command *old_cmd;
-	struct command *new_cmd;
+	// IF first char is \0 exit immediately
+	if (ptr == NULL)
+		return NULL;
+	if (*ptr == '\0' || *ptr == '#' || *ptr == '\n')
+		return NULL;
 
-	if (cmd_array->n_cmd == 0) {
-		// Create command
-		new_cmd = new_command();
-		if (add_command(new_cmd, cmd_array) < 0) {
-			fprintf(stderr, "Failed to add command");
-		}
-	} else {
-		if (cmd_array->commands[cmd_array->n_cmd - 1]->pipe_next != NULL
-		    && get_last_command(cmd_array->commands[cmd_array->n_cmd -
-							    1])->argc < 0) {
-			new_argument(get_last_command
-				     (cmd_array->commands
-				      [cmd_array->n_cmd - 1]), parse_info,
-				     cmd_array, file_info, sub_info);
-		} else {
-			new_cmd =
-			    get_last_command(cmd_array->commands
-					     [cmd_array->n_cmd - 1]);
-			if (*new_cmd->current_arg != '\0') {
-				new_argument(new_cmd, parse_info, cmd_array,
-					     file_info, sub_info);
-			}
-		}
+	// Can call the other
+	struct command *new_cmd = command;
+	struct command *old_cmd = new_cmd;
+
+	if (strlen(new_cmd->current_arg) > 0) {
+		add_arg(new_cmd);
 	}
+
 	parse_info->copy = new_cmd->current_arg;
 
-	char *ptr;
-
-	for (ptr = line; *ptr != '\0'; ptr++) {
+	for (; *ptr != '\0'; ptr++) {
 		switch (*ptr) {
 		case '"':
 			if (parse_info->do_not_expect_new_cmd)
 				return error_token('&', ptr);
 			ptr =
-			    soft_apost_tokenize(++ptr, parse_info, cmd_array,
+			    soft_apost_tokenize(++ptr, parse_info, new_cmd,
 						file_info, sub_info);
 			parse_info->has_arg_started = PARSE_ARG_STARTED;
 			break;
@@ -272,104 +286,51 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 		case '|':
 			if (parse_info->do_not_expect_new_cmd)
 				return error_token('&', ptr);
+			// Check if next char is |
+			if (*++ptr == '|') {
+				new_cmd->next_status_needed_to_exec =
+				    EXECUTE_IN_FAILURE;
+				return ++ptr;
+			}
+			ptr--;
 			// Add an argument to old command
 			old_cmd = new_cmd;
 			if (parse_info->has_arg_started == PARSE_ARG_STARTED) {
-				add_arg(old_cmd);
+				new_argument(old_cmd, parse_info, file_info,
+					     sub_info);
 			}
 			// New command
 			new_cmd = new_command();
-			// Check if next char is |
-			if (*++ptr == '|') {
-				if (add_command(new_cmd, cmd_array) < 0) {
-					fprintf(stderr,
-						"Failed to add command");
-				}
-				new_cmd->prev_status_needed_to_exec =
-				    EXECUTE_IN_FAILURE;
-			} else {
-				// Update old_cmd pipe
-				strcpy(sub_info->last_alias, "");
-				pipe_command(old_cmd, new_cmd);
-				ptr--;
-			}
+			// Update old_cmd pipe
+			strcpy(sub_info->last_alias, "");
+			pipe_command(old_cmd, new_cmd);
 			parse_info->copy = new_cmd->current_arg;
 			parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
 			break;
 		case '<':
-			parse_info->copy = file_info->buffer;
+			if (parse_info->do_not_expect_new_cmd)
+				return error_token('&', ptr);
 			ptr =
-			    file_tokenize(++ptr, parse_info, cmd_array,
-					  file_info, sub_info);
-			if (set_file_cmd
-			    (cmd_array->commands[cmd_array->n_cmd - 1],
-			     INPUT_READ, file_info->buffer) < 0) {
-				return -1;
-			}
+			    cmdtok_redirect_in(++ptr, parse_info, new_cmd,
+					       file_info, sub_info);
 			parse_info->copy = new_cmd->current_arg;
 			parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
 			break;
 		case '>':
-			if (*(--ptr) == '2') {
-				ptr++;
-				*--parse_info->copy = '\0';
-				parse_info->copy = file_info->buffer;
-				ptr =
-				    file_tokenize(++ptr, parse_info, cmd_array,
-						  file_info, sub_info);
-				if (set_file_cmd
-				    (cmd_array->commands[cmd_array->n_cmd - 1],
-				     ERROR_WRITE, file_info->buffer) < 0) {
-					return -1;
-				}
-			} else if (*ptr == '&') {
-				ptr++;
-				parse_info->copy = file_info->buffer;
-				ptr =
-				    file_tokenize(++ptr, parse_info, cmd_array,
-						  file_info, sub_info);
-				if (set_file_cmd
-				    (cmd_array->commands[cmd_array->n_cmd - 1],
-				     OUTPUT_WRITE, file_info->buffer) < 0) {
-					return -1;
-				}
-				if (set_file_cmd
-				    (cmd_array->commands[cmd_array->n_cmd - 1],
-				     ERROR_AND_OUTPUT_WRITE,
-				     file_info->buffer) < 0) {
-					return -1;
-				}
-			} else if (*ptr == '1') {
-				ptr++;
-				parse_info->copy = file_info->buffer;
-				ptr =
-				    file_tokenize(++ptr, parse_info, cmd_array,
-						  file_info, sub_info);
-				if (set_file_cmd
-				    (cmd_array->commands[cmd_array->n_cmd - 1],
-				     OUTPUT_WRITE, file_info->buffer) < 0) {
-					return -1;
-				}
-			} else {
-				ptr++;
-				parse_info->copy = file_info->buffer;
-				ptr =
-				    file_tokenize(++ptr, parse_info, cmd_array,
-						  file_info, sub_info);
-				if (set_file_cmd
-				    (cmd_array->commands[cmd_array->n_cmd - 1],
-				     OUTPUT_WRITE, file_info->buffer) < 0) {
-					return -1;
-				}
-			}
-
+			if (parse_info->do_not_expect_new_cmd)
+				return error_token('&', ptr);
+			ptr =
+			    cmdtok_redirect_out(++ptr, parse_info, new_cmd,
+						file_info, sub_info);
 			parse_info->copy = new_cmd->current_arg;
 			parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
 			break;
 		case '*':
 		case '?':
 		case '[':
-			ptr = glob_tokenize(ptr, parse_info, cmd_array,
+			if (parse_info->do_not_expect_new_cmd)
+				return error_token('&', ptr);
+			ptr = glob_tokenize(ptr, parse_info, new_cmd,
 					    file_info, sub_info);
 			break;
 		case '\\':
@@ -377,8 +338,7 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 				return error_token('&', ptr);
 			// Do NOT return if escape \n
 			if (*++ptr == '\n') {
-				request_new_line(line);
-				ptr = line;
+				request_new_line(ptr);
 				ptr--;
 			} else {
 				*parse_info->copy++ = *++ptr;
@@ -389,13 +349,13 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			if (parse_info->do_not_expect_new_cmd)
 				return error_token('&', ptr);
 			ptr =
-			    substitution_tokenize(++ptr, parse_info, cmd_array,
+			    substitution_tokenize(++ptr, parse_info, new_cmd,
 						  file_info, sub_info);
 			// Copy now sub_info to parse_info->copy
 			if (strlen(sub_info->buffer) > 0) {
 				if (copy_substitution
 				    (parse_info, sub_info->buffer) < 0) {
-					return -1;
+					return NULL;
 				}
 			} else {
 				ptr++;
@@ -409,36 +369,16 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			if (parse_info->has_arg_started == PARSE_ARG_STARTED) {
 				*parse_info->copy++ = *ptr;
 			} else {
-				ptr++;
-				if (*ptr == '/' || *ptr == ' ' || *ptr == '\n') {
-					ptr--;
-					substitution_tokenize("HOME",
-							      parse_info,
-							      cmd_array,
-							      file_info,
-							      sub_info);
-					// Copy now sub_info to parse_info->copy
-					if (strlen(sub_info->buffer) > 0) {
-						if (copy_substitution
-						    (parse_info,
-						     sub_info->buffer) < 0) {
-							return -1;
-						}
-					} else {
-						ptr++;
-					}
-				} else {
-					ptr--;
-					*parse_info->copy++ = *ptr;
-					*parse_info->copy++ = *++ptr;
-				}
+				ptr =
+				    tilde_tokenize(ptr, parse_info, new_cmd,
+						   file_info, sub_info);
 			}
 			parse_info->has_arg_started = PARSE_ARG_STARTED;
 			break;
 		case ' ':
 		case '\t':
 			if (parse_info->has_arg_started == PARSE_ARG_STARTED) {
-				new_argument(new_cmd, parse_info, cmd_array,
+				new_argument(new_cmd, parse_info,
 					     file_info, sub_info);
 				parse_info->copy = new_cmd->current_arg;
 				parse_info->has_arg_started =
@@ -447,50 +387,46 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			break;
 		case '\n':
 			if (parse_info->has_arg_started == PARSE_ARG_STARTED) {
-				new_argument(new_cmd, parse_info, cmd_array,
+				new_argument(new_cmd, parse_info,
 					     file_info, sub_info);
 				parse_info->copy = new_cmd->current_arg;
 				parse_info->has_arg_started =
 				    PARSE_ARG_NOT_STARTED;
+				return ++ptr;
 			}
 			break;
 		case ';':
 			if (parse_info->do_not_expect_new_cmd)
 				return error_token('&', ptr);
-			new_argument(new_cmd, parse_info, cmd_array,
-				     file_info, sub_info);
-			new_cmd = new_command();
-			if (add_command(new_cmd, cmd_array) < 0) {
-				fprintf(stderr, "Failed to add command");
+			if (parse_info->has_arg_started == PARSE_ARG_STARTED) {
+				new_argument(new_cmd, parse_info, file_info,
+					     sub_info);
 			}
-			parse_info->copy = new_cmd->current_arg;
-			parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
+			return ++ptr;
+			break;
+		case '#':
+			// END
+			return ptr;
 			break;
 		case '&':
 			// Check if next char is & or >
 			if (*++ptr == '&') {
 				// Add an argument to old command
-				old_cmd = new_cmd;
 				if (parse_info->has_arg_started ==
 				    PARSE_ARG_STARTED) {
 					new_argument(new_cmd, parse_info,
-						     cmd_array, file_info,
-						     sub_info);
+						     file_info, sub_info);
 				}
-				// New command
-				new_cmd = new_command();
-				if (add_command(new_cmd, cmd_array) < 0) {
-					fprintf(stderr,
-						"Failed to add command");
-				}
-				new_cmd->prev_status_needed_to_exec =
+				new_cmd->next_status_needed_to_exec =
 				    EXECUTE_IN_SUCCESS;
-				parse_info->copy = new_cmd->current_arg;
+				return ++ptr;
 			} else if (*ptr == '>') {
-				ptr--;
+				*parse_info->copy++ = *--ptr;
+				parse_info->has_arg_started = PARSE_ARG_STARTED;
+				break;
 			} else {
 				parse_info->do_not_expect_new_cmd = 1;
-				do_not_wait_commands(cmd_array);
+				//do_not_wait_commands(cmd_array);
 				ptr--;
 			}
 			parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
@@ -503,12 +439,9 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			// FIX: add error struct to handle differen error tokens
 			if (parse_info->do_not_expect_new_cmd)
 				return error_token('&', ptr);
-			if (check_here_doc(ptr, cmd_array)) {
+			if (check_here_doc(ptr, new_cmd)) {
 				parse_info->do_not_expect_new_cmd = 1;	// End parsing
-				ptr++;
-				ptr++;
-				ptr++;
-				ptr++;
+				ptr += 4;
 				new_cmd->argc--;
 			} else {
 				*parse_info->copy++ = *ptr;
@@ -518,14 +451,13 @@ cmd_tokenize(char *line, struct parse_info *parse_info,
 			break;
 		}
 		if (ptr == NULL)
-			return -1;
+			return ptr;
 	}
 	// End of substitution
 	if (new_cmd->current_arg[0] != '\0') {
-		new_argument(new_cmd, parse_info, cmd_array, file_info,
-			     sub_info);
+		new_argument(new_cmd, parse_info, file_info, sub_info);
 	}
-	return 0;
+	return ptr;
 }
 
 char *
@@ -552,7 +484,7 @@ hard_apost_tokenize(char *line, struct parse_info *parse_info)
 
 char *
 soft_apost_tokenize(char *line, struct parse_info *parse_info,
-		    struct cmd_array *cmd_array, struct file_info *file_info,
+		    struct command *command, struct file_info *file_info,
 		    struct sub_info *sub_info)
 {
 	// Can call only substitution
@@ -582,7 +514,7 @@ soft_apost_tokenize(char *line, struct parse_info *parse_info,
 			if (*++ptr != '\\') {
 				ptr =
 				    substitution_tokenize(ptr, parse_info,
-							  cmd_array, file_info,
+							  command, file_info,
 							  sub_info);
 				// Copy now sub_info to parse_info->copy
 				if (strlen(sub_info->buffer) > 0) {
@@ -600,7 +532,7 @@ soft_apost_tokenize(char *line, struct parse_info *parse_info,
 			}
 			break;
 		case '\n':
-			//*parse_info->copy++ = *ptr;
+			*parse_info->copy++ = *ptr;
 			request_new_line(line);
 			ptr = line;
 			ptr--;
@@ -616,7 +548,7 @@ soft_apost_tokenize(char *line, struct parse_info *parse_info,
 
 char *
 substitution_tokenize(char *line, struct parse_info *parse_info,
-		      struct cmd_array *cmd_array, struct file_info *file_info,
+		      struct command *command, struct file_info *file_info,
 		      struct sub_info *sub_info)
 {
 	sub_info->ptr = sub_info->buffer;
@@ -652,15 +584,14 @@ substitution_tokenize(char *line, struct parse_info *parse_info,
 		case '(':
 			*--sub_info->ptr = '\0';
 			ptr =
-			    execute_token(++ptr, parse_info, cmd_array,
+			    execute_token(++ptr, parse_info, command,
 					  file_info, sub_info);
 			ptr--;
 			break;
 		case ')':
 		case '{':
 		case '}':
-			error_token(*ptr, ptr);
-			return NULL;
+			return error_token(*ptr, ptr);
 			break;
 		case '$':
 		case '?':
@@ -699,7 +630,7 @@ copy_substitution(struct parse_info *parse_info, const char *sub_buffer)
 
 char *
 file_tokenize(char *line, struct parse_info *parse_info,
-	      struct cmd_array *cmd_array, struct file_info *file_info,
+	      struct command *command, struct file_info *file_info,
 	      struct sub_info *sub_info)
 {
 	// Check if next char is \0
@@ -710,7 +641,7 @@ file_tokenize(char *line, struct parse_info *parse_info,
 		switch (*ptr) {
 		case '"':
 			ptr =
-			    soft_apost_tokenize(++ptr, parse_info, cmd_array,
+			    soft_apost_tokenize(++ptr, parse_info, command,
 						file_info, sub_info);
 			parse_info->has_arg_started = PARSE_ARG_STARTED;
 			break;
@@ -724,29 +655,9 @@ file_tokenize(char *line, struct parse_info *parse_info,
 			if (parse_info->has_arg_started == PARSE_ARG_STARTED) {
 				*parse_info->copy++ = *ptr;
 			} else {
-				ptr++;
-				if (*ptr == '/' || *ptr == ' ' || *ptr == '\n') {
-					ptr--;
-					substitution_tokenize("HOME",
-							      parse_info,
-							      cmd_array,
-							      file_info,
-							      sub_info);
-					// Copy now sub_info to parse_info->copy
-					if (strlen(sub_info->buffer) > 0) {
-						if (copy_substitution
-						    (parse_info,
-						     sub_info->buffer) < 0) {
-							return NULL;
-						}
-					} else {
-						ptr++;
-					}
-				} else {
-					ptr--;
-					*parse_info->copy++ = *ptr;
-					*parse_info->copy++ = *++ptr;
-				}
+				ptr =
+				    tilde_tokenize(ptr, parse_info, command,
+						   file_info, sub_info);
 			}
 			parse_info->has_arg_started = PARSE_ARG_STARTED;
 			break;
@@ -759,11 +670,15 @@ file_tokenize(char *line, struct parse_info *parse_info,
 			break;
 		case '$':
 			ptr =
-			    substitution_tokenize(++ptr, parse_info, cmd_array,
+			    substitution_tokenize(++ptr, parse_info, command,
 						  file_info, sub_info);
-			// Copy now sub_info to parse_info->copy
-			if (copy_substitution(parse_info, sub_info->buffer) < 0) {
-				return NULL;
+			if (strlen(sub_info->buffer) > 0) {
+				if (copy_substitution
+				    (parse_info, sub_info->buffer) < 0) {
+					return NULL;
+				}
+			} else {
+				ptr++;
 			}
 			parse_info->has_arg_started = PARSE_ARG_STARTED;
 			break;
@@ -782,8 +697,7 @@ file_tokenize(char *line, struct parse_info *parse_info,
 		case ')':
 		case '{':
 		case '}':
-			error_token(*ptr, ptr);
-			return NULL;
+			return error_token(*ptr, ptr);
 			break;
 		default:
 			*parse_info->copy++ = *ptr;
@@ -799,7 +713,7 @@ file_tokenize(char *line, struct parse_info *parse_info,
 
 char *
 glob_tokenize(char *line, struct parse_info *parse_info,
-	      struct cmd_array *cmd_array, struct file_info *file_info,
+	      struct command *command, struct file_info *file_info,
 	      struct sub_info *sub_info)
 {
 	int exit = 0;
@@ -821,7 +735,7 @@ glob_tokenize(char *line, struct parse_info *parse_info,
 		switch (*ptr) {
 		case '"':
 			ptr =
-			    soft_apost_tokenize(++ptr, parse_info, cmd_array,
+			    soft_apost_tokenize(++ptr, parse_info, command,
 						file_info, sub_info);
 			break;
 		case '\'':
@@ -844,7 +758,7 @@ glob_tokenize(char *line, struct parse_info *parse_info,
 			break;
 		case '$':
 			ptr =
-			    substitution_tokenize(++ptr, parse_info, cmd_array,
+			    substitution_tokenize(++ptr, parse_info, command,
 						  file_info, sub_info);
 			// Copy now sub_info to parse_info->copy
 			if (strlen(sub_info->buffer) > 0) {
@@ -875,13 +789,12 @@ glob_tokenize(char *line, struct parse_info *parse_info,
 			break;
 	}
 	// Append the things in command
-	strcat(cmd_array->commands[cmd_array->n_cmd - 1]->current_arg,
-	       line_buf);
+	strcat(command->current_arg, line_buf);
 
 	// Do substitution and update command
 	glob_t gstruct;
 
-	if (glob(cmd_array->commands[cmd_array->n_cmd - 1]->current_arg,
+	if (glob(command->current_arg,
 		 GLOB_ERR, NULL, &gstruct) == GLOB_NOESCAPE) {
 		//TODO: add error
 		return NULL;
@@ -891,12 +804,11 @@ glob_tokenize(char *line, struct parse_info *parse_info,
 
 	found = gstruct.gl_pathv;
 	if (found == NULL) {
-		add_arg(cmd_array->commands[cmd_array->n_cmd - 1]);
+		add_arg(command);
 	} else {
 		while (*found != NULL) {
-			strcpy(cmd_array->commands[cmd_array->n_cmd - 1]->
-			       current_arg, *found);
-			add_arg(cmd_array->commands[cmd_array->n_cmd - 1]);
+			strcpy(command->current_arg, *found);
+			add_arg(command);
 			found++;
 		}
 	}
@@ -910,7 +822,7 @@ glob_tokenize(char *line, struct parse_info *parse_info,
 
 char *
 execute_token(char *line, struct parse_info *parse_info,
-	      struct cmd_array *cmd_array, struct file_info *file_info,
+	      struct command *command, struct file_info *file_info,
 	      struct sub_info *sub_info)
 {
 	int n_parenthesis = 0;
@@ -967,7 +879,14 @@ execute_token(char *line, struct parse_info *parse_info,
 	// Copy result into sub_info->buffer
 	// FIX: fix find_command call
 	find_command(line_buf, buffer, stdin);
-	cmd_tokenize(buffer, parse_info, cmd_array, file_info, sub_info);
+	// Remove \n from buffer to ' '
+	char *current_pos = strchr(buffer, '\n');
+
+	while (current_pos) {
+		*current_pos = ' ';
+		current_pos = strchr(current_pos, '\n');
+	}
+	cmd_tokenize(buffer, parse_info, command, file_info, sub_info);
 	free(line_buf);
 	free(buffer);
 	return ptr;
@@ -976,7 +895,7 @@ execute_token(char *line, struct parse_info *parse_info,
 void
 request_new_line(char *line)
 {
-	printf("> ");
+	prompt_request();
 	fgets(line, 1024, stdin);
 	if (ferror(stdin)) {
 		err(EXIT_FAILURE, "fgets failed");
@@ -985,44 +904,122 @@ request_new_line(char *line)
 
 void
 new_argument(struct command *current_cmd, struct parse_info *parse_info,
-	     struct cmd_array *cmd_array, struct file_info *file_info,
-	     struct sub_info *sub_info)
+	     struct file_info *file_info, struct sub_info *sub_info)
 {
 	if (strcmp(sub_info->last_alias, current_cmd->argv[0]) != 0) {
 		if (check_alias_cmd(current_cmd)) {
 			strcpy(sub_info->last_alias, current_cmd->argv[0]);
+			reset_last_arg(current_cmd);
+			current_cmd->argc = 0;
+			current_cmd->current_arg = current_cmd->argv[0];
 			cmd_tokenize(get_alias
-				     (current_cmd->argv[0]),
+				     (sub_info->last_alias),
 				     parse_info,
-				     cmd_array, file_info, sub_info);
+				     current_cmd, file_info, sub_info);
 			return;
 		}
 	}
 	add_arg(current_cmd);
 }
 
-int
+char *
 error_token(char token, char *line)
 {
 	fprintf(stderr,
 		"dash: syntax error in '%c' near unexpected token `%s", token,
 		line);
-	return -1;
+	return NULL;
 }
 
 int
-check_here_doc(char *line, struct cmd_array *cmd_array)
+check_here_doc(char *line, struct command *command)
 {
 	char *ptr = line;
 
 	if (*ptr++ == 'H' && *ptr++ == 'E' && *ptr++ == 'R' && *ptr++ == 'E'
 	    && *ptr == '{') {
 		// TODO: check input
-		if (set_file_cmd
-		    (cmd_array->commands[cmd_array->n_cmd - 1],
-		     HERE_DOC_READ, "") >= 0) {
+		if (set_file_cmd(command, HERE_DOC_READ, "") >= 0) {
 			return 1;
 		}
 	}
 	return 0;
+}
+
+char *
+cmdtok_redirect_in(char *line, struct parse_info *parse_info,
+		   struct command *command, struct file_info *file_info,
+		   struct sub_info *sub_info)
+{
+	parse_info->copy = file_info->buffer;
+	line = file_tokenize(line, parse_info, command, file_info, sub_info);
+	// TODO: first command not new cmd
+	if (set_file_cmd(command, INPUT_READ, file_info->buffer) < 0) {
+		return NULL;
+	}
+	return line;
+}
+
+char *
+cmdtok_redirect_out(char *line, struct parse_info *parse_info,
+		    struct command *command, struct file_info *file_info,
+		    struct sub_info *sub_info)
+{
+	parse_info->copy = file_info->buffer;
+	line = file_tokenize(line, parse_info, command, file_info, sub_info);
+
+	if (parse_info->has_arg_started) {
+		if (strcmp(command->current_arg, "2") == 0) {
+			reset_last_arg(command);
+			if (set_file_cmd
+			    (command, ERROR_WRITE, file_info->buffer) < 0) {
+				return NULL;
+			}
+			return line;
+		} else if (strcmp(command->current_arg, "&") == 0) {
+			reset_last_arg(command);
+			if (set_file_cmd
+			    (command, OUTPUT_WRITE, file_info->buffer) < 0) {
+				return NULL;
+			}
+			if (set_file_cmd
+			    (command,
+			     ERROR_AND_OUTPUT_WRITE, file_info->buffer) < 0) {
+				return NULL;
+			}
+			return line;
+		} else if (strcmp(command->current_arg, "1") == 0) {
+			reset_last_arg(command);
+		}
+	}
+
+	if (set_file_cmd(command, OUTPUT_WRITE, file_info->buffer) < 0) {
+		return NULL;
+	}
+	return line;
+}
+
+char *
+tilde_tokenize(char *line, struct parse_info *parse_info,
+	       struct command *command, struct file_info *file_info,
+	       struct sub_info *sub_info)
+{
+	line++;
+	if (*line == '/' || *line == ' ' || *line == '\n') {
+		line--;
+		substitution_tokenize("HOME",
+				      parse_info, command, file_info, sub_info);
+		// Copy now sub_info to parse_info->copy
+		if (strlen(sub_info->buffer) > 0) {
+			if (copy_substitution(parse_info, sub_info->buffer) < 0) {
+				return NULL;
+			}
+		} else {
+			line++;
+		}
+	} else {
+		*parse_info->copy++ = *--line;
+		*parse_info->copy++ = *++line;
+	}
+	return line;
 }

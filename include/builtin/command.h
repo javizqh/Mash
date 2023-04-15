@@ -34,7 +34,7 @@ struct command {
 	char *current_arg;
 	pid_t pid;
 	// Only used for the first command
-	int prev_status_needed_to_exec;
+	int next_status_needed_to_exec;
 	// Execute in background Only in first command
 	int do_wait;
 	// Pipes
@@ -50,11 +50,15 @@ struct command {
 
 struct command *new_command();
 
+void reset_command(struct command *command);
+
 void free_command(struct command *command);
 
 int check_alias_cmd(struct command *command);
 
 int add_arg(struct command *command);
+
+int reset_last_arg(struct command *command);
 
 int set_file_cmd(struct command *command,int file_type, char *file);
 

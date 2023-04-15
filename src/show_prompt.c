@@ -26,12 +26,20 @@
 #include "parse_line.h"
 #include "show_prompt.h"
 
+int shell_mode = NON_INTERACTIVE;
+
+void
+set_prompt_mode(int mode)
+{
+	shell_mode = mode;
+}
+
 int
-prompt(int mode)
+prompt()
 {
 	char *result = getenv("result");
 
-	if (mode == INTERACTIVE_MODE) {
+	if (shell_mode == INTERACTIVE_MODE) {
 		char *prompt = getenv("PROMPT");
 
 		parse_prompt(prompt);
@@ -40,6 +48,16 @@ prompt(int mode)
 	add_env_by_name("result", result);
 	return 1;
 }
+
+int
+prompt_request()
+{
+	if (shell_mode == INTERACTIVE_MODE) {
+		printf("> ");
+		fflush(stdout);
+	}
+	return 1;
+};
 
 int
 parse_prompt(char *prompt)
@@ -80,11 +98,11 @@ parse_prompt(char *prompt)
 		} else if (strstr(token, "branch") == token) {
 			//FIX: solve error message and space issue
 			// Execute this git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/'
-			char *buffer = malloc(sizeof(char) * 1024);
+			char *buffer = malloc(1024);
 
 			if (buffer == NULL)
 				err(EXIT_FAILURE, "malloc failed");
-			memset(buffer, 0, sizeof(char) * 1024);
+			memset(buffer, 0, 1024);
 
 			if (find_command
 			    ("git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/(\\1)/'",

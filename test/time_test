@@ -1,4 +1,4 @@
-test_file=tmp/m
+test_file=test/ttest
 
 echo "Testing time to execute script $test_file 1000 times"
 echo -n "BASH:"

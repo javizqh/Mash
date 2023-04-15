@@ -31,8 +31,6 @@
 int
 main(int argc, char **argv)
 {
-	int shell_mode = NON_INTERACTIVE;
-
 	argc--;
 	argv++;
 	// TODO: add proper check
@@ -61,14 +59,14 @@ main(int argc, char **argv)
 	}
 	memset(buf, 0, 1024);
 	// ------------
-	prompt(shell_mode);
+	prompt();
 	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
 		find_command(buf, NULL, stdin);
 
 		if (has_to_exit)
 			break;
 
-		prompt(shell_mode);
+		prompt();
 	}
 
 	if (ferror(stdin)) {

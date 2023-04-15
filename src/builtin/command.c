@@ -38,7 +38,7 @@ new_command()
 	command->argc = 0;
 	command->current_arg = command->argv[0];
   command->pid = 0;
-  command->prev_status_needed_to_exec = DO_NOT_MATTER_TO_EXEC;
+  command->next_status_needed_to_exec = DO_NOT_MATTER_TO_EXEC;
   command->do_wait = WAIT_TO_FINISH;
 	command->input = STDIN_FILENO;
 	command->output = STDOUT_FILENO;
@@ -52,6 +52,25 @@ new_command()
 
 	return command;
 }
+
+void reset_command(struct command *command) {
+  free_command(command->pipe_next);
+  memset(command, 0, sizeof(*command));
+  command->argc = 0;
+	command->current_arg = command->argv[0];
+  command->pid = 0;
+  command->next_status_needed_to_exec = DO_NOT_MATTER_TO_EXEC;
+  command->do_wait = WAIT_TO_FINISH;
+	command->input = STDIN_FILENO;
+	command->output = STDOUT_FILENO;
+  command->err_output = STDERR_FILENO;
+  command->fd_pipe_input[0] = -1;
+  command->fd_pipe_input[1] = -1;
+	command->fd_pipe_output[0] = -1;
+	command->fd_pipe_output[1] = -1;
+  command->pipe_next = NULL;
+  command->output_buffer = NULL;
+};
 
 void 
 free_command(struct command *command) {
@@ -68,8 +87,6 @@ free_command(struct command *command) {
 extern int check_alias_cmd(struct command *command) {
   if (command->argc == 0) {
     if (get_alias(command->argv[0]) != NULL) {
-      // Substitute
-      command->argc--;
       return 1;
     }
   }
@@ -83,6 +100,12 @@ add_arg(struct command *command)
 	command->current_arg = command->argv[command->argc];
 	return 1;
 }
+
+int reset_last_arg(struct command *command) {
+  memset(command->current_arg,0,MAX_ARGUMENT_SIZE);
+  command->current_arg = command->argv[command->argc - 1];
+  return 1;
+};
 
 int set_file_cmd(struct command *command,int file_type, char *file) {
   switch (file_type) {
