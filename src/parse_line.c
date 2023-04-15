@@ -261,9 +261,7 @@ cmd_tokenize(char *ptr, struct parse_info *parse_info,
 	struct command *new_cmd = command;
 	struct command *old_cmd = new_cmd;
 
-	if (strlen(new_cmd->current_arg) > 0) {
-		add_arg(new_cmd);
-	}
+	new_cmd->current_arg += strlen(new_cmd->current_arg);
 
 	parse_info->copy = new_cmd->current_arg;
 
@@ -293,13 +291,13 @@ cmd_tokenize(char *ptr, struct parse_info *parse_info,
 				return ++ptr;
 			}
 			ptr--;
-			// Add an argument to old command
-			old_cmd = new_cmd;
 			if (parse_info->has_arg_started == PARSE_ARG_STARTED) {
-				new_argument(old_cmd, parse_info, file_info,
+				// Add an argument
+				new_argument(new_cmd, parse_info, file_info,
 					     sub_info);
 			}
 			// New command
+			old_cmd = new_cmd;
 			new_cmd = new_command();
 			// Update old_cmd pipe
 			strcpy(sub_info->last_alias, "");
@@ -311,7 +309,7 @@ cmd_tokenize(char *ptr, struct parse_info *parse_info,
 			if (parse_info->do_not_expect_new_cmd)
 				return error_token('&', ptr);
 			ptr =
-			    cmdtok_redirect_in(++ptr, parse_info, new_cmd,
+			    cmdtok_redirect_in(++ptr, parse_info, command,
 					       file_info, sub_info);
 			parse_info->copy = new_cmd->current_arg;
 			parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
@@ -360,6 +358,8 @@ cmd_tokenize(char *ptr, struct parse_info *parse_info,
 			} else {
 				ptr++;
 			}
+			new_cmd->current_arg += strlen(new_cmd->current_arg);
+			parse_info->copy = new_cmd->current_arg;
 			parse_info->has_arg_started = PARSE_ARG_STARTED;
 			break;
 		case '~':
@@ -456,6 +456,8 @@ cmd_tokenize(char *ptr, struct parse_info *parse_info,
 	// End of substitution
 	if (new_cmd->current_arg[0] != '\0') {
 		new_argument(new_cmd, parse_info, file_info, sub_info);
+	} else {
+		reset_last_arg(new_cmd);
 	}
 	return ptr;
 }
