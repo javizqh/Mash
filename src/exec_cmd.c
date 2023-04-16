@@ -268,11 +268,11 @@ exec_child(struct command *command, struct command *start_command,
 	char *args[command->argc];
 
 	close_all_fd_cmd(command, start_command);
+	redirect_stdin(command, start_command);
+	redirect_stdout(command, last_command);
+	redirect_stderr(command, last_command);
 	// Check if builtin
 	if (find_builtin(command)) {
-		redirect_stdin(command, start_command);
-		redirect_stdout(command, last_command);
-		redirect_stderr(command, last_command);
 		if (last_command != NULL || command->output_buffer != NULL
 		    || command->output != STDOUT_FILENO
 		    || command->err_output != STDERR_FILENO
@@ -281,9 +281,9 @@ exec_child(struct command *command, struct command *start_command,
 		}
 
 		exec_builtin(start_command, command);
-		exit(EXIT_SUCCESS);
+		exit(EXIT_FAILURE);
 	} else {
-		// FIND PATH
+
 		if (!find_path(command)) {
 			fprintf(stderr, "%s: command not found\n",
 				command->argv[0]);
@@ -293,9 +293,6 @@ exec_child(struct command *command, struct command *start_command,
 			exit(EXIT_FAILURE);
 		}
 
-		redirect_stdin(command, start_command);
-		redirect_stdout(command, last_command);
-		redirect_stderr(command, last_command);
 		if (last_command != NULL || command->output_buffer != NULL
 		    || command->output != STDOUT_FILENO
 		    || command->err_output != STDERR_FILENO
