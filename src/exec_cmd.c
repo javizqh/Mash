@@ -33,6 +33,8 @@
 #include "mash.h"
 #include "exec_cmd.h"
 
+pid_t active_command = 0;
+
 int
 find_path(struct command *command)
 {
@@ -173,6 +175,7 @@ exec_pipe(FILE * src_file, struct exec_info *exec_info, char *to_free_excess)
 		err(EXIT_FAILURE, "Failed to exec");
 		break;
 	default:
+		active_command = pid;
 		close_all_fd(exec_info->command);
 		close_fd(buffer_pipe[1]);
 		ssize_t count = MAX_BUFFER_IO_SIZE;
@@ -192,19 +195,25 @@ exec_pipe(FILE * src_file, struct exec_info *exec_info, char *to_free_excess)
 				    read(buffer_pipe[0], buffer_stdout, count);
 				if (bytes_stdout > 0) {
 					strcat(get_last_command
-					       (exec_info->
-						command)->output_buffer,
-					       buffer_stdout);
+					       (exec_info->command)->
+					       output_buffer, buffer_stdout);
 				}
 			} while (bytes_stdout > 0);
 			close_fd(buffer_pipe[0]);
 			free(buffer_stdout);
 		}
+		if (exec_info->last_command->do_wait != WAIT_TO_FINISH) {
+			//TODO: have a list to store the surpressed command and later check
+			printf("[1] %d\n", pid);
+			return EXIT_SUCCESS;
+		}
+		// REVIEW: PROBLEM WITH NOT WAITING FOR COMMANDS AFTER USING BACKGROUND BECAUSE IS WAITING FOR BACKGROUND
 		if (waitpid(pid, &wstatus, WUNTRACED) == -1) {
 			perror("waitpid failed");
 			return EXIT_FAILURE;
 		}
 		if (WIFEXITED(wstatus)) {
+			active_command = 0;
 			return WEXITSTATUS(wstatus);
 		}
 		break;
@@ -308,7 +317,6 @@ exec_child(struct command *command, struct command *start_command,
 			}
 		}
 		args[i] = NULL;
-		//free_command_with_buf(command->pipe_next);
 		execv(args[0], args);
 	}
 }
@@ -323,13 +331,6 @@ wait_childs(struct command *start_command, struct command *last_command,
 	struct command *current_command = start_command;
 	struct command *command_to_free = current_command;
 
-	if (start_command->do_wait != WAIT_TO_FINISH) {
-		//TODO: have a list to store the surpressed command and later check
-		printf("[1] %d\n", start_command->pid);
-		free_command_with_buf(start_command);
-		exit(EXIT_SUCCESS);
-	}
-	// REVIEW: PROBLEM WITH NOT WAITING FOR COMMANDS AFTER USING BACKGROUND BECAUSE IS WAITING FOR BACKGROUND
 	for (proc_finished = 0; proc_finished < n_cmds; proc_finished++) {
 		wait_pid = waitpid(current_command->pid, &wstatus, WUNTRACED);
 		if (wait_pid == -1) {

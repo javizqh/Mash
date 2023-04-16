@@ -15,3 +15,5 @@
 extern int reading_from_file;
 
 int main(int argc, char **argv);
+
+void sig_handler(int sig);
