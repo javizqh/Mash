@@ -59,6 +59,7 @@ struct file_info *new_file_info();
 void restore_file_info(struct file_info *file_info);
 struct exec_info {
 	struct command *command;
+	struct command *last_command;
 	struct parse_info *parse_info;
 	struct file_info *file_info;
 	struct sub_info *sub_info;
