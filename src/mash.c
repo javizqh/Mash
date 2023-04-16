@@ -59,14 +59,14 @@ main(int argc, char **argv)
 	}
 	memset(buf, 0, 1024);
 	// ------------
-	prompt();
+	prompt(buf);
 	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
-		find_command(buf, NULL, stdin);
+		find_command(buf, NULL, stdin, NULL);
 
 		if (has_to_exit)
 			break;
 
-		prompt();
+		prompt(buf);
 	}
 
 	if (ferror(stdin)) {

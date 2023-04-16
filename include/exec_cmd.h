@@ -15,23 +15,14 @@
 int find_path(struct command *command);
 int command_exists(char *path);
 
-int exec_command(struct command *command, FILE * src_file);
+int exec_pipe(FILE * src_file, struct exec_info *exec_info);
 
-int execution(struct command *command);
-
-/**
- * @brief Executes builtins that need to be executed in the parent process
- * 
- * @param command 
- * @return 1 = Need to execute in child | 0 = Executed in parent process
- */
-int exec_in_shell(struct command *command);
-int has_builtin_exec_in_shell(struct command *command);
+void exec_command(int buffer_pipe,struct command *command);
 
 void exec_child(struct command *command, struct command *start_command,
 		struct command *last_command);
 
-int wait_childs(struct command *start_command, struct command *last_command,
+void wait_childs(struct command *start_command, struct command *last_command,
 		int n_cmds);
 
 // Redirect input and output: Parent
@@ -41,7 +32,7 @@ enum iobuffer {
 
 void read_from_here_doc(struct command *start_command);
 void read_from_file(struct command *start_command);
-void write_to_file_or_buffer(struct command *last_command);
+void write_to_file_or_buffer(int buffer_pipe, struct command *last_command);
 
 // Redirect input and output: Child
 void redirect_stdin(struct command *command, struct command *start_command);
@@ -49,14 +40,11 @@ void redirect_stdout(struct command *command, struct command *last_command);
 void redirect_stderr(struct command *command, struct command *last_command);
 
 // File descriptor
-int set_input_shell_pipe(struct command *command);
-int set_output_shell_pipe(struct command *command);
-int set_err_output_shell_pipe(struct command *command);
+void set_input_shell_pipe(struct command *command);
+void set_output_shell_pipe(struct command *command);
+void set_err_output_shell_pipe(struct command *command);
 
 int close_fd(int fd);
-int close_all_fd(struct command *start_command, struct command *last_command);
+int close_all_fd(struct command *start_command);
+int close_all_fd_io(struct command *start_command, struct command *last_command);
 int close_all_fd_cmd(struct command *command, struct command *start_command);
-
-// BUILTIN
-int find_builtin(struct command *command);
-void exec_builtin(struct command *command);

@@ -84,6 +84,19 @@ free_command(struct command *command) {
   }
 }
 
+void 
+free_command_with_buf(struct command *command) {
+  struct command * to_free = command;
+  struct command * next = command;
+  while (next != NULL)
+  { 
+    to_free = next;
+    next = to_free->pipe_next;
+    free(to_free->output_buffer);
+    free(to_free);
+  }
+}
+
 extern int check_alias_cmd(struct command *command) {
   if (command->argc == 0) {
     if (get_alias(command->argv[0]) != NULL) {

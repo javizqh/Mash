@@ -91,7 +91,7 @@ read_source_file(char *filename)
 	FILE *f = fopen(filename, "r");
 
 	while (fgets(buf, 1024, f) != NULL) {	/* break with ^D or ^Z */
-		if (find_command(buf, NULL, f) == -1) {
+		if (find_command(buf, NULL, f, NULL) == -1) {
 			//exit_dash();
 			fclose(f);
 			free(buf);

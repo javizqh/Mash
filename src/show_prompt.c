@@ -35,14 +35,14 @@ set_prompt_mode(int mode)
 }
 
 int
-prompt()
+prompt(char *line)
 {
 	char *result = getenv("result");
 
 	if (shell_mode == INTERACTIVE_MODE) {
 		char *prompt = getenv("PROMPT");
 
-		parse_prompt(prompt);
+		parse_prompt(prompt, line);
 		fflush(stdout);
 	}
 	add_env_by_name("result", result);
@@ -60,7 +60,7 @@ prompt_request()
 };
 
 int
-parse_prompt(char *prompt)
+parse_prompt(char *prompt, char *line)
 {
 	int match = 0;
 	char *token;
@@ -104,13 +104,17 @@ parse_prompt(char *prompt)
 				err(EXIT_FAILURE, "malloc failed");
 			memset(buffer, 0, 1024);
 
-			if (find_command
-			    ("git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/(\\1)/'",
-			     buffer, stdin) == 0) {
+			strcpy(line,
+			       "git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/(\\1)/'");
 
+			token += strlen("branch");
+			if (find_command(line, buffer, stdin, NULL) == 0) {
 				strtok(buffer, "\n");
-				token += strlen("branch");
-				printf("%s%s", buffer, token);
+				if (strlen(buffer) > 0) {
+					printf("%s%s", buffer, token);
+				} else {
+					printf("%s", token);
+				}
 			} else {
 				printf("%s", token);
 			}

@@ -53,6 +53,7 @@ struct command *new_command();
 void reset_command(struct command *command);
 
 void free_command(struct command *command);
+void free_command_with_buf(struct command *command);
 
 int check_alias_cmd(struct command *command);
 
