@@ -229,7 +229,7 @@ cmd_tokenize(char *ptr, struct exec_info *exec_info)
 		return NULL;
 
 	// Can call the other
-	struct command *new_cmd = get_last_command(exec_info->command);
+	struct command *new_cmd = exec_info->last_command;
 	struct command *old_cmd = new_cmd;
 
 	new_cmd->current_arg += strlen(new_cmd->current_arg);
@@ -273,6 +273,7 @@ cmd_tokenize(char *ptr, struct exec_info *exec_info)
 			// Update old_cmd pipe
 			strcpy(exec_info->sub_info->last_alias, "");
 			pipe_command(old_cmd, new_cmd);
+			exec_info->last_command = new_cmd;
 			exec_info->parse_info->copy = new_cmd->current_arg;
 			exec_info->parse_info->has_arg_started =
 			    PARSE_ARG_NOT_STARTED;
@@ -347,15 +348,6 @@ cmd_tokenize(char *ptr, struct exec_info *exec_info)
 			break;
 		case ' ':
 		case '\t':
-			if (exec_info->parse_info->has_arg_started ==
-			    PARSE_ARG_STARTED) {
-				new_argument(exec_info);
-				exec_info->parse_info->copy =
-				    new_cmd->current_arg;
-				exec_info->parse_info->has_arg_started =
-				    PARSE_ARG_NOT_STARTED;
-			}
-			break;
 		case '\n':
 			if (exec_info->parse_info->has_arg_started ==
 			    PARSE_ARG_STARTED) {
@@ -364,7 +356,6 @@ cmd_tokenize(char *ptr, struct exec_info *exec_info)
 				    new_cmd->current_arg;
 				exec_info->parse_info->has_arg_started =
 				    PARSE_ARG_NOT_STARTED;
-				return ++ptr;
 			}
 			break;
 		case ';':
@@ -377,7 +368,7 @@ cmd_tokenize(char *ptr, struct exec_info *exec_info)
 			return ++ptr;
 			break;
 		case '#':
-			// END
+			// Comments are not parsed
 			return ptr;
 			break;
 		case '&':
@@ -757,12 +748,12 @@ glob_tokenize(char *line, struct exec_info *exec_info)
 			break;
 	}
 	// Append the things in command
-	strcat(get_last_command(exec_info->command)->current_arg, line_buf);
+	strcat(exec_info->last_command->current_arg, line_buf);
 
 	// Do substitution and update command
 	glob_t gstruct;
 
-	if (glob(get_last_command(exec_info->command)->current_arg,
+	if (glob(exec_info->last_command->current_arg,
 		 GLOB_ERR, NULL, &gstruct) == GLOB_NOESCAPE) {
 		//TODO: add error
 		return NULL;
@@ -772,12 +763,11 @@ glob_tokenize(char *line, struct exec_info *exec_info)
 
 	found = gstruct.gl_pathv;
 	if (found == NULL) {
-		add_arg(get_last_command(exec_info->command));
+		add_arg(exec_info->last_command);
 	} else {
 		while (*found != NULL) {
-			strcpy(get_last_command
-			       (exec_info->command)->current_arg, *found);
-			add_arg(get_last_command(exec_info->command));
+			strcpy(exec_info->last_command->current_arg, *found);
+			add_arg(exec_info->last_command);
 			found++;
 		}
 	}
@@ -847,13 +837,6 @@ execute_token(char *line, struct exec_info *exec_info)
 	// FIX: fix find_command call
 	find_command(line_buf, buffer, stdin, exec_info, NULL);
 
-	// Remove \n from buffer to ' '
-	char *current_pos = strchr(buffer, '\n');
-
-	while (current_pos) {
-		*current_pos = ' ';
-		current_pos = strchr(current_pos, '\n');
-	}
 	cmd_tokenize(buffer, exec_info);
 	free(line_buf);
 	free(buffer);
@@ -875,20 +858,20 @@ new_argument(struct exec_info *exec_info)
 {
 	if (strcmp
 	    (exec_info->sub_info->last_alias,
-	     get_last_command(exec_info->command)->argv[0]) != 0) {
-		if (check_alias_cmd(get_last_command(exec_info->command))) {
+	     exec_info->last_command->argv[0]) != 0) {
+		if (check_alias_cmd(exec_info->last_command)) {
 			strcpy(exec_info->sub_info->last_alias,
-			       get_last_command(exec_info->command)->argv[0]);
-			reset_last_arg(get_last_command(exec_info->command));
-			get_last_command(exec_info->command)->argc = 0;
-			get_last_command(exec_info->command)->current_arg =
-			    get_last_command(exec_info->command)->argv[0];
+			       exec_info->last_command->argv[0]);
+			reset_last_arg(exec_info->last_command);
+			exec_info->last_command->argc = 0;
+			exec_info->last_command->current_arg =
+			    exec_info->last_command->argv[0];
 			cmd_tokenize(get_alias(exec_info->sub_info->last_alias),
 				     exec_info);
 			return;
 		}
 	}
-	add_arg(get_last_command(exec_info->command));
+	add_arg(exec_info->last_command);
 }
 
 char *
@@ -936,28 +919,25 @@ cmdtok_redirect_out(char *line, struct exec_info *exec_info)
 	line = file_tokenize(line, exec_info);
 
 	if (exec_info->parse_info->has_arg_started) {
-		if (strcmp
-		    (get_last_command(exec_info->command)->current_arg,
-		     "2") == 0) {
-			reset_last_arg(get_last_command(exec_info->command));
+		if (strcmp(exec_info->last_command->current_arg, "2") == 0) {
+			reset_last_arg(exec_info->last_command);
 			if (set_file_cmd
-			    (get_last_command(exec_info->command), ERROR_WRITE,
+			    (exec_info->last_command, ERROR_WRITE,
 			     exec_info->file_info->buffer) < 0) {
 				return NULL;
 			}
 			return line;
 		} else
 		    if (strcmp
-			(get_last_command(exec_info->command)->current_arg,
-			 "&") == 0) {
-			reset_last_arg(get_last_command(exec_info->command));
+			(exec_info->last_command->current_arg, "&") == 0) {
+			reset_last_arg(exec_info->last_command);
 			if (set_file_cmd
-			    (get_last_command(exec_info->command), OUTPUT_WRITE,
+			    (exec_info->last_command, OUTPUT_WRITE,
 			     exec_info->file_info->buffer) < 0) {
 				return NULL;
 			}
 			if (set_file_cmd
-			    (get_last_command(exec_info->command),
+			    (exec_info->last_command,
 			     ERROR_AND_OUTPUT_WRITE,
 			     exec_info->file_info->buffer) < 0) {
 				return NULL;
@@ -965,14 +945,13 @@ cmdtok_redirect_out(char *line, struct exec_info *exec_info)
 			return line;
 		} else
 		    if (strcmp
-			(get_last_command(exec_info->command)->current_arg,
-			 "1") == 0) {
-			reset_last_arg(get_last_command(exec_info->command));
+			(exec_info->last_command->current_arg, "1") == 0) {
+			reset_last_arg(exec_info->last_command);
 		}
 	}
 
 	if (set_file_cmd
-	    (get_last_command(exec_info->command), OUTPUT_WRITE,
+	    (exec_info->last_command, OUTPUT_WRITE,
 	     exec_info->file_info->buffer) < 0) {
 		return NULL;
 	}
@@ -1013,6 +992,7 @@ new_exec_info(char *line)
 	}
 	memset(exec_info, 0, sizeof(struct exec_info));
 	exec_info->command = new_command();
+	exec_info->last_command = exec_info->command;
 	exec_info->parse_info = new_parse_info();
 	exec_info->sub_info = new_sub_info();
 	exec_info->file_info = new_file_info();

@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,7 +54,9 @@ int
 prompt_request()
 {
 	if (shell_mode == INTERACTIVE_MODE) {
-		printf("> ");
+		if (ftell(stdout) < 0) {
+			printf("> ");
+		}
 		fflush(stdout);
 	}
 	return 1;
@@ -74,10 +77,124 @@ parse_prompt(char *prompt, char *line)
 	char *rest_start = rest;
 
 	while ((token = strtok_r(rest, "@", &rest))) {
-		//printf("%s", token);
-		if (strstr(token, "user") == token) {
+		if (strstr(token, "ifcustom") == token) {
+			token += strlen("ifcustom");
+			struct stat buf;
+
+			if (stat(".mash_prompt", &buf) == 0) {
+				printf("%s", token);
+			} else {
+				while ((token = strtok_r(rest, "@", &rest))) {
+					if (strstr(token, "else") == token) {
+						token += strlen("else");
+						printf("%s", token);
+						break;
+					} else if (strstr(token, "endif") ==
+						   token) {
+						token += strlen("endif");
+						printf("%s", token);
+						break;
+					}
+				}
+			}
+			match = 1;
+		} else if (strstr(token, "ifgit") == token) {
+			fflush(stdout);
+			char *buffer = malloc(1024);
+
+			if (buffer == NULL)
+				err(EXIT_FAILURE, "malloc failed");
+			memset(buffer, 0, 1024);
+
+			strcpy(line, "git branch 2> /dev/null");
+
+			token += strlen("ifgit");
+
+			if (find_command(line, buffer, stdin, NULL, rest_start)
+			    == 0) {
+				printf("%s", token);
+			} else {
+				while ((token = strtok_r(rest, "@", &rest))) {
+					if (strstr(token, "else") == token) {
+						token += strlen("else");
+						printf("%s", token);
+						break;
+					} else if (strstr(token, "endif") ==
+						   token) {
+						token += strlen("endif");
+						printf("%s", token);
+						break;
+					}
+				}
+			}
+			free(buffer);
+			match = 1;
+		} else if (strstr(token, "else") == token) {
+			while ((token = strtok_r(rest, "@", &rest))) {
+				if (strstr(token, "endif") == token) {
+					token += strlen("endif");
+					printf("%s", token);
+					break;
+				}
+			}
+			match = 1;
+		} else if (strstr(token, "endif") == token) {
+			token += strlen("endif");
+			printf("%s", token);
+			match = 1;
+		} else if (strstr(token, "user") == token) {
 			token += strlen("user");
 			printf("%s%s", getpwuid(getuid())->pw_name, token);
+			match = 1;
+		} else if (strstr(token, "-") == token) {
+			token += strlen("-");
+			printf("%s", token);
+			match = 1;
+		} else if (strstr(token, "gitstatuscolor") == token) {
+			fflush(stdout);
+			char *buffer = malloc(1024);
+
+			if (buffer == NULL)
+				err(EXIT_FAILURE, "malloc failed");
+			memset(buffer, 0, 1024);
+
+			strcpy(line,
+			       "git status --porcelain 2> /dev/null | wc -l");
+
+			token += strlen("gitstatuscolor");
+			find_command(line, buffer, stdin, NULL, rest_start);
+
+			strtok(buffer, "\n");
+			if (atoi(buffer) > 0) {
+				printf("\033[01;31m%s", token);
+			} else {
+				printf("\033[01;32m%s", token);
+			}
+
+			free(buffer);
+			match = 1;
+		} else if (strstr(token, "gitstatus") == token) {
+			fflush(stdout);
+			char *buffer = malloc(1024);
+
+			if (buffer == NULL)
+				err(EXIT_FAILURE, "malloc failed");
+			memset(buffer, 0, 1024);
+
+			strcpy(line,
+			       "git status --porcelain 2> /dev/null | wc -l");
+
+			token += strlen("gitstatus");
+			find_command(line, buffer, stdin, NULL, rest_start);
+
+			strtok(buffer, "\n");
+			if (atoi(buffer) > 0) {
+				printf("|%s%s", buffer, token);
+			} else {
+				printf("%s", token);
+			}
+
+			free(buffer);
 			match = 1;
 		} else if (strstr(token, "green") == token) {
 			token += strlen("green");
@@ -97,7 +214,6 @@ parse_prompt(char *prompt, char *line)
 			match = 1;
 		} else if (strstr(token, "branch") == token) {
 			fflush(stdout);
-			//FIX: solve error message and space issue
 			char *buffer = malloc(1024);
 
 			if (buffer == NULL)
@@ -105,17 +221,14 @@ parse_prompt(char *prompt, char *line)
 			memset(buffer, 0, 1024);
 
 			strcpy(line,
-			       "git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/(\\1)/'");
+			       "git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/\\1/'");
 
 			token += strlen("branch");
-			if (find_command(line, buffer, stdin, NULL, rest_start)
-			    == 0) {
-				strtok(buffer, "\n");
-				if (strlen(buffer) > 0) {
-					printf("%s%s", buffer, token);
-				} else {
-					printf("%s", token);
-				}
+			find_command(line, buffer, stdin, NULL, rest_start);
+
+			strtok(buffer, "\n");
+			if (strlen(buffer) > 0) {
+				printf("%s%s", buffer, token);
 			} else {
 				printf("%s", token);
 			}
@@ -150,6 +263,24 @@ parse_prompt(char *prompt, char *line)
 			token += strlen("host");
 			printf("%s%s", hostname, token);
 			match = 1;
+		} else if (strstr(token, "custom") == token) {
+			fflush(stdout);
+			token += strlen("custom");
+			FILE *file_prompt = fopen(".mash_prompt", "r");
+			char *buffer = malloc(1024);
+
+			if (buffer == NULL)
+				err(EXIT_FAILURE, "malloc failed");
+			memset(buffer, 0, 1024);
+			while (fgets(buffer, 1024, file_prompt)) {
+				parse_prompt(buffer, line);
+			}
+			if (ferror(stdin)) {
+				err(EXIT_FAILURE, "fgets failed");
+			}
+			fclose(file_prompt);
+			free(buffer);
+			match = 1;
 		}
 		if (*rest == '@') {
 			printf("@");
@@ -157,7 +288,7 @@ parse_prompt(char *prompt, char *line)
 		if (match) {
 			match = 0;
 		} else {
-			printf("@%s", token);
+			printf("%s", token);
 		}
 	}
 
