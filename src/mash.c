@@ -66,7 +66,7 @@ main(int argc, char **argv)
 	// ------------
 	prompt(buf);
 	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
-		find_command(buf, NULL, stdin, NULL);
+		find_command(buf, NULL, stdin, NULL, NULL);
 
 		if (has_to_exit)
 			break;

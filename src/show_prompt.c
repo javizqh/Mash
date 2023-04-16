@@ -96,8 +96,8 @@ parse_prompt(char *prompt, char *line)
 			printf("\033[0m%s", token);
 			match = 1;
 		} else if (strstr(token, "branch") == token) {
+			fflush(stdout);
 			//FIX: solve error message and space issue
-			// Execute this git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/'
 			char *buffer = malloc(1024);
 
 			if (buffer == NULL)
@@ -108,7 +108,8 @@ parse_prompt(char *prompt, char *line)
 			       "git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/(\\1)/'");
 
 			token += strlen("branch");
-			if (find_command(line, buffer, stdin, NULL) == 0) {
+			if (find_command(line, buffer, stdin, NULL, rest_start)
+			    == 0) {
 				strtok(buffer, "\n");
 				if (strlen(buffer) > 0) {
 					printf("%s%s", buffer, token);

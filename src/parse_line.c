@@ -60,7 +60,7 @@ restore_parse_info(struct parse_info *parse_info)
 // ---------- Commands -------------
 int
 find_command(char *line, char *buffer, FILE * src_file,
-	     struct exec_info *prev_exec_info)
+	     struct exec_info *prev_exec_info, char *to_free_excess)
 {
 	int status = 0;
 	int status_for_next_cmd = DO_NOT_MATTER_TO_EXEC;
@@ -81,16 +81,20 @@ find_command(char *line, char *buffer, FILE * src_file,
 	while ((line = cmd_tokenize(line, exec_info))) {
 		switch (status_for_next_cmd) {
 		case DO_NOT_MATTER_TO_EXEC:
-			status = exec_pipe(src_file, exec_info);
+			status = exec_pipe(src_file, exec_info, to_free_excess);
 			break;
 		case EXECUTE_IN_SUCCESS:
 			if (status == 0) {
-				status = exec_pipe(src_file, exec_info);
+				status =
+				    exec_pipe(src_file, exec_info,
+					      to_free_excess);
 			}
 			break;
 		case EXECUTE_IN_FAILURE:
 			if (status != 0) {
-				status = exec_pipe(src_file, exec_info);
+				status =
+				    exec_pipe(src_file, exec_info,
+					      to_free_excess);
 			} else {
 				status = 0;
 			}
@@ -841,7 +845,7 @@ execute_token(char *line, struct exec_info *exec_info)
 	}
 	// Copy result into sub_info->buffer
 	// FIX: fix find_command call
-	find_command(line_buf, buffer, stdin, exec_info);
+	find_command(line_buf, buffer, stdin, exec_info, NULL);
 
 	// Remove \n from buffer to ' '
 	char *current_pos = strchr(buffer, '\n');

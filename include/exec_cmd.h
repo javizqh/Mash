@@ -15,7 +15,7 @@
 int find_path(struct command *command);
 int command_exists(char *path);
 
-int exec_pipe(FILE * src_file, struct exec_info *exec_info);
+int exec_pipe(FILE * src_file, struct exec_info *exec_info, char * to_free_excess);
 
 void exec_command(int buffer_pipe,struct command *command);
 

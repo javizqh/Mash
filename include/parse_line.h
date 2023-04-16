@@ -71,7 +71,7 @@ void reset_exec_info(struct exec_info * exec_info);
 void free_exec_info(struct exec_info * exec_info);
 
 // New TOKENIZATION Recursive
-int find_command(char *line, char *buffer, FILE * src_file, struct exec_info * prev_exec_info);
+int find_command(char *line, char *buffer, FILE * src_file, struct exec_info * prev_exec_info, char * to_free_excess);
 
 enum token {
 	CREATE_COMMAND_TO_START,

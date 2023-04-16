@@ -120,7 +120,7 @@ command_exists(char *path)
 }
 
 int
-exec_pipe(FILE * src_file, struct exec_info *exec_info)
+exec_pipe(FILE * src_file, struct exec_info *exec_info, char *to_free_excess)
 {
 	int wstatus;
 	int buffer_pipe[2] = { -1, -1 };
@@ -155,6 +155,7 @@ exec_pipe(FILE * src_file, struct exec_info *exec_info)
 	case 0:
 		command = exec_info->command;
 		free_exec_info(exec_info);
+		free(to_free_excess);
 		exit_mash();
 		if (command->input != STDIN_FILENO) {
 			if (src_file != stdin) {
