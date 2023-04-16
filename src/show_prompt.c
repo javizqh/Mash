@@ -278,6 +278,7 @@ parse_prompt(char *prompt, char *line)
 			if (ferror(stdin)) {
 				err(EXIT_FAILURE, "fgets failed");
 			}
+			fclose(file_prompt);
 			free(buffer);
 			match = 1;
 		}
