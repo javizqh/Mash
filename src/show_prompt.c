@@ -104,11 +104,52 @@ parse_prompt(char *prompt, char *line)
 					}
 				}
 			}
+			match = 1;
+		} else if (strstr(token, "ifgit") == token) {
+			fflush(stdout);
+			char *buffer = malloc(1024);
 
-			//printf("%s", token);
+			if (buffer == NULL)
+				err(EXIT_FAILURE, "malloc failed");
+			memset(buffer, 0, 1024);
+
+			strcpy(line, "git branch 2> /dev/null");
+
+			token += strlen("ifgit");
+
+			if (find_command(line, buffer, stdin, NULL, rest_start)
+			    == 0) {
+				printf("%s", token);
+			} else {
+				while ((token = strtok_r(rest, "@", &rest))) {
+					if (strstr(token, "else") == token) {
+						token += strlen("else");
+						printf("%s", token);
+						break;
+					} else if (strstr(token, "endif") ==
+						   token) {
+						token += strlen("endif");
+						printf("%s", token);
+						break;
+					}
+				}
+			}
+			free(buffer);
+			match = 1;
+		} else if (strstr(token, "else") == token) {
+			while ((token = strtok_r(rest, "@", &rest))) {
+				if (strstr(token, "endif") == token) {
+					token += strlen("endif");
+					printf("%s", token);
+					break;
+				}
+			}
+			match = 1;
+		} else if (strstr(token, "endif") == token) {
+			token += strlen("endif");
+			printf("%s", token);
 			match = 1;
 		} else if (strstr(token, "gitstatuscolor") == token) {
-			//git status --porcelain 2> /dev/null | wc -l
 			fflush(stdout);
 			char *buffer = malloc(1024);
 
@@ -131,18 +172,28 @@ parse_prompt(char *prompt, char *line)
 
 			free(buffer);
 			match = 1;
-		} else if (strstr(token, "else") == token) {
-			while ((token = strtok_r(rest, "@", &rest))) {
-				if (strstr(token, "endif") == token) {
-					token += strlen("endif");
-					printf("%s", token);
-					break;
-				}
+		} else if (strstr(token, "gitstatus") == token) {
+			fflush(stdout);
+			char *buffer = malloc(1024);
+
+			if (buffer == NULL)
+				err(EXIT_FAILURE, "malloc failed");
+			memset(buffer, 0, 1024);
+
+			strcpy(line,
+			       "git status --porcelain 2> /dev/null | wc -l");
+
+			token += strlen("gitstatus");
+			find_command(line, buffer, stdin, NULL, rest_start);
+
+			strtok(buffer, "\n");
+			if (atoi(buffer) > 0) {
+				printf("|%s%s", buffer, token);
+			} else {
+				printf("%s", token);
 			}
-			match = 1;
-		} else if (strstr(token, "endif") == token) {
-			token += strlen("endif");
-			printf("%s", token);
+
+			free(buffer);
 			match = 1;
 		} else if (strstr(token, "green") == token) {
 			token += strlen("green");
@@ -169,7 +220,7 @@ parse_prompt(char *prompt, char *line)
 			memset(buffer, 0, 1024);
 
 			strcpy(line,
-			       "git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/(\\1)/'");
+			       "git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/\\1/'");
 
 			token += strlen("branch");
 			find_command(line, buffer, stdin, NULL, rest_start);
