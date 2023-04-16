@@ -28,6 +28,8 @@
 #include "builtin/exit.h"
 #include "mash.h"
 
+int reading_from_file = 0;
+
 int
 main(int argc, char **argv)
 {
@@ -36,6 +38,9 @@ main(int argc, char **argv)
 	// TODO: add proper check
 	if (argc == 1 && strcmp(argv[0], "-i") == 0) {
 		shell_mode = INTERACTIVE_MODE;
+	}
+	if (ftell(stdin) >= 0) {
+		reading_from_file = 1;
 	}
 
 	add_source("env/.mashrc");

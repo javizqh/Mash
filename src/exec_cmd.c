@@ -30,6 +30,7 @@
 #include "builtin/alias.h"
 #include "builtin/exit.h"
 #include "parse_line.h"
+#include "mash.h"
 #include "exec_cmd.h"
 
 int
@@ -155,8 +156,17 @@ exec_pipe(FILE * src_file, struct exec_info *exec_info)
 		command = exec_info->command;
 		free_exec_info(exec_info);
 		exit_mash();
-		if (src_file != stdin)
-			fclose(src_file);
+		if (command->input != STDIN_FILENO) {
+			if (src_file != stdin) {
+				fclose(src_file);
+			}
+		}
+		if (reading_from_file) {
+			fclose(stdin);
+		}
+		if (command->output != STDOUT_FILENO) {
+			fclose(stdout);
+		}
 		close_fd(buffer_pipe[0]);
 		exec_command(buffer_pipe[1], command);
 		err(EXIT_FAILURE, "Failed to exec");
@@ -279,6 +289,7 @@ exec_child(struct command *command, struct command *start_command,
 				command->argv[0]);
 			close_fd(command->fd_pipe_input[0]);
 			close_fd(command->fd_pipe_output[1]);
+			free_command_with_buf(start_command);
 			exit(EXIT_FAILURE);
 		}
 
@@ -299,6 +310,7 @@ exec_child(struct command *command, struct command *start_command,
 			}
 		}
 		args[i] = NULL;
+		//free_command_with_buf(command->pipe_next);
 		execv(args[0], args);
 	}
 }
