@@ -26,15 +26,23 @@
 #include "parse_line.h"
 #include "show_prompt.h"
 
+int shell_mode = NON_INTERACTIVE;
+
+void
+set_prompt_mode(int mode)
+{
+	shell_mode = mode;
+}
+
 int
-prompt(int mode)
+prompt(char *line)
 {
 	char *result = getenv("result");
 
-	if (mode == INTERACTIVE_MODE) {
+	if (shell_mode == INTERACTIVE_MODE) {
 		char *prompt = getenv("PROMPT");
 
-		parse_prompt(prompt);
+		parse_prompt(prompt, line);
 		fflush(stdout);
 	}
 	add_env_by_name("result", result);
@@ -42,7 +50,17 @@ prompt(int mode)
 }
 
 int
-parse_prompt(char *prompt)
+prompt_request()
+{
+	if (shell_mode == INTERACTIVE_MODE) {
+		printf("> ");
+		fflush(stdout);
+	}
+	return 1;
+};
+
+int
+parse_prompt(char *prompt, char *line)
 {
 	int match = 0;
 	char *token;
@@ -78,21 +96,26 @@ parse_prompt(char *prompt)
 			printf("\033[0m%s", token);
 			match = 1;
 		} else if (strstr(token, "branch") == token) {
+			fflush(stdout);
 			//FIX: solve error message and space issue
-			// Execute this git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/(\1)/'
-			char *buffer = malloc(sizeof(char) * 1024);
+			char *buffer = malloc(1024);
 
 			if (buffer == NULL)
 				err(EXIT_FAILURE, "malloc failed");
-			memset(buffer, 0, sizeof(char) * 1024);
+			memset(buffer, 0, 1024);
 
-			if (find_command
-			    ("git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/(\\1)/'",
-			     buffer, stdin) == 0) {
+			strcpy(line,
+			       "git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \\(.*\\)/(\\1)/'");
 
+			token += strlen("branch");
+			if (find_command(line, buffer, stdin, NULL, rest_start)
+			    == 0) {
 				strtok(buffer, "\n");
-				token += strlen("branch");
-				printf("%s%s", buffer, token);
+				if (strlen(buffer) > 0) {
+					printf("%s%s", buffer, token);
+				} else {
+					printf("%s", token);
+				}
 			} else {
 				printf("%s", token);
 			}

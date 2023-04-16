@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+extern int reading_from_file;
+
 int main(int argc, char **argv);

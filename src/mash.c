@@ -28,16 +28,19 @@
 #include "builtin/exit.h"
 #include "mash.h"
 
+int reading_from_file = 0;
+
 int
 main(int argc, char **argv)
 {
-	int shell_mode = NON_INTERACTIVE;
-
 	argc--;
 	argv++;
 	// TODO: add proper check
 	if (argc == 1 && strcmp(argv[0], "-i") == 0) {
 		shell_mode = INTERACTIVE_MODE;
+	}
+	if (ftell(stdin) >= 0) {
+		reading_from_file = 1;
 	}
 
 	add_source("env/.mashrc");
@@ -61,14 +64,14 @@ main(int argc, char **argv)
 	}
 	memset(buf, 0, 1024);
 	// ------------
-	prompt(shell_mode);
+	prompt(buf);
 	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
-		find_command(buf, NULL, stdin);
+		find_command(buf, NULL, stdin, NULL, NULL);
 
 		if (has_to_exit)
 			break;
 
-		prompt(shell_mode);
+		prompt(buf);
 	}
 
 	if (ferror(stdin)) {

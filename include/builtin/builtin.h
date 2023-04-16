@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//#include <stdio.h>
-//#include "builtin/command.h"
-//
-//int find_builtin(struct command *command);
-//
-//void exec_builtin(struct command *command);
+/**
+ * @brief Executes builtins that need to be executed in the parent process
+ * 
+ * @param command 
+ * @return 1 = Need to execute in child | 0 = Executed in parent process
+ */
+int has_builtin_exec_in_shell(struct command *command);
+int exec_builtin_in_shell(struct command *command);
+
+int find_builtin(struct command *command);
+void exec_builtin(struct command *start_scommand, struct command *command);
