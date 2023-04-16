@@ -77,16 +77,7 @@ parse_prompt(char *prompt, char *line)
 	char *rest_start = rest;
 
 	while ((token = strtok_r(rest, "@", &rest))) {
-		//printf("%s", token);
-		if (strstr(token, "user") == token) {
-			token += strlen("user");
-			printf("%s%s", getpwuid(getuid())->pw_name, token);
-			match = 1;
-		} else if (strstr(token, "-") == token) {
-			token += strlen("-");
-			printf("%s", token);
-			match = 1;
-		} else if (strstr(token, "ifcustom") == token) {
+		if (strstr(token, "ifcustom") == token) {
 			token += strlen("ifcustom");
 			struct stat buf;
 
@@ -149,6 +140,14 @@ parse_prompt(char *prompt, char *line)
 			match = 1;
 		} else if (strstr(token, "endif") == token) {
 			token += strlen("endif");
+			printf("%s", token);
+			match = 1;
+		} else if (strstr(token, "user") == token) {
+			token += strlen("user");
+			printf("%s%s", getpwuid(getuid())->pw_name, token);
+			match = 1;
+		} else if (strstr(token, "-") == token) {
+			token += strlen("-");
 			printf("%s", token);
 			match = 1;
 		} else if (strstr(token, "gitstatuscolor") == token) {
