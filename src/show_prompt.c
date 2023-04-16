@@ -54,7 +54,9 @@ int
 prompt_request()
 {
 	if (shell_mode == INTERACTIVE_MODE) {
-		printf("> ");
+		if (ftell(stdout) < 0) {
+			printf("> ");
+		}
 		fflush(stdout);
 	}
 	return 1;
@@ -88,7 +90,7 @@ parse_prompt(char *prompt, char *line)
 			token += strlen("ifcustom");
 			struct stat buf;
 
-			if (stat(".mash_custprompt", &buf) == 0) {
+			if (stat(".mash_prompt", &buf) == 0) {
 				printf("%s", token);
 			} else {
 				while ((token = strtok_r(rest, "@", &rest))) {
@@ -262,6 +264,23 @@ parse_prompt(char *prompt, char *line)
 			token += strlen("host");
 			printf("%s%s", hostname, token);
 			match = 1;
+		} else if (strstr(token, "custom") == token) {
+			fflush(stdout);
+			token += strlen("custom");
+			FILE *file_prompt = fopen(".mash_prompt", "r");
+			char *buffer = malloc(1024);
+
+			if (buffer == NULL)
+				err(EXIT_FAILURE, "malloc failed");
+			memset(buffer, 0, 1024);
+			while (fgets(buffer, 1024, file_prompt)) {
+				parse_prompt(buffer, line);
+			}
+			if (ferror(stdin)) {
+				err(EXIT_FAILURE, "fgets failed");
+			}
+			free(buffer);
+			match = 1;
 		}
 		if (*rest == '@') {
 			printf("@");
@@ -269,7 +288,7 @@ parse_prompt(char *prompt, char *line)
 		if (match) {
 			match = 0;
 		} else {
-			printf("@%s", token);
+			printf("%s", token);
 		}
 	}
 
