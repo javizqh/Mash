@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+extern pid_t active_command;
+
 int find_path(struct command *command);
 int command_exists(char *path);
 

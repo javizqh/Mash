@@ -14,6 +14,7 @@
 
 #include <unistd.h>
 #include <sys/types.h>
+#include <signal.h>
 #include <pwd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,6 +27,7 @@
 #include "parse_line.h"
 #include "show_prompt.h"
 #include "builtin/exit.h"
+#include "exec_cmd.h"
 #include "mash.h"
 
 int reading_from_file = 0;
@@ -42,6 +44,9 @@ main(int argc, char **argv)
 	if (ftell(stdin) >= 0) {
 		reading_from_file = 1;
 	}
+
+	signal(SIGINT, sig_handler);
+	signal(SIGTSTP, sig_handler);
 
 	add_source("env/.mashrc");
 	exec_sources();
@@ -80,4 +85,19 @@ main(int argc, char **argv)
 
 	free(buf);
 	return 0;
+}
+
+void
+sig_handler(int sig)
+{
+	switch (sig) {
+	case SIGINT:
+	case SIGTSTP:
+		if (active_command) {
+			kill(active_command, sig);
+		}
+		break;
+	default:
+		break;
+	}
 }

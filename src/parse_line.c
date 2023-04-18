@@ -390,7 +390,13 @@ cmd_tokenize(char *ptr, struct exec_info *exec_info)
 			} else {
 				exec_info->parse_info->do_not_expect_new_cmd =
 				    1;
-				//do_not_wait_commands(cmd_array);
+				exec_info->last_command->do_wait =
+				    DO_NOT_WAIT_TO_FINISH;
+				if (set_file_cmd
+				    (exec_info->command, INPUT_READ,
+				     "/dev/null") < 0) {
+					return NULL;
+				}
 				ptr--;
 			}
 			exec_info->parse_info->has_arg_started =
@@ -833,8 +839,7 @@ execute_token(char *line, struct exec_info *exec_info)
 			break;
 		}
 	}
-	// Copy result into sub_info->buffer
-	// FIX: fix find_command call
+
 	find_command(line_buf, buffer, stdin, exec_info, NULL);
 
 	cmd_tokenize(buffer, exec_info);
