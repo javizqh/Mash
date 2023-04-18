@@ -272,14 +272,28 @@ parse_prompt(char *prompt, char *line)
 			if (buffer == NULL)
 				err(EXIT_FAILURE, "malloc failed");
 			memset(buffer, 0, 1024);
-			while (fgets(buffer, 1024, file_prompt)) {
-				parse_prompt(buffer, line);
+			char *orig_buffer = buffer;
+
+			fgets(buffer, 1024, file_prompt);
+			char *tmp = malloc(1024);
+
+			if (tmp == NULL) {
+				err(EXIT_FAILURE, "malloc failed");
 			}
+			memset(tmp, 0, 1024);
+			if (strstr(buffer, "@") == buffer) {
+				buffer++;
+			}
+			strcpy(tmp, buffer);
+			strcat(tmp, "@");
+			strcat(tmp, rest);
+			strcpy(rest, tmp);
+			free(tmp);
 			if (ferror(stdin)) {
 				err(EXIT_FAILURE, "fgets failed");
 			}
 			fclose(file_prompt);
-			free(buffer);
+			free(orig_buffer);
 			match = 1;
 		}
 		if (*rest == '@') {

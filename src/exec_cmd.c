@@ -195,8 +195,9 @@ exec_pipe(FILE * src_file, struct exec_info *exec_info, char *to_free_excess)
 				    read(buffer_pipe[0], buffer_stdout, count);
 				if (bytes_stdout > 0) {
 					strcat(get_last_command
-					       (exec_info->command)->
-					       output_buffer, buffer_stdout);
+					       (exec_info->
+						command)->output_buffer,
+					       buffer_stdout);
 				}
 			} while (bytes_stdout > 0);
 			close_fd(buffer_pipe[0]);
