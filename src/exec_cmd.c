@@ -30,6 +30,7 @@
 #include "builtin/alias.h"
 #include "builtin/exit.h"
 #include "parse_line.h"
+#include "builtin/jobs.h"
 #include "mash.h"
 #include "exec_cmd.h"
 
@@ -121,162 +122,12 @@ command_exists(char *path)
 	return 0;
 }
 
-int
-exec_pipe(FILE * src_file, struct exec_info *exec_info, char *to_free_excess)
-{
-	int wstatus;
-	int buffer_pipe[2] = { -1, -1 };
-	pid_t pid;
-	struct command *command;
-
-	if (get_last_command(exec_info->command)->output_buffer != NULL) {
-		pipe(buffer_pipe);
-	}
-
-	if (has_builtin_exec_in_shell(exec_info->command)) {
-		return exec_builtin_in_shell(exec_info->command);
-	}
-
-	pid = fork();
-
-	switch (pid) {
-	case -1:
-		free(exec_info->parse_info);
-		free(exec_info->file_info);
-		free(exec_info->sub_info);
-		free(exec_info->line);
-		free_command_with_buf(exec_info->command);
-		exit_mash();
-		fclose(src_file);
-		if (src_file != stdin)
-			fclose(stdin);
-		fclose(stdout);
-		fclose(stderr);
-		err(EXIT_FAILURE, "Failed to fork");
-		break;
-	case 0:
-		command = exec_info->command;
-		free_exec_info(exec_info);
-		free(to_free_excess);
-		exit_mash();
-		if (command->input != STDIN_FILENO) {
-			if (src_file != stdin) {
-				fclose(src_file);
-			}
-		}
-		if (reading_from_file) {
-			fclose(stdin);
-		}
-		if (command->output != STDOUT_FILENO) {
-			fclose(stdout);
-		}
-		close_fd(buffer_pipe[0]);
-		exec_command(buffer_pipe[1], command);
-		err(EXIT_FAILURE, "Failed to exec");
-		break;
-	default:
-		active_command = pid;
-		close_all_fd(exec_info->command);
-		close_fd(buffer_pipe[1]);
-		ssize_t count = MAX_BUFFER_IO_SIZE;
-		ssize_t bytes_stdout;
-
-		if (buffer_pipe[0] >= 0) {
-			// Create stdout buffer
-			char *buffer_stdout =
-			    malloc(sizeof(char[MAX_BUFFER_IO_SIZE]));
-
-			if (buffer_stdout == NULL) {
-				err(EXIT_FAILURE, "malloc failed");
-			}
-			memset(buffer_stdout, 0, MAX_BUFFER_IO_SIZE);
-			do {
-				bytes_stdout =
-				    read(buffer_pipe[0], buffer_stdout, count);
-				if (bytes_stdout > 0) {
-					strcat(get_last_command
-					       (exec_info->
-						command)->output_buffer,
-					       buffer_stdout);
-				}
-			} while (bytes_stdout > 0);
-			close_fd(buffer_pipe[0]);
-			free(buffer_stdout);
-		}
-		if (exec_info->last_command->do_wait != WAIT_TO_FINISH) {
-			//TODO: have a list to store the surpressed command and later check
-			printf("[1] %d\n", pid);
-			return EXIT_SUCCESS;
-		}
-		// REVIEW: PROBLEM WITH NOT WAITING FOR COMMANDS AFTER USING BACKGROUND BECAUSE IS WAITING FOR BACKGROUND
-		if (waitpid(pid, &wstatus, WUNTRACED) == -1) {
-			perror("waitpid failed");
-			return EXIT_FAILURE;
-		}
-		if (WIFEXITED(wstatus)) {
-			active_command = 0;
-			return WEXITSTATUS(wstatus);
-		}
-		break;
-	}
-	return EXIT_FAILURE;
-}
-
 void
-exec_command(int buffer_pipe, struct command *command)
-{
-
-	int cmd_to_wait = 0;
-
-	struct command *current_command = command;
-
-	set_input_shell_pipe(command);
-	set_output_shell_pipe(command);
-	set_err_output_shell_pipe(command);
-
-	// Make a loop fork each command
-	do {
-		if (cmd_to_wait > 0) {
-			current_command = current_command->pipe_next;
-		}
-		current_command->pid = fork();
-		cmd_to_wait++;
-	} while (current_command->pid != 0
-		 && current_command->pipe_next != NULL);
-
-	switch (current_command->pid) {
-	case -1:
-		close_all_fd(command);
-		free_command_with_buf(command);
-		err(EXIT_FAILURE, "Failed to fork");
-		break;
-	case 0:
-		close_fd(buffer_pipe);
-		exec_child(current_command, command,
-			   current_command->pipe_next);
-		err(EXIT_FAILURE, "Failed to exec");
-		break;
-	default:
-		close_all_fd_io(command, current_command);
-		if (command->input == HERE_DOC_FILENO) {
-			read_from_here_doc(command);
-		} else {
-			read_from_file(command);
-		}
-		write_to_file_or_buffer(buffer_pipe, current_command);
-
-		wait_childs(command, current_command, cmd_to_wait);
-		break;
-	}
-	exit(EXIT_FAILURE);
-}
-
-void
-exec_child(struct command *command, struct command *start_command,
-	   struct command *last_command)
+exec_cmd(struct command *command, struct command *start_command,
+	 struct command *last_command)
 {
 	int i;
-	char *args[command->argc];
+	char *args[command->argc + 1];
 
 	close_all_fd_cmd(command, start_command);
 	redirect_stdin(command, start_command);
@@ -294,7 +145,7 @@ exec_child(struct command *command, struct command *start_command,
 		exec_builtin(start_command, command);
 		exit(EXIT_FAILURE);
 	} else {
-
+		exit_mash();
 		if (!find_path(command)) {
 			fprintf(stderr, "%s: command not found\n",
 				command->argv[0]);
@@ -315,46 +166,12 @@ exec_child(struct command *command, struct command *start_command,
 				args[i] = command->argv[i];
 			} else {
 				args[i] = NULL;
+				break;
 			}
 		}
 		args[i] = NULL;
 		execv(args[0], args);
 	}
-}
-
-void
-wait_childs(struct command *start_command, struct command *last_command,
-	    int n_cmds)
-{
-	int wstatus;
-	int proc_finished;
-	pid_t wait_pid;
-	struct command *current_command = start_command;
-	struct command *command_to_free = current_command;
-
-	for (proc_finished = 0; proc_finished < n_cmds; proc_finished++) {
-		wait_pid = waitpid(current_command->pid, &wstatus, WUNTRACED);
-		if (wait_pid == -1) {
-			perror("waitpid failed");
-			free_command_with_buf(start_command);
-			exit(EXIT_FAILURE);
-		}
-		if (WIFEXITED(wstatus)) {
-			// If last command then save return value
-			if (wait_pid == last_command->pid) {
-				if (current_command->output_buffer != NULL) {
-					free(current_command->output_buffer);
-				}
-				free(current_command);
-				exit(WEXITSTATUS(wstatus));
-			}
-		}
-		current_command = current_command->pipe_next;
-		command_to_free->pipe_next = NULL;
-		free(command_to_free);
-		command_to_free = current_command;
-	}
-	exit(EXIT_FAILURE);
 }
 
 // Redirect input and output: Parent
@@ -424,7 +241,7 @@ read_from_file(struct command *start_command)
 }
 
 void
-write_to_file_or_buffer(int buffer_pipe, struct command *last_command)
+write_to_file_or_buffer(struct command *last_command)
 {
 	if ((last_command->output == STDOUT_FILENO
 	     && last_command->output_buffer == NULL)
@@ -452,20 +269,23 @@ write_to_file_or_buffer(int buffer_pipe, struct command *last_command)
 			    last_command->output) {
 				write(last_command->err_output, buffer_stdout,
 				      bytes_stdout);
+				if (last_command->output_buffer != NULL) {
+					strcat(last_command->output_buffer,
+					       buffer_stdout);
+				}
 			} else {
 				if (last_command->output_buffer == NULL) {
 					write(last_command->output,
 					      buffer_stdout, bytes_stdout);
 				} else {
-					write(buffer_pipe, buffer_stdout,
-					      bytes_stdout);
+					strcat(last_command->output_buffer,
+					       buffer_stdout);
 				}
 			}
 		}
 	} while (bytes_stdout > 0);
 	free(buffer_stdout);
 	close_fd(last_command->fd_pipe_output[0]);
-	close_fd(buffer_pipe);
 	if (last_command->output != STDOUT_FILENO) {
 		close_fd(last_command->output);
 	}
@@ -517,7 +337,7 @@ redirect_stderr(struct command *command, struct command *last_command)
 
 // File descriptor
 
-void
+int
 set_input_shell_pipe(struct command *start_command)
 {
 	// SET INPUT PIPE
@@ -526,14 +346,15 @@ set_input_shell_pipe(struct command *start_command)
 		if (pipe(fd_write_shell) < 0) {
 			fprintf(stderr, "Failed to pipe to stdin");
 			free_command_with_buf(start_command);
-			exit(EXIT_FAILURE);
+			return 1;
 		}
 		start_command->fd_pipe_input[0] = fd_write_shell[0];
 		start_command->fd_pipe_input[1] = fd_write_shell[1];
 	}
+	return 0;
 }
 
-void
+int
 set_output_shell_pipe(struct command *start_command)
 {
 	// SET OUTOUT PIPE
@@ -546,14 +367,15 @@ set_output_shell_pipe(struct command *start_command)
 		if (pipe(fd_read_shell) < 0) {
 			fprintf(stderr, "Failed to pipe to stdout");
 			free_command_with_buf(start_command);
-			exit(EXIT_FAILURE);
+			return 1;
 		}
 		last_command->fd_pipe_output[0] = fd_read_shell[0];
 		last_command->fd_pipe_output[1] = fd_read_shell[1];
 	}
+	return 0;
 }
 
-void
+int
 set_err_output_shell_pipe(struct command *start_command)
 {
 	// SET OUTOUT PIPE
@@ -566,11 +388,12 @@ set_err_output_shell_pipe(struct command *start_command)
 		if (pipe(fd_read_shell) < 0) {
 			fprintf(stderr, "Failed to pipe to stderr");
 			free_command_with_buf(start_command);
-			exit(EXIT_FAILURE);
+			return 1;
 		}
 		last_command->fd_pipe_output[0] = fd_read_shell[0];
 		last_command->fd_pipe_output[1] = fd_read_shell[1];
 	}
+	return 0;
 }
 
 int

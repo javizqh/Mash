@@ -12,10 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdio.h>
 #include <stdlib.h>
-#include "builtin/exit.h"
+#include "open_files.h"
+#include "builtin/command.h"
+#include "builtin/builtin.h"
+#include "builtin/export.h"
 #include "builtin/source.h"
 #include "builtin/alias.h"
+#include "parse_line.h"
+#include "builtin/jobs.h"
+#include "builtin/exit.h"
 
 int has_to_exit = 0;
 
@@ -30,6 +37,8 @@ exit_mash()
 	}
 
   free_source_file();
+
+	free_jobs_list();
 
 	has_to_exit = 1;
   return EXIT_SUCCESS;

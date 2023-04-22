@@ -29,6 +29,7 @@
 #include "builtin/exit.h"
 #include "exec_cmd.h"
 #include "mash.h"
+#include "builtin/jobs.h"
 
 int reading_from_file = 0;
 
@@ -48,6 +49,7 @@ main(int argc, char **argv)
 	signal(SIGINT, sig_handler);
 	signal(SIGTSTP, sig_handler);
 
+	init_jobs_list();
 	add_source("env/.mashrc");
 	exec_sources();
 
@@ -73,9 +75,10 @@ main(int argc, char **argv)
 	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
 		find_command(buf, NULL, stdin, NULL, NULL);
 
-		if (has_to_exit)
+		if (has_to_exit) {
 			break;
-
+		}
+		update_jobs();
 		prompt(buf);
 	}
 
@@ -92,10 +95,10 @@ sig_handler(int sig)
 {
 	switch (sig) {
 	case SIGINT:
+		end_current_job();
+		break;
 	case SIGTSTP:
-		if (active_command) {
-			kill(active_command, sig);
-		}
+		stop_current_job();
 		break;
 	default:
 		break;
