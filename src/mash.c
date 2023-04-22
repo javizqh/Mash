@@ -86,6 +86,9 @@ main(int argc, char **argv)
 		err(EXIT_FAILURE, "fgets failed");
 	}
 
+	if (!has_to_exit) {
+		exit_mash();
+	}
 	free(buf);
 	return 0;
 }
