@@ -1,1 +1,1 @@
-@pinkIn MASH@nocolor:@blue@where@nocolor @ifgit@gitstatuscolor(@branch@gitstatus)@nocolor @endif
+@pinkIn MASH@nocolor:@blue@where@nocolor @ifgit@gitstatuscolorgit:(@branch@gitstatus)@nocolor @endif

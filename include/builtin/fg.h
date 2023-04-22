@@ -12,34 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "open_files.h"
-#include "builtin/command.h"
-#include "builtin/builtin.h"
-#include "builtin/export.h"
-#include "builtin/source.h"
-#include "builtin/alias.h"
-#include "parse_line.h"
-#include "builtin/jobs.h"
-#include "builtin/exit.h"
-
-int has_to_exit = 0;
-
-int
-exit_mash()
-{
-	int i;
-
-  for (i = 0; i < ALIAS_MAX; i++) {
-		if (aliases[i] == NULL) break;
-		free(aliases[i]);
-	}
-
-  free_source_file();
-
-	free_jobs_list();
-
-	has_to_exit = 1;
-  return EXIT_SUCCESS;
-}
+int fg(int argc, char *argv[]);

@@ -12,34 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <unistd.h>
+#include <err.h>
+#include <errno.h>
+#include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "open_files.h"
 #include "builtin/command.h"
 #include "builtin/builtin.h"
 #include "builtin/export.h"
 #include "builtin/source.h"
 #include "builtin/alias.h"
+#include "builtin/exit.h"
 #include "parse_line.h"
 #include "builtin/jobs.h"
-#include "builtin/exit.h"
+#include "builtin/fg.h"
 
-int has_to_exit = 0;
+static int usage() {
+  fprintf(stderr,"Usage: fg [jobspec]\n");
+	return EXIT_FAILURE;
+}
 
-int
-exit_mash()
-{
-	int i;
-
-  for (i = 0; i < ALIAS_MAX; i++) {
-		if (aliases[i] == NULL) break;
-		free(aliases[i]);
-	}
-
-  free_source_file();
-
-	free_jobs_list();
-
-	has_to_exit = 1;
-  return EXIT_SUCCESS;
+int fg(int argc, char *argv[]) {
+  argc--;argv++;
+  struct job * job;
+  if (argc == 0) {
+    job = get_job(get_relevance_job_pid(0));
+  } else if (argc == 1) {
+    job = get_job(substitute_jobspec(argv[0]));
+    if (job == NULL) {
+      return usage(); 
+    }
+  } else {
+    return usage();
+  }
+  job->execution = FOREGROUND;
+  job->state = RUNNING;
+  kill(job->pid, SIGCONT);
+  return wait_job(job);
 }

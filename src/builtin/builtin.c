@@ -16,16 +16,23 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "open_files.h"
 #include "builtin/command.h"
 #include "builtin/export.h"
 #include "builtin/source.h"
 #include "builtin/alias.h"
 #include "builtin/exit.h"
 #include "builtin/cd.h"
+#include "parse_line.h"
+#include "mash.h"
+#include "exec_cmd.h"
+#include "builtin/jobs.h"
+#include "builtin/fg.h"
+#include "builtin/bg.h"
 #include "builtin/builtin.h"
 
-char *builtins_in_shell[5] = {"cd","export","alias","exit","source"};
-char *builtins_fork[1] = {"echo"};
+char *builtins_in_shell[8] = {"bg","fg","cd","export","alias","exit","source","."};
+char *builtins_fork[2] = {"echo","jobs"};
 
 int
 has_builtin_exec_in_shell(struct command *command)
@@ -40,7 +47,7 @@ has_builtin_exec_in_shell(struct command *command)
 		return 1;
 	}
 
-  for (i = 0; i < 5; i++)
+  for (i = 0; i < 8; i++)
   {
     if (strcmp(command->argv[0], builtins_in_shell[i]) == 0) {
       return 1;
@@ -53,6 +60,18 @@ has_builtin_exec_in_shell(struct command *command)
 int
 exec_builtin_in_shell(struct command *command)
 {
+	int i;
+	char *args[command->argc];
+	for (i = 0; i < command->argc; i++) {
+		if (strlen(command->argv[i]) > 0) {
+			args[i] = command->argv[i];
+		} else {
+			args[i] = NULL;
+		}
+	}
+	args[i] = NULL;
+
+
 	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
 		return add_env(command->argv[0]);
 	}
@@ -62,11 +81,23 @@ exec_builtin_in_shell(struct command *command)
 	} else if (strcmp(command->argv[0], "export") == 0) {
 		return add_env(command->argv[1]);
 	} else if (strcmp(command->argv[0], "exit") == 0) {
+		// TODO: check if stopped jobs
+		if (are_jobs_stopped()) {
+			fprintf(stderr, "Mash: couldn't exit because there are stopped jobs\n");
+			return EXIT_FAILURE;
+		}
+		wait_all_jobs();
 		return exit_mash();
 	} else if (strcmp(command->argv[0], "source") == 0) {
 		return add_source(command->argv[1]);
+	} else if (strcmp(command->argv[0], ".") == 0) {
+		return add_source(command->argv[1]);
 	} else if (strcmp(command->argv[0], "cd") == 0) {
 		return cd(command);
+	} else if (strcmp(command->argv[0], "fg") == 0) {
+		return fg(i,args);
+	} else if (strcmp(command->argv[0], "bg") == 0) {
+		return bg(i,args);
 	}
 	return 1;
 }
@@ -75,7 +106,7 @@ int
 find_builtin(struct command *command)
 {
   int i;
-  for (i = 0; i < 1; i++)
+  for (i = 0; i < 2; i++)
   {
     if (strcmp(command->argv[0], builtins_fork[i]) == 0) {
       return 1;
@@ -88,21 +119,37 @@ find_builtin(struct command *command)
 void
 exec_builtin(struct command *start_scommand, struct command *command)
 {
-	// FIX: solve valgrind warnings
-	if (strcmp(command->argv[0], "echo") == 0) {
+	int i;
+	int return_value = 0;
+	char *args[command->argc + 1];
+	for (i = 0; i < command->argc; i++) {
+		if (strlen(command->argv[i]) > 0) {
+			args[i] = command->argv[i];
+		} else {
+			args[i] = NULL;
+			break;
+		}
+	}
+	args[i] = NULL;
+	if (strcmp(args[0], "echo") == 0) {
 		// If doesn't contain alias
-		int i;
-
 		for (i = 1; i < command->argc; i++) {
 			printf("%s ",
 				command->argv[i]);
 		}
 		printf("\n");
 		free_command_with_buf(start_scommand);
+		exit_mash();
 		exit(EXIT_SUCCESS);
+	} else if (strcmp(args[0], "jobs") == 0) {
+		return_value = jobs(i,args);
+		free_command_with_buf(start_scommand);
+		exit_mash();
+		exit(return_value);
 	} else {
     exec_builtin_in_shell(command);
     free_command_with_buf(start_scommand);
+		exit_mash();
     exit(EXIT_SUCCESS);
   }
 	return;

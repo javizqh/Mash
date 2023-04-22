@@ -28,6 +28,7 @@
 #include "parse_line.h"
 #include "show_prompt.h"
 #include "exec_cmd.h"
+#include "builtin/jobs.h"
 
 // ------ Parse info --------
 
@@ -81,20 +82,21 @@ find_command(char *line, char *buffer, FILE * src_file,
 	while ((line = cmd_tokenize(line, exec_info))) {
 		switch (status_for_next_cmd) {
 		case DO_NOT_MATTER_TO_EXEC:
-			status = exec_pipe(src_file, exec_info, to_free_excess);
+			status =
+			    launch_job(src_file, exec_info, to_free_excess);
 			break;
 		case EXECUTE_IN_SUCCESS:
 			if (status == 0) {
 				status =
-				    exec_pipe(src_file, exec_info,
-					      to_free_excess);
+				    launch_job(src_file, exec_info,
+					       to_free_excess);
 			}
 			break;
 		case EXECUTE_IN_FAILURE:
 			if (status != 0) {
 				status =
-				    exec_pipe(src_file, exec_info,
-					      to_free_excess);
+				    launch_job(src_file, exec_info,
+					       to_free_excess);
 			} else {
 				status = 0;
 			}

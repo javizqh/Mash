@@ -17,15 +17,10 @@ extern pid_t active_command;
 int find_path(struct command *command);
 int command_exists(char *path);
 
-int exec_pipe(FILE * src_file, struct exec_info *exec_info, char * to_free_excess);
-
-void exec_command(int buffer_pipe,struct command *command);
-
-void exec_child(struct command *command, struct command *start_command,
+void exec_cmd(struct command *command, struct command *start_command,
 		struct command *last_command);
 
-void wait_childs(struct command *start_command, struct command *last_command,
-		int n_cmds);
+int wait_childs(struct command *start_command, struct command *last_command);
 
 // Redirect input and output: Parent
 enum iobuffer {
@@ -34,7 +29,7 @@ enum iobuffer {
 
 void read_from_here_doc(struct command *start_command);
 void read_from_file(struct command *start_command);
-void write_to_file_or_buffer(int buffer_pipe, struct command *last_command);
+void write_to_file_or_buffer(struct command *last_command);
 
 // Redirect input and output: Child
 void redirect_stdin(struct command *command, struct command *start_command);
@@ -42,9 +37,9 @@ void redirect_stdout(struct command *command, struct command *last_command);
 void redirect_stderr(struct command *command, struct command *last_command);
 
 // File descriptor
-void set_input_shell_pipe(struct command *command);
-void set_output_shell_pipe(struct command *command);
-void set_err_output_shell_pipe(struct command *command);
+int set_input_shell_pipe(struct command *command);
+int set_output_shell_pipe(struct command *command);
+int set_err_output_shell_pipe(struct command *command);
 
 int close_fd(int fd);
 int close_all_fd(struct command *start_command);
