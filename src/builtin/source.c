@@ -27,7 +27,34 @@
 #include "parse_line.h"
 #include "builtin/source.h"
 
+// DECLARE STATIC FUNCTIONS
+static int usage();
+
+// DECLARE GLOBAL VARIABLE
 struct source_file *sources[MAX_SOURCE_FILES];
+
+static int usage() {
+	fprintf(stderr,"Usage: source filename\n");
+	return EXIT_FAILURE;
+}
+
+int source(int argc, char *argv[]) {
+	struct stat buffer;
+	argc--; argv++;
+	if (argc != 1) {
+		return usage();
+	}
+	if (strcmp(argv[0], "--help") == 0) {
+		usage();
+		return EXIT_SUCCESS;
+	}
+	// Check if file exists
+	if (stat(argv[0], &buffer) < 0) {
+		fprintf(stderr,"Mash: source: %s no such file in directory\n", argv[0]);
+		return EXIT_FAILURE;
+	}
+	return add_source(argv[0]);
+}
 
 struct source_file *new_source_file(char *source_file_name)
 {
@@ -64,7 +91,7 @@ add_source(char *source_file_name)
       return 0;
     }
   }
-  perror("Failed to add new source. Already at limit.\n");
+	fprintf(stderr,"Failed to add new source. Already at limit.\n");
 	return 1;
 }
 

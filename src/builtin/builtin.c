@@ -89,10 +89,8 @@ exec_builtin_in_shell(struct command *command)
 		}
 		wait_all_jobs();
 		return exit_mash(i,args);
-	} else if (strcmp(command->argv[0], "source") == 0) {
-		return add_source(command->argv[1]);
-	} else if (strcmp(command->argv[0], ".") == 0) {
-		return add_source(command->argv[1]);
+	} else if (strcmp(command->argv[0], "source") == 0 || strcmp(command->argv[0], ".") == 0) {
+		return source(i,args);
 	} else if (strcmp(command->argv[0], "cd") == 0) {
 		return cd(i,args);
 	} else if (strcmp(command->argv[0], "fg") == 0) {
