@@ -12,4 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "builtin/command.h"
 #include "builtin/ifnot.h"
+
+// DECLARE STATIC FUNCTIONS
+static int usage();
+
+static int usage() {
+	fprintf(stderr,"Usage: ifnot command [arg ..]\n");
+	return CMD_EXIT_FAILURE;
+}
+
+int ifnot(struct command * command) {
+  int i;
+  char* result = getenv("result");
+  if (result == NULL) {
+    fprintf(stderr,"error: var result does not exist");
+    return CMD_EXIT_FAILURE;
+  }
+
+  if (command->argc < 2) {
+    return usage();
+  }
+
+  if (atoi(result) != 0) {
+    for (i = 1; i < command->argc; i++)
+    {
+      strcpy(command->argv[i - 1], command->argv[i]);
+    }
+    strcpy(command->argv[command->argc - 1], command->argv[command->argc]);
+    command->argc--;
+    return CMD_EXIT_SUCCESS;
+  }
+  return CMD_EXIT_NOT_EXECUTE;
+}

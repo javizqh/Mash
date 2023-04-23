@@ -12,8 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-int usage();
-
-int cd(struct command * command);
-
-int check_if_dir_exists(const char *dir);
+int cd(int argc, char* argv[]);

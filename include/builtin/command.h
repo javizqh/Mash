@@ -13,7 +13,7 @@
 // limitations under the License.
 
 enum {
-	MAX_ARGUMENT_SIZE = 128,
+	MAX_ARGUMENT_SIZE = 256,
 	MAX_ARGUMENTS = 64
 };
 
@@ -26,6 +26,12 @@ enum status {
 	DO_NOT_MATTER_TO_EXEC,
 	EXECUTE_IN_SUCCESS,
 	EXECUTE_IN_FAILURE
+};
+
+enum exit_code {
+	CMD_EXIT_SUCCESS,
+	CMD_EXIT_FAILURE,
+	CMD_EXIT_NOT_EXECUTE
 };
 
 struct command {
@@ -47,6 +53,13 @@ struct command {
 	// Only used when $()
 	char * output_buffer;
 };
+
+// Builtin command
+extern int search_in_builtin;
+
+int command(struct command * command);
+// ---------------
+
 
 struct command *new_command();
 

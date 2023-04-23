@@ -17,6 +17,10 @@ enum {
   MAX_PATH_SIZE = 64
 };
 
-extern int add_env(const char * line);
+int export(int argc, char* argv[]);
 
-extern int add_env_by_name(const char *key, const char *value);
+int add_env(const char * line);
+
+int add_env_by_name(const char *key, const char *value);
+
+void print_env();

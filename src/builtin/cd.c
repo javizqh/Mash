@@ -18,28 +18,42 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "builtin/command.h"
 #include "builtin/cd.h"
 
-int usage() {
+// DECLARE STATIC FUNCTION
+static int usage();
+
+static int usage() {
   fprintf(stderr, "Usage: cd [directory]\n");
   return EXIT_FAILURE;
 }
 
-int cd(struct command * command) {
-  if (command->argc > 2) {
+int cd(int argc, char* argv[]) {
+  char *home;
+
+  argc--; argv++;
+  if (argc > 1) {
     return usage();
   }
-  if (strcmp(command->argv[1],"--help") == 0 || strcmp(command->argv[1],"-h") == 0) {
-    return usage();
+  if (argc == 0) {
+    home = getenv("HOME");
+    if (home == NULL) {
+      home = getpwuid(getuid())->pw_dir;
+    }
+    if (chdir(home) < 0) {
+      fprintf(stderr,"mash: cd: %s: No such directory\n", home);
+      return EXIT_FAILURE;
+    }
+  } else {
+    if (strcmp(argv[0],"--help") == 0 || strcmp(argv[0],"-h") == 0) {
+      return usage();
+    }
+
+    if (chdir(argv[0]) < 0) {
+      fprintf(stderr,"mash: cd: %s: No such directory\n", argv[0]);
+      return EXIT_FAILURE;
+    }
   }
-  if (command->argc == 1) {
-    // FIX: get it from home
-    strcpy(command->argv[1], getpwuid(getuid())->pw_dir);
-  }
-  if (chdir(command->argv[1]) < 0) {
-    fprintf(stderr,"mash: cd: %s: No such directory\n", command->argv[1]);
-    return EXIT_FAILURE;
-  }
+
   return EXIT_SUCCESS;
 }

@@ -21,6 +21,8 @@ struct source_file {
 	char file[MAX_FILE_LENGTH];
 };
 
+int source(int argc, char *argv[]);
+
 struct source_file *new_source_file(char *source_file_name);
 
 void free_source_file();

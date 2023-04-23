@@ -24,12 +24,33 @@
 #include "builtin/jobs.h"
 #include "builtin/exit.h"
 
+// DECLARE STATIC FUNCTIONS
+static int usage();
+
+// DECLARE GLOBAL VARIABLE
 int has_to_exit = 0;
 
+static int usage() {
+	fprintf(stderr,"Usage: exit [n]\n");
+	return EXIT_FAILURE;
+}
+
 int
-exit_mash()
+exit_mash(int argc, char* argv[])
 {
 	int i;
+	int exit_status = EXIT_SUCCESS;
+
+	argc--;argv++;
+	
+	if (argc == 1) {
+		exit_status = atoi(argv[0]);
+		if ( exit_status < 0) {
+			exit_status = 0;
+		}	
+	} else if (argc > 1) {
+		return usage();
+	}
 
   for (i = 0; i < ALIAS_MAX; i++) {
 		if (aliases[i] == NULL) break;
@@ -41,5 +62,5 @@ exit_mash()
 	free_jobs_list();
 
 	has_to_exit = 1;
-  return EXIT_SUCCESS;
+  return exit_status;
 }

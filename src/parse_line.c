@@ -311,7 +311,7 @@ cmd_tokenize(char *ptr, struct exec_info *exec_info)
 				request_new_line(ptr);
 				ptr--;
 			} else {
-				*exec_info->parse_info->copy++ = *++ptr;
+				*exec_info->parse_info->copy++ = *ptr;
 			}
 			exec_info->parse_info->has_arg_started =
 			    PARSE_ARG_STARTED;
