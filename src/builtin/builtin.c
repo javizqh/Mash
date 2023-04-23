@@ -22,6 +22,7 @@
 #include "builtin/source.h"
 #include "builtin/alias.h"
 #include "builtin/exit.h"
+#include "builtin/echo.h"
 #include "builtin/cd.h"
 #include "parse_line.h"
 #include "mash.h"
@@ -119,7 +120,7 @@ void
 exec_builtin(struct command *start_scommand, struct command *command)
 {
 	int i;
-	int return_value = 0;
+	int return_value = EXIT_FAILURE;
 	char *args[command->argc + 1];
 	for (i = 0; i < command->argc; i++) {
 		if (strlen(command->argv[i]) > 0) {
@@ -131,25 +132,14 @@ exec_builtin(struct command *start_scommand, struct command *command)
 	}
 	args[i] = NULL;
 	if (strcmp(args[0], "echo") == 0) {
-		// If doesn't contain alias
-		for (i = 1; i < command->argc; i++) {
-			printf("%s ",
-				command->argv[i]);
-		}
-		printf("\n");
-		free_command_with_buf(start_scommand);
-		exit_mash(0,NULL);
-		exit(EXIT_SUCCESS);
+		return_value = echo(i,args);
 	} else if (strcmp(args[0], "jobs") == 0) {
 		return_value = jobs(i,args);
-		free_command_with_buf(start_scommand);
-		exit_mash(0,NULL);
-		exit(return_value);
 	} else {
     exec_builtin_in_shell(command);
-    free_command_with_buf(start_scommand);
-		exit_mash(0,NULL);
-    exit(EXIT_SUCCESS);
   }
+	free_command_with_buf(start_scommand);
+	exit_mash(0,NULL);
+	exit(return_value);
 	return;
 }
