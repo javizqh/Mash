@@ -38,6 +38,40 @@ char *builtins_modify_cmd[4] = {"ifnot","ifok","builtin","command"};
 char *builtins_in_shell[8] = {"bg","fg","cd","export","alias","exit","source","."};
 char *builtins_fork[2] = {"echo","jobs"};
 
+// Builtin command
+
+// DECLARE STATIC FUNCTION
+static int usage();
+
+static int usage() {
+	fprintf(stderr,"Usage: builtin shell-builtin [arg ..]\n");
+	return CMD_EXIT_FAILURE;
+}
+
+int builtin(struct command * command) {
+  int i;
+
+  if (command->argc < 2) {
+    return usage();
+  }
+
+  for (i = 1; i < command->argc; i++)
+  {
+    strcpy(command->argv[i - 1], command->argv[i]);
+  }
+  strcpy(command->argv[command->argc - 1], command->argv[command->argc]);
+  command->argc--;
+
+	search_in_builtin = 1;
+
+	if (!find_builtin(command)) {
+		return usage();
+	}
+
+  return CMD_EXIT_SUCCESS;
+}
+// ---------------
+
 int has_builtin_modify_cmd(struct command *command){
   int i;
 	for (i = 0; i < 4; i++)
@@ -52,6 +86,8 @@ int has_builtin_modify_cmd(struct command *command){
 int modify_cmd_builtin(struct command *modify_command){
 	if (strcmp(modify_command->argv[0], "command") == 0) {
 		return command(modify_command);
+	} else if (strcmp(modify_command->argv[0], "builtin") == 0) {
+		return builtin(modify_command);
 	} else if (strcmp(modify_command->argv[0], "ifnot") == 0) {
 		return ifnot(modify_command);
 	} else if (strcmp(modify_command->argv[0], "ifok") == 0) {
@@ -139,7 +175,7 @@ find_builtin(struct command *command)
     }
   }
 
-	return has_builtin_exec_in_shell(command);
+	return has_builtin_exec_in_shell(command) || has_builtin_modify_cmd(command);
 }
 
 void
@@ -162,7 +198,9 @@ exec_builtin(struct command *start_scommand, struct command *command)
 	} else if (strcmp(args[0], "jobs") == 0) {
 		return_value = jobs(i,args);
 	} else {
-    exec_builtin_in_shell(command);
+    if (exec_builtin_in_shell(command) != 0) {
+			modify_cmd_builtin(command);
+		}
   }
 	free_command_with_buf(start_scommand);
 	exit_mash(0,NULL);

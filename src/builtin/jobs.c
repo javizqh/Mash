@@ -187,6 +187,7 @@ launch_job(FILE * src_file, struct exec_info *exec_info, char * to_free_excess){
 
 	int a = exec_job(src_file, exec_info, job, to_free_excess);
 
+	// FIX: solve searching pipe
 	search_in_builtin = 1;
 
 	return a;
