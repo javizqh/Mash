@@ -14,4 +14,4 @@
 
 extern int has_to_exit;
 
-int exit_mash();
+int exit_mash(int argc, char* argv[]);

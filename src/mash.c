@@ -36,6 +36,8 @@ int reading_from_file = 0;
 int
 main(int argc, char **argv)
 {
+	int status;
+
 	argc--;
 	argv++;
 	// TODO: add proper check
@@ -73,7 +75,7 @@ main(int argc, char **argv)
 	// ------------
 	prompt(buf);
 	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
-		find_command(buf, NULL, stdin, NULL, NULL);
+		status = find_command(buf, NULL, stdin, NULL, NULL);
 
 		if (has_to_exit) {
 			break;
@@ -87,10 +89,10 @@ main(int argc, char **argv)
 	}
 
 	if (!has_to_exit) {
-		exit_mash();
+		exit_mash(0, NULL);
 	}
 	free(buf);
-	return 0;
+	return status;
 }
 
 void

@@ -145,7 +145,7 @@ exec_cmd(struct command *command, struct command *start_command,
 		exec_builtin(start_command, command);
 		exit(EXIT_FAILURE);
 	} else {
-		exit_mash();
+		exit_mash(0, NULL);
 		if (!find_path(command)) {
 			fprintf(stderr, "%s: command not found\n",
 				command->argv[0]);

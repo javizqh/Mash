@@ -87,13 +87,13 @@ exec_builtin_in_shell(struct command *command)
 			return EXIT_FAILURE;
 		}
 		wait_all_jobs();
-		return exit_mash();
+		return exit_mash(i,args);
 	} else if (strcmp(command->argv[0], "source") == 0) {
 		return add_source(command->argv[1]);
 	} else if (strcmp(command->argv[0], ".") == 0) {
 		return add_source(command->argv[1]);
 	} else if (strcmp(command->argv[0], "cd") == 0) {
-		return cd(command);
+		return cd(i,args);
 	} else if (strcmp(command->argv[0], "fg") == 0) {
 		return fg(i,args);
 	} else if (strcmp(command->argv[0], "bg") == 0) {
@@ -139,17 +139,17 @@ exec_builtin(struct command *start_scommand, struct command *command)
 		}
 		printf("\n");
 		free_command_with_buf(start_scommand);
-		exit_mash();
+		exit_mash(0,NULL);
 		exit(EXIT_SUCCESS);
 	} else if (strcmp(args[0], "jobs") == 0) {
 		return_value = jobs(i,args);
 		free_command_with_buf(start_scommand);
-		exit_mash();
+		exit_mash(0,NULL);
 		exit(return_value);
 	} else {
     exec_builtin_in_shell(command);
     free_command_with_buf(start_scommand);
-		exit_mash();
+		exit_mash(0,NULL);
     exit(EXIT_SUCCESS);
   }
 	return;
