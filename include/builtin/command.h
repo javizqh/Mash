@@ -28,6 +28,12 @@ enum status {
 	EXECUTE_IN_FAILURE
 };
 
+enum exit_code {
+	CMD_EXIT_SUCCESS,
+	CMD_EXIT_FAILURE,
+	CMD_EXIT_NOT_EXECUTE
+};
+
 struct command {
 	char argv[MAX_ARGUMENTS][MAX_ARGUMENT_SIZE];
 	int argc;
@@ -47,6 +53,13 @@ struct command {
 	// Only used when $()
 	char * output_buffer;
 };
+
+// Builtin command
+extern int search_in_builtin;
+
+int command(struct command * command);
+// ---------------
+
 
 struct command *new_command();
 

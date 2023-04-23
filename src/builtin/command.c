@@ -18,12 +18,44 @@
 #include <unistd.h>
 #include <err.h>
 #include <errno.h>
-#include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "open_files.h"
 #include "builtin/alias.h"
 #include "builtin/command.h"
 
+// Builtin command
+
+// DECLARE STATIC FUNCTION
+static int usage();
+
+// DECLARE GLOBAL VARIABLE
+int search_in_builtin = 1;
+
+static int usage() {
+	fprintf(stderr,"Usage: command command [arg ..]\n");
+	return CMD_EXIT_FAILURE;
+}
+
+int command(struct command * command) {
+  int i;
+
+  if (command->argc < 2) {
+    return usage();
+  }
+
+  for (i = 1; i < command->argc; i++)
+  {
+    strcpy(command->argv[i - 1], command->argv[i]);
+  }
+  strcpy(command->argv[command->argc - 1], command->argv[command->argc]);
+  command->argc--;
+
+  search_in_builtin = 0;
+  return CMD_EXIT_SUCCESS;
+}
+// ---------------
 struct command *
 new_command()
 {

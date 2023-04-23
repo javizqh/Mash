@@ -23,6 +23,8 @@
 #include "builtin/alias.h"
 #include "builtin/exit.h"
 #include "builtin/echo.h"
+#include "builtin/ifok.h"
+#include "builtin/ifnot.h"
 #include "builtin/cd.h"
 #include "parse_line.h"
 #include "mash.h"
@@ -32,8 +34,32 @@
 #include "builtin/bg.h"
 #include "builtin/builtin.h"
 
+char *builtins_modify_cmd[4] = {"ifnot","ifok","builtin","command"};
 char *builtins_in_shell[8] = {"bg","fg","cd","export","alias","exit","source","."};
 char *builtins_fork[2] = {"echo","jobs"};
+
+int has_builtin_modify_cmd(struct command *command){
+  int i;
+	for (i = 0; i < 4; i++)
+  {
+    if (strcmp(command->argv[0], builtins_modify_cmd[i]) == 0) {
+      return 1;
+    }
+  }
+	return 0;
+}
+
+int modify_cmd_builtin(struct command *modify_command){
+	if (strcmp(modify_command->argv[0], "command") == 0) {
+		return command(modify_command);
+	} else if (strcmp(modify_command->argv[0], "ifnot") == 0) {
+		return ifnot(modify_command);
+	} else if (strcmp(modify_command->argv[0], "ifok") == 0) {
+		return ifok(modify_command);
+	}
+	return 1;
+}
+
 
 int
 has_builtin_exec_in_shell(struct command *command)

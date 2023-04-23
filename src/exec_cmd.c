@@ -134,16 +134,14 @@ exec_cmd(struct command *command, struct command *start_command,
 	redirect_stdout(command, last_command);
 	redirect_stderr(command, last_command);
 	// Check if builtin
-	if (find_builtin(command)) {
+	if (search_in_builtin && find_builtin(command)) {
 		if (last_command != NULL || command->output_buffer != NULL
 		    || command->output != STDOUT_FILENO
 		    || command->err_output != STDERR_FILENO
 		    || command->output != command->err_output) {
 			close_fd(command->fd_pipe_output[1]);
 		}
-
 		exec_builtin(start_command, command);
-		exit(EXIT_FAILURE);
 	} else {
 		exit_mash(0, NULL);
 		if (!find_path(command)) {

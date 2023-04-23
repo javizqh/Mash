@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+int has_builtin_modify_cmd(struct command *command);
+int modify_cmd_builtin(struct command *modify_command);
+
 /**
  * @brief Executes builtins that need to be executed in the parent process
  * 

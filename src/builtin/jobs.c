@@ -161,7 +161,18 @@ pid_t substitute_jobspec(char* jobspec) {
 int
 launch_job(FILE * src_file, struct exec_info *exec_info, char * to_free_excess){
 
-	if (has_builtin_exec_in_shell(exec_info->command)) {
+	if (has_builtin_modify_cmd(exec_info->command)) {
+		switch (modify_cmd_builtin(exec_info->command)) {
+			case CMD_EXIT_FAILURE:
+				return CMD_EXIT_FAILURE;
+				break;
+			case CMD_EXIT_NOT_EXECUTE:
+				return EXIT_SUCCESS; // Not execute more
+				break;
+		}
+	}
+
+	if (search_in_builtin && has_builtin_exec_in_shell(exec_info->command)) {
 		close_all_fd(exec_info->command);
 		return exec_builtin_in_shell(exec_info->command);
 	}
@@ -175,6 +186,8 @@ launch_job(FILE * src_file, struct exec_info *exec_info, char * to_free_excess){
 	add_job(job);
 
 	int a = exec_job(src_file, exec_info, job, to_free_excess);
+
+	search_in_builtin = 1;
 
 	return a;
 }
