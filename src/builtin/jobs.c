@@ -33,6 +33,10 @@
 #include "exec_cmd.h"
 #include "builtin/jobs.h"
 
+// DECLARE STATIC FUNCTIONS
+static int usage();
+static void print_job_builtin(struct job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id);
+
 struct job_list jobs_list;
 
 static int usage() {
@@ -90,76 +94,51 @@ int jobs(int argc, char *argv[]) {
 			return usage();
 		}
 	}
-	// FIX: fix this mess
+
 	if (only_job) {
 		current = get_job(only_job);
-		if (only_id) {
-			if (only_run || only_stop) {
-				if (only_run) {
-					if (current->state == RUNNING) {
-						printf("%d\n", current->pid);
-					}
-				}
-				if (only_stop) {
-					if (current->state == STOPPED) {
-						printf("%d\n", current->pid);
-					}
-				}
-			} else {
-				printf("%d\n", current->pid);
-			}
-		} else {
-			if (only_run || only_stop) {
-				if (only_run) {
-					if (current->state == RUNNING) {
-						print_job(current,print_id);
-					}
-				}
-				if (only_stop) {
-					if (current->state == STOPPED) {
-						print_job(current,print_id);
-					}
-				}
-			} else {
-				print_job(current,print_id);
-			}
-		}
+		print_job_builtin(current, only_run, only_stop, only_id, print_id);
 		return EXIT_SUCCESS;
-	}
-	for (current = jobs_list.head; current; current = current->next_job) {
-		if (only_id) {
-			if (only_run || only_stop) {
-				if (only_run) {
-					if (current->state == RUNNING) {
-						printf("%d\n", current->pid);
-					}
-				}
-				if (only_stop) {
-					if (current->state == STOPPED) {
-						printf("%d\n", current->pid);
-					}
-				}
-			} else {
-				printf("%d\n", current->pid);
-			}
-		} else {
-			if (only_run || only_stop) {
-				if (only_run) {
-					if (current->state == RUNNING) {
-						print_job(current,print_id);
-					}
-				}
-				if (only_stop) {
-					if (current->state == STOPPED) {
-						print_job(current,print_id);
-					}
-				}
-			} else {
-				print_job(current,print_id);
-			}
+	} else {
+		for (current = jobs_list.head; current; current = current->next_job) {
+			print_job_builtin(current, only_run, only_stop, only_id, print_id);
 		}
 	}
 	return EXIT_SUCCESS;
+}
+
+static void print_job_builtin(struct job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id) {
+	if (flag_only_id) {
+		if (flag_only_run || flag_only_stop) {
+			if (flag_only_run) {
+				if (job->state == RUNNING) {
+					printf("%d\n", job->pid);
+				}
+			}
+			if (flag_only_stop) {
+				if (job->state == STOPPED) {
+					printf("%d\n", job->pid);
+				}
+			}
+		} else {
+			printf("%d\n", job->pid);
+		}
+	} else {
+		if (flag_only_run || flag_only_stop) {
+			if (flag_only_run) {
+				if (job->state == RUNNING) {
+					print_job(job,flag_print_id);
+				}
+			}
+			if (flag_only_stop) {
+				if (job->state == STOPPED) {
+					print_job(job,flag_print_id);
+				}
+			}
+		} else {
+			print_job(job,flag_print_id);
+		}
+	}
 }
 
 pid_t substitute_jobspec(char* jobspec) {

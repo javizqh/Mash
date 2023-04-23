@@ -77,7 +77,7 @@ exec_builtin_in_shell(struct command *command)
 	}
 
 	if (strcmp(command->argv[0], "alias") == 0) {
-		return add_alias(command->argv[1]);
+		return alias(i, args);
 	} else if (strcmp(command->argv[0], "export") == 0) {
 		return add_env(command->argv[1]);
 	} else if (strcmp(command->argv[0], "exit") == 0) {

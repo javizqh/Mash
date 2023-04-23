@@ -26,8 +26,10 @@ struct alias {
 	char reference[ALIAS_MAX_REFERENCE];
 };
 
-extern struct alias *new_alias(const char *command, char *reference);
+struct alias *new_alias(const char *command, char *reference);
 
-extern int add_alias(char *command);
+int alias(int argc, char *argv[]);
 
-extern char* get_alias(const char* name);
+int add_alias(char *command);
+char* get_alias(const char* name);
+void print_aliases();

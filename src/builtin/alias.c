@@ -19,8 +19,32 @@
 #include <stdlib.h>
 #include "builtin/alias.h"
 
+// DECLARE STATIC FUNCTION
+static int usage();
+
+// DECLARE GLOBAL VARIABLE
 struct alias *aliases[ALIAS_MAX];
 
+static int usage() {
+	fprintf(stderr,"Usage: alias [name=value]\n");
+	return EXIT_FAILURE;
+}
+
+int alias(int argc, char *argv[]) {
+	argc--;argv++;
+	int exit_value = 0;
+	if (argc == 0) {
+		print_aliases();
+	} else if (argc == 1) {
+		exit_value = add_alias(argv[0]);
+		if (exit_value < 0) {
+			return usage();
+		}
+	} else {
+		return usage();
+	}
+	return exit_value;
+}
 struct alias *
 new_alias(const char *command, char *reference)
 {
@@ -57,11 +81,10 @@ add_alias(char *command)
 				return 0;
 			}
 		}
-		perror("Failed to add new alias. Already at limit.\n");
-	} else {
-		perror("Failed to add new alias. Failed to found =.\n");
+		fprintf(stderr,"Failed to add new alias. Already at limit.\n");
+		return 1;
 	}
-	return 1;
+	return -1;
 }
 
 char* get_alias(const char* name) {
@@ -73,4 +96,12 @@ char* get_alias(const char* name) {
 		}
 	}
 	return NULL;
+}
+
+void print_aliases() {
+	int i;
+	for (i = 0; i < ALIAS_MAX; i++) {
+		if (aliases[i] == NULL) break;
+		printf("alias %s=%s\n",aliases[i]->command,aliases[i]->reference);
+	}
 }
