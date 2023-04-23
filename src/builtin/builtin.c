@@ -67,6 +67,7 @@ exec_builtin_in_shell(struct command *command)
 			args[i] = command->argv[i];
 		} else {
 			args[i] = NULL;
+			break;
 		}
 	}
 	args[i] = NULL;
@@ -79,7 +80,7 @@ exec_builtin_in_shell(struct command *command)
 	if (strcmp(command->argv[0], "alias") == 0) {
 		return alias(i, args);
 	} else if (strcmp(command->argv[0], "export") == 0) {
-		return add_env(command->argv[1]);
+		return export(i,args);
 	} else if (strcmp(command->argv[0], "exit") == 0) {
 		// TODO: check if stopped jobs
 		if (are_jobs_stopped()) {

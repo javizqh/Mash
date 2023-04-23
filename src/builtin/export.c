@@ -17,6 +17,29 @@
 #include <stdlib.h>
 #include "builtin/export.h"
 
+// DECLARE STATIC FUNCTION
+static int usage();
+
+extern char **environ;
+
+static int usage() {
+	fprintf(stderr,"Usage: export [name=value]\n");
+	return EXIT_FAILURE;
+}
+
+int export(int argc, char* argv[]) {
+	argc--;argv++;
+	int exit_value = 0;
+	if (argc == 0) {
+		print_env();
+	} else if (argc == 1) {
+		exit_value = add_env(argv[0]);
+	} else {
+		return usage();
+	}
+	return exit_value;
+}
+
 int add_env(const char * line) {
   char *p = strchr(line, '=');
   if (p != NULL) {
@@ -35,4 +58,12 @@ int add_env(const char * line) {
 
 int add_env_by_name(const char *key, const char *value) {
   return setenv(key, value, 1);
+}
+
+void print_env() {
+  char **s = environ;
+
+  for (; *s; s++) {
+    printf("%s\n", *s);
+  }
 }

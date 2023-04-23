@@ -13,7 +13,7 @@
 // limitations under the License.
 
 enum {
-	MAX_ARGUMENT_SIZE = 128,
+	MAX_ARGUMENT_SIZE = 256,
 	MAX_ARGUMENTS = 64
 };
 
