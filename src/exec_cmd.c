@@ -305,7 +305,7 @@ redirect_stdin(struct command *command, struct command *start_command)
 		}
 		close_fd(command->fd_pipe_input[0]);
 	}
-	if (command->input != STDIN_FILENO) {
+	if (command->input != STDIN_FILENO && command->input != HERE_DOC_FILENO) {
 		if (dup2(command->input, STDIN_FILENO) == -1) {
 			err(EXIT_FAILURE, "Failed to dup stdin");
 		}
