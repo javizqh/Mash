@@ -294,7 +294,7 @@ redirect_stdout(struct command *command, struct command *last_command)
 			err(EXIT_FAILURE, "Failed to dup stdout");
 		}
 	}
-	if (command->output != STDOUT_FILENO && command->output_buffer != NULL) {
+	if (command->output != STDOUT_FILENO) {
 		if (dup2(command->output, STDOUT_FILENO) == -1) {
 			err(EXIT_FAILURE, "Failed to dup stdout");
 		}
