@@ -695,8 +695,6 @@ glob_tokenize(char *line, struct exec_info *exec_info)
 		err(EXIT_FAILURE, "malloc failed");
 	}
 	memset(line_buf, 0, 1024);
-	// Can call only substitution
-	char *old_ptr = exec_info->parse_info->copy;
 
 	exec_info->parse_info->copy = line_buf;
 	char *ptr;
@@ -737,13 +735,8 @@ glob_tokenize(char *line, struct exec_info *exec_info)
 				ptr++;
 			}
 			break;
-		case '\n':
-			// End line
-			*exec_info->parse_info->copy = '\0';
-			exit = 1;
-			ptr++;
-			break;
 		case ' ':
+		case '\n':
 			// End line
 			*exec_info->parse_info->copy = '\0';
 			exit = 1;
@@ -782,9 +775,11 @@ glob_tokenize(char *line, struct exec_info *exec_info)
 
 	free(line_buf);
 	globfree(&gstruct);
-	// Ask for new line
-	exec_info->parse_info->copy = old_ptr;
-	return --ptr;
+
+	exec_info->parse_info->copy = exec_info->last_command->current_arg;
+	exec_info->parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
+	//exec_info->parse_info->copy = old_ptr;
+	return ptr;
 }
 
 char *
