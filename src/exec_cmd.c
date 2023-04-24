@@ -305,6 +305,12 @@ redirect_stdin(struct command *command, struct command *start_command)
 		}
 		close_fd(command->fd_pipe_input[0]);
 	}
+	if (command->input != STDIN_FILENO) {
+		if (dup2(command->input, STDIN_FILENO) == -1) {
+			err(EXIT_FAILURE, "Failed to dup stdin");
+		}
+		close_fd(command->input);
+	}
 }
 
 void
@@ -316,6 +322,14 @@ redirect_stdout(struct command *command, struct command *last_command)
 		// redirect stdout
 		if (dup2(command->fd_pipe_output[1], STDOUT_FILENO) == -1) {
 			err(EXIT_FAILURE, "Failed to dup stdout");
+		}
+	}
+	if (command->output != STDOUT_FILENO) {
+		if (dup2(command->output, STDOUT_FILENO) == -1) {
+			err(EXIT_FAILURE, "Failed to dup stdout");
+		}
+		if (command->output != command->err_output) {
+			close_fd(command->output);
 		}
 	}
 }
@@ -330,6 +344,12 @@ redirect_stderr(struct command *command, struct command *last_command)
 			err(EXIT_FAILURE, "Failed to dup stderr %i",
 			    command->fd_pipe_input[1]);
 		}
+	}
+	if (command->err_output != STDOUT_FILENO) {
+		if (dup2(command->err_output, STDERR_FILENO) == -1) {
+			err(EXIT_FAILURE, "Failed to dup stdout");
+		}
+		close_fd(command->err_output);
 	}
 }
 
@@ -456,11 +476,14 @@ close_all_fd_cmd(struct command *command, struct command *start_command)
 	struct command *new_cmd = start_command;
 
 	while (new_cmd != NULL) {
-		if (new_cmd->input != STDIN_FILENO) {
+		if (new_cmd->input != STDIN_FILENO
+		    && start_command->input != new_cmd->input) {
 			close_fd(new_cmd->input);
 		}
 		if (new_cmd->output != STDOUT_FILENO) {
-			close_fd(new_cmd->output);
+			if (new_cmd->pipe_next != NULL) {
+				close_fd(new_cmd->output);
+			}
 		}
 		// IF fd is the same don't close it
 		if (new_cmd == command) {

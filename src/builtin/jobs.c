@@ -242,9 +242,9 @@ exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * 
 		if (exec_info->command->input == HERE_DOC_FILENO) {
 			read_from_here_doc(exec_info->command);
 		} else {
-			read_from_file(exec_info->command);
+			//read_from_file(exec_info->command);
 		}
-		write_to_file_or_buffer(current_command);
+		//write_to_file_or_buffer(current_command);
 		if (job->execution == FOREGROUND) {
 			return wait_job(job);
 		} else {
