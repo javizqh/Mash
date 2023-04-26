@@ -905,7 +905,6 @@ cmdtok_redirect_in(char *line, struct exec_info *exec_info)
 {
 	exec_info->parse_info->copy = exec_info->file_info->buffer;
 	line = file_tokenize(line, exec_info);
-	// TODO: first command not new cmd
 	if (set_file_cmd
 	    (exec_info->command, INPUT_READ,
 	     exec_info->file_info->buffer) < 0) {

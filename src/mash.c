@@ -50,6 +50,7 @@ main(int argc, char **argv)
 
 	signal(SIGINT, sig_handler);
 	signal(SIGTSTP, sig_handler);
+	signal(SIGCHLD, sig_handler);
 
 	init_jobs_list();
 	add_source("env/.mashrc");

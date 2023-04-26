@@ -237,7 +237,7 @@ exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * 
 	default:
 		job->pid = exec_info->command->pid;
 		job->end_pid = exec_info->last_command->pid;
-		setpgid(exec_info->command->pid,0);
+		setpgid(exec_info->command->pid,getpid());
 		close_all_fd_io(exec_info->command, current_command);
 		if (exec_info->command->input == HERE_DOC_FILENO) {
 			read_from_here_doc(exec_info->command);
@@ -275,6 +275,7 @@ wait_job(struct job * job)
 				return WEXITSTATUS(wstatus);
 			}
 		} else if (WIFSTOPPED(wstatus)) {
+			fprintf(stderr,"STOPPED:%d\n",WSTOPSIG(wstatus));
 			return EXIT_SUCCESS;
 		} else if (WIFSIGNALED(wstatus)) {
 			return EXIT_SUCCESS;
