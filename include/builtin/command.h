@@ -14,7 +14,7 @@
 
 enum {
 	MAX_ARGUMENT_SIZE = 256,
-	MAX_ARGUMENTS = 64
+	MAX_ARGUMENTS = 128
 };
 
 enum wait{

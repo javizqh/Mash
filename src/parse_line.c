@@ -328,7 +328,7 @@ cmd_tokenize(char *ptr, struct exec_info *exec_info)
 					return NULL;
 				}
 			} else {
-				ptr++;
+				//ptr++;
 			}
 			new_cmd->current_arg += strlen(new_cmd->current_arg);
 			exec_info->parse_info->copy = new_cmd->current_arg;
@@ -552,8 +552,7 @@ substitution_tokenize(char *line, struct exec_info *exec_info)
 			break;
 		case '(':
 			*--exec_info->sub_info->ptr = '\0';
-			ptr = execute_token(++ptr, exec_info);
-			ptr--;
+			return execute_token(++ptr, exec_info);
 			break;
 		case ')':
 		case '{':
@@ -832,7 +831,6 @@ execute_token(char *line, struct exec_info *exec_info)
 		}
 		if (n_parenthesis < 0) {
 			*--line_buf_ptr = '\0';
-			*ptr = '\0';
 			break;
 		}
 	}

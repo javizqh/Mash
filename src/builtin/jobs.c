@@ -196,6 +196,7 @@ launch_job(FILE * src_file, struct exec_info *exec_info, char * to_free_excess){
 int
 exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * to_free_excess)
 {
+	int exit_code = EXIT_FAILURE;
 	struct command *current_command;
 
 	if (set_input_shell_pipe(exec_info->command) || set_output_shell_pipe(exec_info->command)
@@ -237,7 +238,11 @@ exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * 
 	default:
 		job->pid = exec_info->command->pid;
 		job->end_pid = exec_info->last_command->pid;
+		//signal(SIGTTOU, SIG_IGN);
+    //signal(SIGTTIN, SIG_IGN);
+		//setpgid(exec_info->command->pid,0);
 		setpgid(exec_info->command->pid,getpid());
+		//tcsetpgrp(0, exec_info->command->pid);  //traspaso el foreground a ese
 		close_all_fd_io(exec_info->command, current_command);
 		if (exec_info->command->input == HERE_DOC_FILENO) {
 			read_from_here_doc(exec_info->command);
@@ -246,14 +251,17 @@ exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * 
 			write_to_buffer(current_command);
 		}
 		if (job->execution == FOREGROUND) {
-			return wait_job(job);
+			exit_code = wait_job(job);
 		} else {
 			printf("[%d]\t%d\n", job->pos,job->pid);
-			return EXIT_SUCCESS;
+			exit_code = EXIT_SUCCESS;
 		}
+		//tcsetpgrp(0, getpgrp());  //recupero el foreground
+		//signal(SIGTTOU, sig_handler);
+    //signal(SIGTTIN, sig_handler);
 		break;
 	}
-	return 1;
+	return exit_code;
 }
 
 int
@@ -275,7 +283,6 @@ wait_job(struct job * job)
 				return WEXITSTATUS(wstatus);
 			}
 		} else if (WIFSTOPPED(wstatus)) {
-			fprintf(stderr,"STOPPED:%d\n",WSTOPSIG(wstatus));
 			return EXIT_SUCCESS;
 		} else if (WIFSIGNALED(wstatus)) {
 			return EXIT_SUCCESS;
