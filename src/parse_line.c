@@ -328,7 +328,7 @@ cmd_tokenize(char *ptr, struct exec_info *exec_info)
 					return NULL;
 				}
 			} else {
-				ptr++;
+				//ptr++;
 			}
 			new_cmd->current_arg += strlen(new_cmd->current_arg);
 			exec_info->parse_info->copy = new_cmd->current_arg;
@@ -552,8 +552,7 @@ substitution_tokenize(char *line, struct exec_info *exec_info)
 			break;
 		case '(':
 			*--exec_info->sub_info->ptr = '\0';
-			ptr = execute_token(++ptr, exec_info);
-			ptr--;
+			return execute_token(++ptr, exec_info);
 			break;
 		case ')':
 		case '{':
@@ -695,8 +694,6 @@ glob_tokenize(char *line, struct exec_info *exec_info)
 		err(EXIT_FAILURE, "malloc failed");
 	}
 	memset(line_buf, 0, 1024);
-	// Can call only substitution
-	char *old_ptr = exec_info->parse_info->copy;
 
 	exec_info->parse_info->copy = line_buf;
 	char *ptr;
@@ -737,13 +734,8 @@ glob_tokenize(char *line, struct exec_info *exec_info)
 				ptr++;
 			}
 			break;
-		case '\n':
-			// End line
-			*exec_info->parse_info->copy = '\0';
-			exit = 1;
-			ptr++;
-			break;
 		case ' ':
+		case '\n':
 			// End line
 			*exec_info->parse_info->copy = '\0';
 			exit = 1;
@@ -782,9 +774,11 @@ glob_tokenize(char *line, struct exec_info *exec_info)
 
 	free(line_buf);
 	globfree(&gstruct);
-	// Ask for new line
-	exec_info->parse_info->copy = old_ptr;
-	return --ptr;
+
+	exec_info->parse_info->copy = exec_info->last_command->current_arg;
+	exec_info->parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
+	//exec_info->parse_info->copy = old_ptr;
+	return ptr;
 }
 
 char *
@@ -837,7 +831,6 @@ execute_token(char *line, struct exec_info *exec_info)
 		}
 		if (n_parenthesis < 0) {
 			*--line_buf_ptr = '\0';
-			*ptr = '\0';
 			break;
 		}
 	}
@@ -910,7 +903,6 @@ cmdtok_redirect_in(char *line, struct exec_info *exec_info)
 {
 	exec_info->parse_info->copy = exec_info->file_info->buffer;
 	line = file_tokenize(line, exec_info);
-	// TODO: first command not new cmd
 	if (set_file_cmd
 	    (exec_info->command, INPUT_READ,
 	     exec_info->file_info->buffer) < 0) {

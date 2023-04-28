@@ -20,8 +20,6 @@ int command_exists(char *path);
 void exec_cmd(struct command *command, struct command *start_command,
 		struct command *last_command);
 
-int wait_childs(struct command *start_command, struct command *last_command);
-
 // Redirect input and output: Parent
 enum iobuffer {
 	MAX_BUFFER_IO_SIZE = 1024 * 4
@@ -29,7 +27,7 @@ enum iobuffer {
 
 void read_from_here_doc(struct command *start_command);
 void read_from_file(struct command *start_command);
-void write_to_file_or_buffer(struct command *last_command);
+void write_to_buffer(struct command *last_command);
 
 // Redirect input and output: Child
 void redirect_stdin(struct command *command, struct command *start_command);
