@@ -30,6 +30,141 @@
 #include "exec_cmd.h"
 #include "builtin/jobs.h"
 
+// DECLARE STATIC FUNCTION
+static char *cmd_tokenize(char *line, struct exec_info *exec_info);
+
+// Tokenize types
+static char *start_squote(char *line, struct exec_info *exec_info);
+static char *end_squote(char *line, struct exec_info *exec_info);
+static char *start_dquote(char *line, struct exec_info *exec_info);
+static char *end_dquote(char *line, struct exec_info *exec_info);
+static char *pipe_tok(char *line, struct exec_info *exec_info);
+static char *start_sub(char *line, struct exec_info *exec_info);
+static char *end_sub(char *line, struct exec_info *exec_info);
+static char *start_file_in(char *line, struct exec_info *exec_info);
+static char *start_file_out(char *line, struct exec_info *exec_info);
+static char *end_file(char *line, struct exec_info *exec_info);
+static char *end_file_started(char *line, struct exec_info *exec_info);
+static char *background(char *line, struct exec_info *exec_info);
+static char *escape(char *line, struct exec_info *exec_info);
+static char *esp_escape(char *line, struct exec_info *exec_info);
+static char *blank(char *line, struct exec_info *exec_info);
+static char *end_line(char *line, struct exec_info *exec_info);
+static char *end_pipe(char *line, struct exec_info *exec_info);
+static char *copy(char *line, struct exec_info *exec_info);
+static char *copy_and_end(char *line, struct exec_info *exec_info);
+static char *error(char *line, struct exec_info *exec_info);
+static char *tilde_tokenize(char *line, struct exec_info *exec_info);	// TODO: do not use 
+static char *start_subexec(char *line, struct exec_info *exec_info);
+static char *start_math(char *line, struct exec_info *exec_info);
+static char *end_math(char *line, struct exec_info *exec_info);
+static char *request_new_line(char *line, struct exec_info *exec_info);
+static char *here_doc(char *line, struct exec_info *exec_info);
+static char *exec_lexer(char *line, struct exec_info *exec_info);
+static int copy_substitution(struct parse_info *parse_info,
+			     const char *sub_buffer);
+static void new_argument(struct exec_info *exec_info);
+static char *error_token(char token, char *line);
+static int seek(char *line);
+
+static const lexer sb_a = { '\0', end_sub };
+static const lexer sb_b = { '\t', end_sub };
+static const lexer sb_c = { '\n', end_sub };
+static const lexer sb_d = { ' ', end_sub };
+static const lexer sb_e = { '"', end_sub };
+static const lexer sb_f = { '#', copy_and_end };
+static const lexer sb_g = { '$', copy_and_end };
+static const lexer sb_h = { '&', end_sub };
+static const lexer sb_i = { '\'', end_sub };
+static const lexer sb_j = { '(', start_subexec };
+static const lexer sb_k = { ')', end_sub };
+static const lexer sb_l = { '-', copy_and_end };
+static const lexer sb_m = { ';', end_sub };
+static const lexer sb_n = { '<', end_sub };
+static const lexer sb_o = { '>', end_sub };
+static const lexer sb_p = { '?', copy_and_end };
+static const lexer sb_q = { '@', copy_and_end };
+static const lexer sb_r = { '\\', end_sub };
+static const lexer sb_s = { '_', copy_and_end };
+static const lexer sb_t = { '{', end_sub };
+static const lexer sb_u = { '}', end_sub };
+static const lexer sb_v = { '|', end_sub };
+static const lexer sb_w = { '~', end_sub };
+
+static const lexer h_a = { '\0', request_new_line };
+static const lexer h_b = { '\'', end_squote };
+
+static const lexer s_b = { '"', end_dquote };
+static const lexer s_d = { '\\', esp_escape };
+
+static const lexer m_a = { '\0', request_new_line };
+static const lexer m_b = { '"', start_dquote };
+static const lexer m_c = { '$', start_sub };
+static const lexer m_d = { '\'', start_squote };
+static const lexer m_e = { ')', end_math };
+
+static const lexer n_a = { '\0', end_line };
+static const lexer n_b = { '\t', blank };
+static const lexer n_c = { '\n', blank };
+static const lexer n_d = { ' ', blank };
+static const lexer n_e = { '"', start_dquote };
+static const lexer n_f = { '#', end_line };
+static const lexer n_g = { '$', start_sub };
+static const lexer n_h = { '&', background };
+static const lexer n_i = { '\'', start_squote };
+static const lexer n_j = { '(', error };
+static const lexer n_k = { ')', error };
+static const lexer n_l = { ';', end_pipe };
+static const lexer n_m = { '<', start_file_in };
+static const lexer n_n = { '>', start_file_out };
+static const lexer n_o = { '\\', escape };
+static const lexer n_p = { '{', here_doc };
+static const lexer n_q = { '}', error };
+static const lexer n_r = { '|', pipe_tok };
+static const lexer n_s = { '~', tilde_tokenize };
+
+static const lexer f_a = { '\0', end_file };
+static const lexer f_b = { '\t', end_file_started };
+static const lexer f_c = { '\n', end_file };
+static const lexer f_d = { ' ', end_file_started };
+static const lexer f_e = { '"', start_dquote };
+static const lexer f_f = { '#', end_file };
+static const lexer f_g = { '$', start_sub };
+static const lexer f_h = { '&', end_file };
+static const lexer f_i = { '\'', start_squote };
+static const lexer f_j = { '(', error };
+static const lexer f_k = { ')', error };
+static const lexer f_l = { '*', error };
+static const lexer f_m = { ';', end_file };
+static const lexer f_n = { '<', end_file };
+static const lexer f_o = { '>', end_file };
+static const lexer f_p = { '?', error };
+static const lexer f_q = { '[', error };
+static const lexer f_r = { '\\', escape };
+static const lexer f_s = { '{', error };
+static const lexer f_t = { '}', error };
+static const lexer f_u = { '|', end_file };
+static const lexer f_v = { '~', tilde_tokenize };
+
+static const lexer normal[22] =
+    { n_a, n_b, n_c, n_d, n_e, n_f, n_g, n_h, n_i, n_j, n_k, n_l, n_m, n_n, n_o,
+	n_p, n_q, n_r, n_s
+};
+static const lexer hard[2] = { h_a, h_b };
+static const lexer soft[4] = { h_a, s_b, n_g, s_d };
+static const lexer math[5] = { m_a, m_b, m_c, m_d, m_e };
+
+static const lexer sub[23] =
+    { sb_a, sb_b, sb_c, sb_d, sb_e, sb_f, sb_g, sb_h, sb_i, sb_j, sb_k, sb_l,
+	sb_m, sb_n, sb_o,
+	sb_p, sb_q, sb_r, sb_s, sb_t, sb_u, sb_v, sb_w
+};
+
+static const lexer file[22] =
+    { f_a, f_b, f_c, f_d, f_e, f_f, f_g, f_h, f_i, f_j, f_k, f_l, f_m, f_n, f_o,
+	f_p, f_q, f_r, f_s, f_t, f_u, f_v
+};
+
 // ------ Parse info --------
 
 struct parse_info *
@@ -43,9 +178,13 @@ new_parse_info()
 		err(EXIT_FAILURE, "malloc failed");
 	}
 	memset(parse_info, 0, sizeof(struct parse_info));
-	parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
-	parse_info->do_not_expect_new_cmd = 0;
+	parse_info->has_arg_started = 0;
+	parse_info->finished = 0;
 	parse_info->copy = NULL;
+	parse_info->curr_lexer_size = sizeof(normal) / sizeof(normal[0]);
+	parse_info->curr_lexer = &normal;
+	parse_info->old_lexer_size = parse_info->curr_lexer_size;
+	parse_info->old_lexer = parse_info->curr_lexer;
 
 	return parse_info;
 }
@@ -53,9 +192,13 @@ new_parse_info()
 void
 restore_parse_info(struct parse_info *parse_info)
 {
-	parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
-	parse_info->do_not_expect_new_cmd = 0;
+	parse_info->has_arg_started = 0;
+	parse_info->finished = 0;
 	parse_info->copy = NULL;
+	parse_info->curr_lexer_size = sizeof(normal) / sizeof(normal[0]);
+	parse_info->curr_lexer = &normal;
+	parse_info->old_lexer_size = parse_info->curr_lexer_size;
+	parse_info->old_lexer = parse_info->curr_lexer;
 };
 
 // ---------- Commands -------------
@@ -141,7 +284,9 @@ new_sub_info()
 		err(EXIT_FAILURE, "malloc failed");
 	}
 	memset(sub_info, 0, sizeof(struct sub_info));
-	sub_info->ptr = sub_info->buffer;
+	sub_info->old_ptr = NULL;
+	sub_info->old_lexer_size = 0;
+	sub_info->old_lexer = NULL;
 
 	return sub_info;
 }
@@ -151,7 +296,9 @@ restore_sub_info(struct sub_info *sub_info)
 {
 	memset(sub_info->last_alias, 0, MAX_ARGUMENT_SIZE);
 	memset(sub_info->buffer, 0, MAX_ENV_SIZE);
-	sub_info->ptr = sub_info->buffer;
+	sub_info->old_ptr = NULL;
+	sub_info->old_lexer_size = 0;
+	sub_info->old_lexer = NULL;
 }
 
 char *
@@ -224,364 +371,119 @@ restore_file_info(struct file_info *file_info)
 char *
 cmd_tokenize(char *ptr, struct exec_info *exec_info)
 {
+	struct parse_info *parse_info = exec_info->parse_info;
+	struct command *cmd = exec_info->last_command;
+
+	parse_info->finished = 0;
+
 	// IF first char is \0 exit immediately
 	if (ptr == NULL)
 		return NULL;
 	if (*ptr == '\0' || *ptr == '#' || *ptr == '\n')
 		return NULL;
 
-	// Can call the other
-	struct command *new_cmd = exec_info->last_command;
-	struct command *old_cmd = new_cmd;
+	cmd->current_arg += strlen(cmd->current_arg);
+	parse_info->copy = cmd->current_arg;
 
-	new_cmd->current_arg += strlen(new_cmd->current_arg);
-
-	exec_info->parse_info->copy = new_cmd->current_arg;
-
-	for (; *ptr != '\0'; ptr++) {
-		switch (*ptr) {
-		case '"':
-			if (exec_info->parse_info->do_not_expect_new_cmd)
-				return error_token('&', ptr);
-			ptr = soft_apost_tokenize(++ptr, exec_info);
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_STARTED;
-			break;
-		case '\'':
-			if (exec_info->parse_info->do_not_expect_new_cmd)
-				return error_token('&', ptr);
-			ptr = hard_apost_tokenize(++ptr, exec_info->parse_info);
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_STARTED;
-			break;
-		case '|':
-			if (exec_info->parse_info->do_not_expect_new_cmd)
-				return error_token('&', ptr);
-			// Check if next char is |
-			if (*++ptr == '|') {
-				new_cmd->next_status_needed_to_exec =
-				    EXECUTE_IN_FAILURE;
-				return ++ptr;
-			}
-			ptr--;
-			if (exec_info->parse_info->has_arg_started ==
-			    PARSE_ARG_STARTED) {
-				// Add an argument
-				new_argument(exec_info);
-			}
-			// New command
-			old_cmd = new_cmd;
-			new_cmd = new_command();
-			// Update old_cmd pipe
-			strcpy(exec_info->sub_info->last_alias, "");
-			pipe_command(old_cmd, new_cmd);
-			exec_info->last_command = new_cmd;
-			exec_info->parse_info->copy = new_cmd->current_arg;
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_NOT_STARTED;
-			break;
-		case '<':
-			if (exec_info->parse_info->do_not_expect_new_cmd)
-				return error_token('&', ptr);
-			ptr = cmdtok_redirect_in(++ptr, exec_info);
-			exec_info->parse_info->copy = new_cmd->current_arg;
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_NOT_STARTED;
-			break;
-		case '>':
-			if (exec_info->parse_info->do_not_expect_new_cmd)
-				return error_token('&', ptr);
-			ptr = cmdtok_redirect_out(++ptr, exec_info);
-			exec_info->parse_info->copy = new_cmd->current_arg;
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_NOT_STARTED;
-			break;
-		case '*':
-		case '?':
-		case '[':
-			if (exec_info->parse_info->do_not_expect_new_cmd)
-				return error_token('&', ptr);
-			ptr = glob_tokenize(ptr, exec_info);
-			break;
-		case '\\':
-			if (exec_info->parse_info->do_not_expect_new_cmd)
-				return error_token('&', ptr);
-			// Do NOT return if escape \n
-			if (*++ptr == '\n') {
-				request_new_line(ptr);
-				ptr--;
-			} else {
-				*exec_info->parse_info->copy++ = *ptr;
-			}
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_STARTED;
-			break;
-		case '$':
-			if (exec_info->parse_info->do_not_expect_new_cmd)
-				return error_token('&', ptr);
-			ptr = substitution_tokenize(++ptr, exec_info);
-			// Copy now sub_info to parse_info->copy
-			if (strlen(exec_info->sub_info->buffer) > 0) {
-				if (copy_substitution
-				    (exec_info->parse_info,
-				     exec_info->sub_info->buffer) < 0) {
-					return NULL;
-				}
-			} else {
-				//ptr++;
-			}
-			new_cmd->current_arg += strlen(new_cmd->current_arg);
-			exec_info->parse_info->copy = new_cmd->current_arg;
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_STARTED;
-			break;
-		case '~':
-			// Csheck if next is ' ' '\n' or '/'then ok if not as '\'                       
-			if (exec_info->parse_info->do_not_expect_new_cmd)
-				return error_token('&', ptr);
-			if (exec_info->parse_info->has_arg_started ==
-			    PARSE_ARG_STARTED) {
-				*exec_info->parse_info->copy++ = *ptr;
-			} else {
-				ptr = tilde_tokenize(ptr, exec_info);
-			}
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_STARTED;
-			break;
-		case ' ':
-		case '\t':
-		case '\n':
-			if (exec_info->parse_info->has_arg_started ==
-			    PARSE_ARG_STARTED) {
-				new_argument(exec_info);
-				exec_info->parse_info->copy =
-				    new_cmd->current_arg;
-				exec_info->parse_info->has_arg_started =
-				    PARSE_ARG_NOT_STARTED;
-			}
-			break;
-		case ';':
-			if (exec_info->parse_info->do_not_expect_new_cmd)
-				return error_token('&', ptr);
-			if (exec_info->parse_info->has_arg_started ==
-			    PARSE_ARG_STARTED) {
-				new_argument(exec_info);
-			}
-			return ++ptr;
-			break;
-		case '#':
-			// Comments are not parsed
-			return ptr;
-			break;
-		case '&':
-			// Check if next char is & or >
-			if (*++ptr == '&') {
-				// Add an argument to old command
-				if (exec_info->parse_info->has_arg_started ==
-				    PARSE_ARG_STARTED) {
-					new_argument(exec_info);
-				}
-				new_cmd->next_status_needed_to_exec =
-				    EXECUTE_IN_SUCCESS;
-				return ++ptr;
-			} else if (*ptr == '>') {
-				*exec_info->parse_info->copy++ = *--ptr;
-				exec_info->parse_info->has_arg_started =
-				    PARSE_ARG_STARTED;
-				break;
-			} else {
-				exec_info->parse_info->do_not_expect_new_cmd =
-				    1;
-				exec_info->last_command->do_wait =
-				    DO_NOT_WAIT_TO_FINISH;
-				if (set_file_cmd
-				    (exec_info->command, INPUT_READ,
-				     "/dev/null") < 0) {
-					return NULL;
-				}
-				ptr--;
-			}
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_NOT_STARTED;
-			break;
-		case '(':
-		case ')':
-			return error_token(*ptr, ptr);
-			break;
-		default:
-			// FIX: add error struct to handle differen error tokens
-			if (exec_info->parse_info->do_not_expect_new_cmd)
-				return error_token('&', ptr);
-			if (check_here_doc(ptr, new_cmd)) {
-				exec_info->parse_info->do_not_expect_new_cmd = 1;	// End parsing
-				ptr += 4;
-				new_cmd->argc--;
-			} else {
-				*exec_info->parse_info->copy++ = *ptr;
-			}
-
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_STARTED;
-			break;
-		}
+	for (; !parse_info->finished; ptr++) {
+		ptr = exec_lexer(ptr, exec_info);
 		if (ptr == NULL)
 			return ptr;
 	}
-	// End of substitution
-	if (new_cmd->current_arg[0] != '\0') {
+
+	cmd = exec_info->last_command;
+	if (cmd->current_arg[0] != '\0') {
 		new_argument(exec_info);
 	} else {
-		reset_last_arg(new_cmd);
+		reset_last_arg(cmd);
 	}
+
+	parse_info->finished = 0;
 	return ptr;
 }
 
 char *
-hard_apost_tokenize(char *line, struct parse_info *parse_info)
+start_squote(char *line, struct exec_info *exec_info)
 {
-	// Can't call any other function
-	char *ptr;
+	struct parse_info *parse_info = exec_info->parse_info;
 
-	for (ptr = line; *ptr != '\0'; ptr++) {
-		if (*ptr == '\'') {
-			return ptr;
-		} else if (*ptr == '\n') {
-			//*parse_info->copy++ = *ptr;
-			request_new_line(line);
-			ptr = line;
-			ptr--;
-		} else {
-			*parse_info->copy++ = *ptr;
-		}
-	}
-	// Ask for new line
-	return --ptr;
+	parse_info->old_lexer = parse_info->curr_lexer;
+	parse_info->old_lexer_size = parse_info->curr_lexer_size;
+	parse_info->curr_lexer = &hard;
+	parse_info->curr_lexer_size = sizeof(hard) / sizeof(hard[0]);
+
+	parse_info->has_arg_started = 1;
+	return line;
 }
 
 char *
-soft_apost_tokenize(char *line, struct exec_info *exec_info)
+end_squote(char *line, struct exec_info *exec_info)
 {
-	// Can call only substitution
-	char *ptr;
+	struct parse_info *parse_info = exec_info->parse_info;
+	const lexer(*tmp_lexer)[] = parse_info->curr_lexer;
+	int tmp_lexer_size = parse_info->curr_lexer_size;
 
-	for (ptr = line; *ptr != '\0'; ptr++) {
-		switch (*ptr) {
-		case '"':
-			return ptr;
-			break;
-		case '\\':
-			// Do NOT return if escape \n
-			if (*++ptr == '\n') {
-				request_new_line(line);
-				ptr = line;
-				ptr--;
-			}
-			if (*ptr == '$' || *ptr == '"') {
-				*exec_info->parse_info->copy++ = *ptr;
-			} else {
-				*exec_info->parse_info->copy++ = *--ptr;
-				*exec_info->parse_info->copy++ = *++ptr;
-			}
-			break;
-		case '$':
-			// If the next one is \ do nothing
-			if (*++ptr != '\\') {
-				ptr = substitution_tokenize(ptr, exec_info);
-				// Copy now sub_info to parse_info->copy
-				if (strlen(exec_info->sub_info->buffer) > 0) {
-					if (copy_substitution
-					    (exec_info->parse_info,
-					     exec_info->sub_info->buffer) < 0) {
-						return NULL;
-					}
-				} else {
-					ptr++;
-				}
-			} else {
-				*exec_info->parse_info->copy++ = *--ptr;
-				ptr++;
-			}
-			break;
-		case '\n':
-			*exec_info->parse_info->copy++ = *ptr;
-			request_new_line(line);
-			ptr = line;
-			ptr--;
-			break;
-		default:
-			*exec_info->parse_info->copy++ = *ptr;
-			break;
-		}
-	}
-	// Ask for new line
-	return --ptr;
+	parse_info->curr_lexer = parse_info->old_lexer;
+	parse_info->curr_lexer_size = parse_info->old_lexer_size;
+	parse_info->old_lexer = tmp_lexer;
+	parse_info->old_lexer_size = tmp_lexer_size;
+	parse_info->finished = 0;
+	return line;
 }
 
 char *
-substitution_tokenize(char *line, struct exec_info *exec_info)
+start_dquote(char *line, struct exec_info *exec_info)
 {
-	exec_info->sub_info->ptr = exec_info->sub_info->buffer;
-	// Can't call any other function
-	char *ptr;
+	struct parse_info *parse_info = exec_info->parse_info;
 
-	for (ptr = line; *ptr != '\0'; ptr++) {
-		*exec_info->sub_info->ptr++ = *ptr;
-		switch (*ptr) {
-		case '"':
-		case '\'':
-		case '~':
-		case ' ':
-		case '\t':
-		case ';':
-		case '<':
-		case '>':
-		case '*':
-		case '\n':
-			// Copy the $
-			*--exec_info->sub_info->ptr = '\0';
-			return --ptr;
-			break;
-		case '\\':
-			// Do NOT return if escape \n
-			if (*++ptr == '\n') {
-				*--exec_info->sub_info->ptr = '\0';
-				request_new_line(line);
-				ptr = line;
-				ptr--;
-			}
-			break;
-		case '(':
-			*--exec_info->sub_info->ptr = '\0';
-			return execute_token(++ptr, exec_info);
-			break;
-		case ')':
-		case '{':
-		case '}':
-			return error_token(*ptr, ptr);
-			break;
-		case '|':
-		case '/':
-			*--exec_info->sub_info->ptr = '\0';
-			return --ptr;
-			break;
-		case '$':
-		case '?':
-		case '@':
-		case '-':
-		case '_':
-			// Copy and exit
-			return ptr;
-			break;
-		}
-	}
-	// Ask for more
-	return --ptr;
+	parse_info->old_lexer = parse_info->curr_lexer;
+	parse_info->old_lexer_size = parse_info->curr_lexer_size;
+	parse_info->curr_lexer = &soft;
+	parse_info->curr_lexer_size = sizeof(soft) / sizeof(soft[0]);
+
+	parse_info->has_arg_started = 1;
+
+	return line;
+}
+
+char *
+end_dquote(char *line, struct exec_info *exec_info)
+{
+	struct parse_info *parse_info = exec_info->parse_info;
+	const lexer(*tmp_lexer)[] = parse_info->curr_lexer;
+	int tmp_lexer_size = parse_info->curr_lexer_size;
+
+	parse_info->curr_lexer = parse_info->old_lexer;
+	parse_info->curr_lexer_size = parse_info->old_lexer_size;
+	parse_info->old_lexer = tmp_lexer;
+	parse_info->old_lexer_size = tmp_lexer_size;
+	return line;
+}
+
+char *
+start_sub(char *line, struct exec_info *exec_info)
+{
+	struct parse_info *parse_info = exec_info->parse_info;
+	struct sub_info *sub_info = exec_info->sub_info;
+
+	sub_info->old_ptr = parse_info->copy;
+
+	sub_info->old_lexer = parse_info->curr_lexer;
+	sub_info->old_lexer_size = parse_info->curr_lexer_size;
+	parse_info->curr_lexer = &sub;
+	parse_info->curr_lexer_size = sizeof(sub) / sizeof(sub[0]);
+
+	parse_info->has_arg_started = 1;
+	parse_info->copy = sub_info->buffer;
+
+	return line;
 }
 
 int
 copy_substitution(struct parse_info *parse_info, const char *sub_buffer)
 {
 	if (strlen(sub_buffer) <= 0) {
+		//*parse_info->copy++ = '$';
 		return 0;
 	}
 	char *subst = substitute(sub_buffer);
@@ -600,191 +502,30 @@ copy_substitution(struct parse_info *parse_info, const char *sub_buffer)
 }
 
 char *
-file_tokenize(char *line, struct exec_info *exec_info)
+end_sub(char *line, struct exec_info *exec_info)
 {
-	// Check if next char is \0
-	exec_info->parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
-	char *ptr;
+	struct parse_info *parse_info = exec_info->parse_info;
+	struct sub_info *sub_info = exec_info->sub_info;
+	struct command *cmd = exec_info->last_command;
 
-	for (ptr = line; *ptr != '\0'; ptr++) {
-		switch (*ptr) {
-		case '"':
-			ptr = soft_apost_tokenize(++ptr, exec_info);
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_STARTED;
-			break;
-		case '\'':
-			ptr = hard_apost_tokenize(++ptr, exec_info->parse_info);
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_STARTED;
-			break;
-		case '|':
-			break;
-		case '~':
-			if (exec_info->parse_info->has_arg_started ==
-			    PARSE_ARG_STARTED) {
-				*exec_info->parse_info->copy++ = *ptr;
-			} else {
-				ptr = tilde_tokenize(ptr, exec_info);
-			}
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_STARTED;
-			break;
-		case '<':
-		case '>':
-			return --ptr;
-			break;
-		case '\\':
-			*exec_info->parse_info->copy++ = *++ptr;
-			break;
-		case '$':
-			ptr = substitution_tokenize(++ptr, exec_info);
-			if (strlen(exec_info->sub_info->buffer) > 0) {
-				if (copy_substitution
-				    (exec_info->parse_info,
-				     exec_info->sub_info->buffer) < 0) {
-					return NULL;
-				}
-			} else {
-				ptr++;
-			}
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_STARTED;
-			break;
-		case ' ':
-		case '\t':
-			if (exec_info->parse_info->has_arg_started ==
-			    PARSE_ARG_STARTED) {
-				*exec_info->parse_info->copy++ = '\0';
-				return --ptr;
-			}
-			break;
-		case '\n':
-			*exec_info->parse_info->copy++ = '\0';
-			return ptr;
-			break;
-		case '(':
-		case ')':
-		case '{':
-		case '}':
-			return error_token(*ptr, ptr);
-			break;
-		default:
-			*exec_info->parse_info->copy++ = *ptr;
-			exec_info->parse_info->has_arg_started =
-			    PARSE_ARG_STARTED;
-			break;
-		}
-		if (ptr == NULL)
-			return ptr;
+	parse_info->curr_lexer = sub_info->old_lexer;
+	parse_info->curr_lexer_size = sub_info->old_lexer_size;
+	parse_info->copy = sub_info->old_ptr;
+
+	if (copy_substitution(parse_info, sub_info->buffer) < 0) {
+		line = NULL;
 	}
-	// Ask for more
-	return --ptr;
+
+	cmd->current_arg += strlen(cmd->current_arg);
+	parse_info->copy = cmd->current_arg;
+	return --line;
 }
 
 char *
-glob_tokenize(char *line, struct exec_info *exec_info)
+start_subexec(char *line, struct exec_info *exec_info)
 {
-	int exit = 0;
-
-	// Store all in line_buf
-	char *line_buf = malloc(1024);
-
-	if (line_buf == NULL) {
-		err(EXIT_FAILURE, "malloc failed");
-	}
-	memset(line_buf, 0, 1024);
-
-	exec_info->parse_info->copy = line_buf;
-	char *ptr;
-
-	for (ptr = line; *ptr != '\0'; ptr++) {
-		switch (*ptr) {
-		case '"':
-			ptr = soft_apost_tokenize(++ptr, exec_info);
-			break;
-		case '\'':
-			ptr = hard_apost_tokenize(++ptr, exec_info->parse_info);
-			break;
-		case '\\':
-			// Do NOT return if escape \n
-			if (*++ptr == '\n') {
-				request_new_line(line);
-				ptr = line;
-				ptr--;
-			}
-			// Do return if escape ' '
-			if (*ptr == '$' || *ptr == '"') {
-				*exec_info->parse_info->copy++ = *ptr;
-			} else {
-				*exec_info->parse_info->copy++ = *--ptr;
-				*exec_info->parse_info->copy++ = *++ptr;
-			}
-			break;
-		case '$':
-			ptr = substitution_tokenize(++ptr, exec_info);
-			// Copy now sub_info to parse_info->copy
-			if (strlen(exec_info->sub_info->buffer) > 0) {
-				if (copy_substitution
-				    (exec_info->parse_info,
-				     exec_info->sub_info->buffer) < 0) {
-					return NULL;
-				}
-			} else {
-				ptr++;
-			}
-			break;
-		case ' ':
-		case '\n':
-			// End line
-			*exec_info->parse_info->copy = '\0';
-			exit = 1;
-			break;
-		default:
-			*exec_info->parse_info->copy++ = *ptr;
-			break;
-		}
-		if (exit)
-			break;
-	}
-	// Append the things in command
-	strcat(exec_info->last_command->current_arg, line_buf);
-
-	// Do substitution and update command
-	glob_t gstruct;
-
-	if (glob(exec_info->last_command->current_arg,
-		 GLOB_ERR, NULL, &gstruct) == GLOB_NOESCAPE) {
-		//TODO: add error
-		return NULL;
-	}
-
-	char **found;
-
-	found = gstruct.gl_pathv;
-	if (found == NULL) {
-		add_arg(exec_info->last_command);
-	} else {
-		while (*found != NULL) {
-			strcpy(exec_info->last_command->current_arg, *found);
-			add_arg(exec_info->last_command);
-			found++;
-		}
-	}
-
-	free(line_buf);
-	globfree(&gstruct);
-
-	exec_info->parse_info->copy = exec_info->last_command->current_arg;
-	exec_info->parse_info->has_arg_started = PARSE_ARG_NOT_STARTED;
-	//exec_info->parse_info->copy = old_ptr;
-	return ptr;
-}
-
-char *
-execute_token(char *line, struct exec_info *exec_info)
-{
-	int n_parenthesis = 0;
+	struct parse_info *parse_info = exec_info->parse_info;
+	int n_parenthesis = 1;
 
 	// Read again and parse until )
 	char *buffer = malloc(sizeof(char) * 1024);
@@ -802,70 +543,111 @@ execute_token(char *line, struct exec_info *exec_info)
 	}
 	memset(line_buf, 0, sizeof(char) * 1024);
 
-	char *line_buf_ptr = line_buf;
 	char *ptr;
+	char *old_ptr = parse_info->copy;
 
+	if (strstr(line, "((") == line) {
+		//TODO: add math
+		n_parenthesis++;
+		line++;
+	}
+	parse_info->copy = line_buf;
+
+	line++;
 	for (ptr = line; ptr != NULL; ptr++) {
 		switch (*ptr) {
-		case '\\':
-			*line_buf_ptr++ = *++ptr;
-			break;
 		case '\0':
-		case '\n':
-			*line_buf_ptr = '\0';
-			request_new_line(line);
-			ptr = line;
-			ptr--;
+			ptr = request_new_line(ptr, exec_info);
 			break;
 		case '(':
 			n_parenthesis++;
-			*line_buf_ptr++ = *ptr;
+			ptr = copy(ptr, exec_info);
 			break;
 		case ')':
 			n_parenthesis--;
-			*line_buf_ptr++ = *ptr;
+			ptr = copy(ptr, exec_info);
 			break;
 		default:
-			*line_buf_ptr++ = *ptr;
+			ptr = copy(ptr, exec_info);
 			break;
 		}
-		if (n_parenthesis < 0) {
-			*--line_buf_ptr = '\0';
+		if (n_parenthesis <= 0) {
+			*--parse_info->copy = '\0';
 			break;
 		}
 	}
-
 	find_command(line_buf, buffer, stdin, exec_info, NULL);
-
+	exec_info->parse_info->finished = 0;
 	cmd_tokenize(buffer, exec_info);
+	parse_info->copy = old_ptr;
 	free(line_buf);
 	free(buffer);
 	return ptr;
 }
 
-void
-request_new_line(char *line)
+static char *
+start_math(char *line, struct exec_info *exec_info)
+{
+	// Has $, ", '
+}
+
+static char *
+end_math(char *line, struct exec_info *exec_info)
+{
+
+}
+
+char *
+request_new_line(char *line, struct exec_info *exec_info)
 {
 	prompt_request();
 	fgets(line, 1024, stdin);
 	if (ferror(stdin)) {
-		err(EXIT_FAILURE, "fgets failed");
+		fprintf(stderr, "Error: fgets failed");
+		return NULL;
 	}
+	exec_info->parse_info->has_arg_started = 0;
+	return --line;
 }
 
 void
 new_argument(struct exec_info *exec_info)
 {
-	if (strcmp
-	    (exec_info->sub_info->last_alias,
-	     exec_info->last_command->argv[0]) != 0) {
-		if (check_alias_cmd(exec_info->last_command)) {
-			strcpy(exec_info->sub_info->last_alias,
-			       exec_info->last_command->argv[0]);
-			reset_last_arg(exec_info->last_command);
-			exec_info->last_command->argc = 0;
-			exec_info->last_command->current_arg =
-			    exec_info->last_command->argv[0];
+	struct command *cmd = exec_info->last_command;
+
+	if (cmd->argc > 0) {
+		// Do substitution and update command
+		glob_t gstruct;
+
+		if (glob(cmd->current_arg, GLOB_ERR, NULL, &gstruct) ==
+		    GLOB_NOESCAPE) {
+			fprintf(stderr, "Error: glob failed");
+			return;
+		}
+
+		char **found;
+
+		found = gstruct.gl_pathv;
+
+		if (found != NULL && strcmp(cmd->current_arg, *found) != 0) {
+			while (*found != NULL) {
+				strcpy(cmd->current_arg, *found);
+				add_arg(cmd);
+				found++;
+			}
+		}
+
+		globfree(&gstruct);
+		add_arg(cmd);
+		return;
+	}
+
+	if (strcmp(exec_info->sub_info->last_alias, cmd->argv[0]) != 0) {
+		if (check_alias_cmd(cmd)) {
+			strcpy(exec_info->sub_info->last_alias, cmd->argv[0]);
+			reset_last_arg(cmd);
+			cmd->argc = 0;
+			cmd->current_arg = cmd->argv[0];
 			cmd_tokenize(get_alias(exec_info->sub_info->last_alias),
 				     exec_info);
 			return;
@@ -883,101 +665,141 @@ error_token(char token, char *line)
 	return NULL;
 }
 
-int
-check_here_doc(char *line, struct command *command)
+char *
+here_doc(char *line, struct exec_info *exec_info)
 {
-	char *ptr = line;
+	struct command *cmd = exec_info->last_command;
 
-	if (*ptr++ == 'H' && *ptr++ == 'E' && *ptr++ == 'R' && *ptr++ == 'E'
-	    && *ptr == '{') {
+	if (strcmp(cmd->current_arg, "HERE") == 0) {
+		if (seek(++line)) {
+			// FIX: proper error
+			return error_token('{', line);
+		}
+		line--;
 		// TODO: check input
-		if (set_file_cmd(command, HERE_DOC_READ, "") >= 0) {
-			return 1;
+		if (set_file_cmd(cmd, HERE_DOC_READ, "") >= 0) {
+			reset_last_arg(cmd);
+			cmd->argc--;
+			exec_info->parse_info->copy = cmd->current_arg;
+			return line;
 		}
 	}
-	return 0;
+	error_token('{', line);
+	return NULL;
 }
 
 char *
-cmdtok_redirect_in(char *line, struct exec_info *exec_info)
+start_file_in(char *line, struct exec_info *exec_info)
 {
-	exec_info->parse_info->copy = exec_info->file_info->buffer;
-	line = file_tokenize(line, exec_info);
-	if (set_file_cmd
-	    (exec_info->command, INPUT_READ,
-	     exec_info->file_info->buffer) < 0) {
-		return NULL;
-	}
+	struct parse_info *parse_info = exec_info->parse_info;
+
+	parse_info->old_lexer = parse_info->curr_lexer;
+	parse_info->old_lexer_size = parse_info->curr_lexer_size;
+	parse_info->curr_lexer = &file;
+	parse_info->curr_lexer_size = sizeof(file) / sizeof(file[0]);
+
+	parse_info->copy = exec_info->file_info->buffer;
+	parse_info->has_arg_started = 0;
+	exec_info->file_info->mode = INPUT_READ;
+
 	return line;
 }
 
 char *
-cmdtok_redirect_out(char *line, struct exec_info *exec_info)
+start_file_out(char *line, struct exec_info *exec_info)
 {
-	exec_info->parse_info->copy = exec_info->file_info->buffer;
-	line = file_tokenize(line, exec_info);
+	struct parse_info *parse_info = exec_info->parse_info;
+	struct file_info *file_info = exec_info->file_info;
+	struct command *cmd = exec_info->last_command;
 
-	if (exec_info->parse_info->has_arg_started) {
-		if (strcmp(exec_info->last_command->current_arg, "2") == 0) {
-			reset_last_arg(exec_info->last_command);
-			if (set_file_cmd
-			    (exec_info->last_command, ERROR_WRITE,
-			     exec_info->file_info->buffer) < 0) {
-				return NULL;
-			}
-			return line;
-		} else
-		    if (strcmp
-			(exec_info->last_command->current_arg, "&") == 0) {
-			reset_last_arg(exec_info->last_command);
-			if (set_file_cmd
-			    (exec_info->last_command, OUTPUT_WRITE,
-			     exec_info->file_info->buffer) < 0) {
-				return NULL;
-			}
-			if (set_file_cmd
-			    (exec_info->last_command,
-			     ERROR_AND_OUTPUT_WRITE,
-			     exec_info->file_info->buffer) < 0) {
-				return NULL;
-			}
-			return line;
-		} else
-		    if (strcmp
-			(exec_info->last_command->current_arg, "1") == 0) {
-			reset_last_arg(exec_info->last_command);
-		}
+	parse_info->old_lexer = parse_info->curr_lexer;
+	parse_info->old_lexer_size = parse_info->curr_lexer_size;
+	parse_info->curr_lexer = &file;
+	parse_info->curr_lexer_size = sizeof(file) / sizeof(file[0]);
+
+	parse_info->copy = file_info->buffer;
+	parse_info->has_arg_started = 0;
+
+	file_info->mode = OUTPUT_WRITE;
+	if (strcmp(cmd->current_arg, "2") == 0) {
+		reset_last_arg(cmd);
+		file_info->mode = ERROR_WRITE;
+	} else if (strcmp(cmd->current_arg, "&") == 0) {
+		reset_last_arg(cmd);
+		file_info->mode = ERROR_AND_OUTPUT_WRITE;
+	} else if (strcmp(cmd->current_arg, "1") == 0) {
+		reset_last_arg(cmd);
 	}
 
-	if (set_file_cmd
-	    (exec_info->last_command, OUTPUT_WRITE,
-	     exec_info->file_info->buffer) < 0) {
+	return line;
+}
+
+char *
+end_file(char *line, struct exec_info *exec_info)
+{
+	struct parse_info *parse_info = exec_info->parse_info;
+	struct file_info *file_info = exec_info->file_info;
+	struct command *cmd;
+	const lexer(*tmp_lexer)[] = parse_info->curr_lexer;
+	int tmp_lexer_size = parse_info->curr_lexer_size;
+
+	parse_info->curr_lexer = parse_info->old_lexer;
+	parse_info->curr_lexer_size = parse_info->old_lexer_size;
+	parse_info->old_lexer = tmp_lexer;
+	parse_info->old_lexer_size = tmp_lexer_size;
+
+	if (!parse_info->has_arg_started) {
+		return error_token(*line, line);
+	}
+
+	if (file_info->mode == INPUT_READ) {
+		cmd = exec_info->command;
+	} else {
+		cmd = exec_info->last_command;
+	}
+
+	if (set_file_cmd(cmd, file_info->mode, file_info->buffer) < 0) {
 		return NULL;
 	}
-	return line;
+
+	cmd->current_arg += strlen(cmd->current_arg);
+	parse_info->copy = cmd->current_arg;
+
+	return --line;
+}
+
+char *
+end_file_started(char *line, struct exec_info *exec_info)
+{
+	if (!exec_info->parse_info->has_arg_started) {
+		return line;
+	}
+	return end_file(line, exec_info);
 }
 
 char *
 tilde_tokenize(char *line, struct exec_info *exec_info)
 {
+	struct parse_info *parse_info = exec_info->parse_info;
+
+	// Check if next is ' ' '\n' or '/'then ok if not as '\'                       
+	if (parse_info->has_arg_started) {
+		line = copy(line, exec_info);
+		return line;
+	}
+
 	line++;
 	if (*line == '/' || *line == ' ' || *line == '\n') {
 		line--;
-		substitution_tokenize("HOME", exec_info);
-		// Copy now sub_info to exec_info->parse_info->copy
-		if (strlen(exec_info->sub_info->buffer) > 0) {
-			if (copy_substitution
-			    (exec_info->parse_info,
-			     exec_info->sub_info->buffer) < 0) {
-				return NULL;
-			}
-		} else {
-			line++;
-		}
+		line = start_sub("HOME", exec_info);
 	} else {
-		*exec_info->parse_info->copy++ = *--line;
-		*exec_info->parse_info->copy++ = *++line;
+		line--;
+		line = copy(line, exec_info);
+		line++;
+		line = copy(line, exec_info);
 	}
+
+	parse_info->has_arg_started = 1;
 	return line;
 }
 
@@ -1022,3 +844,187 @@ free_exec_info(struct exec_info *exec_info)
 	}
 	free(exec_info);
 };
+
+char *
+pipe_tok(char *line, struct exec_info *exec_info)
+{
+	struct parse_info *parse_info = exec_info->parse_info;
+	struct command *old_cmd = exec_info->last_command;
+
+	// Check if next char is |
+	if (strstr(line, "||") == line) {
+		old_cmd->next_status_needed_to_exec = EXECUTE_IN_FAILURE;
+		line++;
+		return line;
+	}
+
+	if (parse_info->has_arg_started) {
+		new_argument(exec_info);
+	}
+
+	exec_info->last_command = new_command();
+	// Update old_cmd pipe
+	strcpy(exec_info->sub_info->last_alias, "");
+	pipe_command(old_cmd, exec_info->last_command);
+	parse_info->copy = exec_info->last_command->current_arg;
+	parse_info->has_arg_started = 0;
+	return line;
+}
+
+char *
+background(char *line, struct exec_info *exec_info)
+{
+	struct parse_info *parse_info = exec_info->parse_info;
+	struct command *command = exec_info->last_command;
+
+	// Check if next char is & or >
+	if (strstr(line, "&&") == line) {
+		// Add an argument to old command
+		if (exec_info->parse_info->has_arg_started) {
+			new_argument(exec_info);
+		}
+		command->next_status_needed_to_exec = EXECUTE_IN_SUCCESS;
+		parse_info->finished = 1;
+		line++;
+		return line;
+	} else if (strstr(line, "&>") == line) {
+		line = copy(line, exec_info);
+		parse_info->has_arg_started = 1;
+		return line;
+	}
+	// TODO: check for char, then error
+	if (seek(line)) {
+		return error_token('&', line);
+	}
+	command->do_wait = DO_NOT_WAIT_TO_FINISH;
+	if (set_file_cmd(command, INPUT_READ, "/dev/null") < 0) {
+		return NULL;
+	}
+	parse_info->has_arg_started = 0;
+	return line;
+}
+
+char *
+escape(char *line, struct exec_info *exec_info)
+{
+	struct parse_info *parse_info = exec_info->parse_info;
+
+	line++;
+	// if escape \n do not copy
+	if (*line != '\n') {
+		line = copy(line, exec_info);
+	}
+
+	parse_info->has_arg_started = 1;
+	return line;
+}
+
+char *
+esp_escape(char *line, struct exec_info *exec_info)
+{
+	struct parse_info *parse_info = exec_info->parse_info;
+
+	line++;
+
+	if (*line == '$' || *line == '"') {
+		line = copy(line, exec_info);
+	} else if (*line != '\n') {
+		line--;
+		line = copy(line, exec_info);
+		line++;
+		line = copy(line, exec_info);
+	}
+
+	parse_info->has_arg_started = 1;
+	return line;
+}
+
+char *
+blank(char *line, struct exec_info *exec_info)
+{
+	struct parse_info *parse_info = exec_info->parse_info;
+
+	if (parse_info->has_arg_started) {
+		new_argument(exec_info);
+		parse_info->copy = exec_info->last_command->current_arg;
+		parse_info->has_arg_started = 1;
+	}
+	return line;
+}
+
+char *
+end_line(char *line, struct exec_info *exec_info)
+{
+	exec_info->parse_info->finished = 1;
+	line--;
+	return line;
+}
+
+char *
+end_pipe(char *line, struct exec_info *exec_info)
+{
+	struct parse_info *parse_info = exec_info->parse_info;
+
+	if (parse_info->has_arg_started) {
+		new_argument(exec_info);
+	}
+	line++;
+	parse_info->finished = 1;
+	return line;
+}
+
+char *
+copy(char *line, struct exec_info *exec_info)
+{
+	*exec_info->parse_info->copy++ = *line;
+	exec_info->parse_info->has_arg_started = 1;
+	return line;
+}
+
+char *
+copy_and_end(char *line, struct exec_info *exec_info)
+{
+	line = copy(line, exec_info);
+	line = end_line(line, exec_info);
+	return line;
+}
+
+char *
+error(char *line, struct exec_info *exec_info)
+{
+	exec_info->parse_info->finished = 1;
+	error_token(*line, line);
+	return NULL;
+}
+
+char *
+exec_lexer(char *line, struct exec_info *exec_info)
+{
+	int index;
+	int size = exec_info->parse_info->curr_lexer_size;
+	const lexer(*table)[] = exec_info->parse_info->curr_lexer;
+
+	for (index = 0; index < (size + 1); index++) {
+		if (index == size) {
+			line = copy(line, exec_info);
+		} else {
+			if (*line == (*table)[index].token) {
+				line = (*table)[index].fun(line, exec_info);
+				break;
+			}
+		}
+	}
+	return line;
+}
+
+int
+seek(char *line)
+{
+	char *ptr;
+
+	for (ptr = line; *ptr != '\0'; ptr++) {
+		if (*ptr != ' ' && *ptr != '\n' && *ptr != '\t')
+			return 1;
+	}
+	return 0;
+}

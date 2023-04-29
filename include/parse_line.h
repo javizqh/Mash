@@ -14,16 +14,21 @@
 
 // ---------- Tokenization -----------
 
+struct exec_info;
 
-enum parse_info_enum {
-	PARSE_ARG_NOT_STARTED,
-	PARSE_ARG_STARTED
-};
+typedef struct lexer {
+	char token;
+	char *(* fun)(char *, struct exec_info *);
+} lexer;
 
 struct parse_info {
 	int has_arg_started;
-	int do_not_expect_new_cmd;
+	int finished;
 	char *copy;
+	int curr_lexer_size;
+	const lexer (*curr_lexer)[];
+	int old_lexer_size;
+	const lexer (*old_lexer)[];
 };
 
 struct parse_info *new_parse_info();
@@ -38,8 +43,10 @@ void restore_parse_info(struct parse_info *parse_info);
 
 struct sub_info {
 	char last_alias[ALIAS_MAX_COMMAND];
-	char *ptr;
+	char *old_ptr;
 	char buffer[MAX_ENV_SIZE];
+	int old_lexer_size;
+	const lexer (*old_lexer)[];
 };
 
 struct sub_info *new_sub_info();
@@ -78,35 +85,4 @@ enum token {
 	CREATE_COMMAND_TO_START,
 	USE_PREVIOUS_COMMAND_TO_START
 };
-
-char * cmd_tokenize(char *line, struct exec_info *exec_info);
-
-// Tokenize types
-char *hard_apost_tokenize(char *line, struct parse_info *parse_info);
-
-char *soft_apost_tokenize(char *line, struct exec_info *exec_info);
-
-char *substitution_tokenize(char *line, struct exec_info *exec_info);
-
-int copy_substitution(struct parse_info *parse_info, const char *sub_buffer);
-
-char *file_tokenize(char *line, struct exec_info *exec_info);
-
-char *glob_tokenize(char *line,struct exec_info *exec_info);
-
-char *execute_token(char *line, struct exec_info *exec_info);
-
-void request_new_line(char *line);
-
-void new_argument(struct exec_info *exec_info);
-
-char * error_token(char token, char *line);
-
-int check_here_doc(char *line, struct command *command);
-
-char * cmdtok_redirect_in(char *line, struct exec_info *exec_info);
-
-char * cmdtok_redirect_out(char *line, struct exec_info *exec_info);
-
-char * tilde_tokenize(char *line, struct exec_info *exec_info);
 
