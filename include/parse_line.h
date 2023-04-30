@@ -22,6 +22,7 @@ typedef struct lexer {
 } lexer;
 
 struct parse_info {
+	int request_line;
 	int has_arg_started;
 	int finished;
 	char *copy;
@@ -45,6 +46,8 @@ struct sub_info {
 	char last_alias[ALIAS_MAX_COMMAND];
 	char *old_ptr;
 	char buffer[MAX_ENV_SIZE];
+	char *exec_buffer;
+	int exec_depth;
 	int old_lexer_size;
 	const lexer (*old_lexer)[];
 };

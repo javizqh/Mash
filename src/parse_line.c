@@ -50,6 +50,7 @@ static char *escape(char *line, struct exec_info *exec_info);
 static char *esp_escape(char *line, struct exec_info *exec_info);
 static char *blank(char *line, struct exec_info *exec_info);
 static char *end_line(char *line, struct exec_info *exec_info);
+static char *comment(char *line, struct exec_info *exec_info);
 static char *end_pipe(char *line, struct exec_info *exec_info);
 static char *copy(char *line, struct exec_info *exec_info);
 static char *copy_and_end(char *line, struct exec_info *exec_info);
@@ -103,12 +104,15 @@ static const lexer m_c = { '$', start_sub };
 static const lexer m_d = { '\'', start_squote };
 static const lexer m_e = { ')', end_math };
 
+static const lexer x_a = { '\0', request_new_line };
+static const lexer x_b = { '$', start_sub };
+
 static const lexer n_a = { '\0', end_line };
 static const lexer n_b = { '\t', blank };
 static const lexer n_c = { '\n', blank };
 static const lexer n_d = { ' ', blank };
 static const lexer n_e = { '"', start_dquote };
-static const lexer n_f = { '#', end_line };
+static const lexer n_f = { '#', comment };
 static const lexer n_g = { '$', start_sub };
 static const lexer n_h = { '&', background };
 static const lexer n_i = { '\'', start_squote };
@@ -152,7 +156,6 @@ static const lexer normal[22] =
 };
 static const lexer hard[2] = { h_a, h_b };
 static const lexer soft[4] = { h_a, s_b, n_g, s_d };
-static const lexer math[5] = { m_a, m_b, m_c, m_d, m_e };
 
 static const lexer sub[23] =
     { sb_a, sb_b, sb_c, sb_d, sb_e, sb_f, sb_g, sb_h, sb_i, sb_j, sb_k, sb_l,
@@ -178,6 +181,7 @@ new_parse_info()
 		err(EXIT_FAILURE, "malloc failed");
 	}
 	memset(parse_info, 0, sizeof(struct parse_info));
+	parse_info->request_line = 0;
 	parse_info->has_arg_started = 0;
 	parse_info->finished = 0;
 	parse_info->copy = NULL;
@@ -192,6 +196,7 @@ new_parse_info()
 void
 restore_parse_info(struct parse_info *parse_info)
 {
+	parse_info->request_line = 0;
 	parse_info->has_arg_started = 0;
 	parse_info->finished = 0;
 	parse_info->copy = NULL;
@@ -385,6 +390,10 @@ cmd_tokenize(char *ptr, struct exec_info *exec_info)
 	cmd->current_arg += strlen(cmd->current_arg);
 	parse_info->copy = cmd->current_arg;
 
+	if (strlen(ptr) == 100 - 1) {
+		exec_info->parse_info->request_line = 1;
+	}
+
 	for (; !parse_info->finished; ptr++) {
 		ptr = exec_lexer(ptr, exec_info);
 		if (ptr == NULL)
@@ -468,13 +477,20 @@ start_sub(char *line, struct exec_info *exec_info)
 
 	sub_info->old_ptr = parse_info->copy;
 
-	sub_info->old_lexer = parse_info->curr_lexer;
-	sub_info->old_lexer_size = parse_info->curr_lexer_size;
-	parse_info->curr_lexer = &sub;
-	parse_info->curr_lexer_size = sizeof(sub) / sizeof(sub[0]);
-
 	parse_info->has_arg_started = 1;
 	parse_info->copy = sub_info->buffer;
+
+	if (strstr(line, "$((") == line) {
+		//FIX: add math well
+		line++;
+		line++;
+	} else if (strstr(line, "$(") == line) {
+		line++;
+		return start_subexec(line, exec_info);
+	}
+
+	parse_info->curr_lexer = &sub;
+	parse_info->curr_lexer_size = sizeof(sub) / sizeof(sub[0]);
 
 	return line;
 }
@@ -546,11 +562,6 @@ start_subexec(char *line, struct exec_info *exec_info)
 	char *ptr;
 	char *old_ptr = parse_info->copy;
 
-	if (strstr(line, "((") == line) {
-		//TODO: add math
-		n_parenthesis++;
-		line++;
-	}
 	parse_info->copy = line_buf;
 
 	line++;
@@ -601,7 +612,7 @@ char *
 request_new_line(char *line, struct exec_info *exec_info)
 {
 	prompt_request();
-	fgets(line, 1024, stdin);
+	fgets(line, MAX_ARGUMENT_SIZE, stdin);
 	if (ferror(stdin)) {
 		fprintf(stderr, "Error: fgets failed");
 		return NULL;
@@ -947,7 +958,7 @@ blank(char *line, struct exec_info *exec_info)
 	if (parse_info->has_arg_started) {
 		new_argument(exec_info);
 		parse_info->copy = exec_info->last_command->current_arg;
-		parse_info->has_arg_started = 1;
+		parse_info->has_arg_started = 0;
 	}
 	return line;
 }
@@ -955,6 +966,42 @@ blank(char *line, struct exec_info *exec_info)
 char *
 end_line(char *line, struct exec_info *exec_info)
 {
+	if (exec_info->parse_info->request_line) {
+		// FIX: add enum
+		memset(exec_info->line, 0, MAX_ARGUMENT_SIZE);
+		fgets(exec_info->line, MAX_ARGUMENT_SIZE, stdin);
+		if (ferror(stdin)) {
+			fprintf(stderr, "Error: fgets failed");
+			return NULL;
+		}
+		if (strlen(exec_info->line) < MAX_ARGUMENT_SIZE - 1) {
+			exec_info->parse_info->request_line = 0;
+		}
+		line = exec_info->line;
+	} else {
+		exec_info->parse_info->finished = 1;
+	}
+	line--;
+	return line;
+}
+
+char *
+comment(char *line, struct exec_info *exec_info)
+{
+	while (!exec_info->parse_info->request_line) {
+		// FIX: create a buffer to hold it
+		memset(exec_info->line, 0, MAX_ARGUMENT_SIZE);
+		fgets(exec_info->line, MAX_ARGUMENT_SIZE, stdin);
+		if (ferror(stdin)) {
+			fprintf(stderr, "Error: fgets failed");
+			return NULL;
+		}
+		if (strlen(exec_info->line) < MAX_ARGUMENT_SIZE - 1) {
+			exec_info->parse_info->request_line = 0;
+		}
+		line = exec_info->line;
+	}
+
 	exec_info->parse_info->finished = 1;
 	line--;
 	return line;

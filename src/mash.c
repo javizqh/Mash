@@ -66,15 +66,15 @@ main(int argc, char **argv)
 
 	// ---------- Read command line
 	// ------ Buffer
-	char *buf = malloc(1024);
+	char *buf = malloc(MAX_ARGUMENT_SIZE);
 
 	if (buf == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-	memset(buf, 0, 1024);
+	memset(buf, 0, MAX_ARGUMENT_SIZE);
 	// ------------
 	prompt(buf);
-	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
+	while (fgets(buf, MAX_ARGUMENT_SIZE, stdin) != NULL) {	/* break with ^D or ^Z */
 		status = find_command(buf, NULL, stdin, NULL, NULL);
 
 		if (has_to_exit) {
