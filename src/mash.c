@@ -51,6 +51,7 @@ main(int argc, char **argv)
 	signal(SIGINT, sig_handler);
 	signal(SIGTSTP, sig_handler);
 
+	load_lex_tables();
 	init_jobs_list();
 	add_source("env/.mashrc");
 	exec_sources();

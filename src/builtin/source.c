@@ -110,14 +110,14 @@ int exec_sources() {
 int
 read_source_file(char *filename)
 {
-	char *buf = malloc(sizeof(char[1024]));
+	char *buf = malloc(MAX_ARGUMENT_SIZE);
 
 	if (buf == NULL)
 		err(EXIT_FAILURE, "malloc failed");
-	memset(buf, 0, 1024);
+	memset(buf, 0, MAX_ARGUMENT_SIZE);
 	FILE *f = fopen(filename, "r");
 
-	while (fgets(buf, 1024, f) != NULL) {	/* break with ^D or ^Z */
+	while (fgets(buf, MAX_ARGUMENT_SIZE, f) != NULL) {	/* break with ^D or ^Z */
 		if (find_command(buf, NULL, f, NULL, NULL) == -1) {
 			//exit_dash();
 			fclose(f);

@@ -14,22 +14,29 @@
 
 // ---------- Tokenization -----------
 
+enum ascii {
+	ASCII_CHARS = 256
+};
+
 struct exec_info;
 
-typedef struct lexer {
-	char token;
-	char *(* fun)(char *, struct exec_info *);
-} lexer;
+typedef char *(*spec_char)(char *, struct exec_info *);
+
+int load_lex_tables();
+int load_std_table();
+int load_sub_table();
+int load_file_table();
+int load_sq_table();
+int load_dq_table();
+int load_defaults(spec_char fun,spec_char (*table)[ASCII_CHARS]);
 
 struct parse_info {
 	int request_line;
 	int has_arg_started;
 	int finished;
 	char *copy;
-	int curr_lexer_size;
-	const lexer (*curr_lexer)[];
-	int old_lexer_size;
-	const lexer (*old_lexer)[];
+	spec_char (*curr_lexer)[ASCII_CHARS];
+	spec_char (*old_lexer)[ASCII_CHARS];
 };
 
 struct parse_info *new_parse_info();
@@ -46,10 +53,7 @@ struct sub_info {
 	char last_alias[ALIAS_MAX_COMMAND];
 	char *old_ptr;
 	char buffer[MAX_ENV_SIZE];
-	char *exec_buffer;
-	int exec_depth;
-	int old_lexer_size;
-	const lexer (*old_lexer)[];
+	spec_char (*old_lexer)[ASCII_CHARS];
 };
 
 struct sub_info *new_sub_info();
@@ -89,3 +93,4 @@ enum token {
 	USE_PREVIOUS_COMMAND_TO_START
 };
 
+char *parse(char *line, struct exec_info *exec_info);

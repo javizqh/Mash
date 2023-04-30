@@ -30,9 +30,7 @@
 #include "exec_cmd.h"
 #include "builtin/jobs.h"
 
-// DECLARE STATIC FUNCTION
-static char *cmd_tokenize(char *line, struct exec_info *exec_info);
-
+// DECLARE STATIC FUNCTIONS
 // Tokenize types
 static char *start_squote(char *line, struct exec_info *exec_info);
 static char *end_squote(char *line, struct exec_info *exec_info);
@@ -69,90 +67,138 @@ static void new_argument(struct exec_info *exec_info);
 static char *error_token(char token, char *line);
 static int seek(char *line);
 
-static const lexer normal[22] = {
-	{'\0', end_line},
-	{'\t', blank},
-	{'\n', blank},
-	{' ', blank},
-	{'"', start_dquote},
-	{'#', comment},
-	{'$', start_sub},
-	{'&', background},
-	{'\'', start_squote},
-	{'(', error},
-	{')', error},
-	{';', end_pipe},
-	{'<', start_file_in},
-	{'>', start_file_out},
-	{'\\', escape},
-	{'{', here_doc},
-	{'}', error},
-	{'|', pipe_tok},
-	{'~', tilde_tokenize}
-};
+static spec_char std[ASCII_CHARS];
+static spec_char sub[ASCII_CHARS];
+static spec_char file[ASCII_CHARS];
+static spec_char sq[ASCII_CHARS];
+static spec_char dq[ASCII_CHARS];
 
-static const lexer hard[2] = {
-	{'\0', request_new_line},
-	{'\'', end_squote}
-};
+int
+load_lex_tables()
+{
+	load_std_table();
+	load_sub_table();
+	load_file_table();
+	load_sq_table();
+	load_dq_table();
+	return 0;
+}
 
-static const lexer soft[4] = {
-	{'\0', request_new_line},
-	{'"', end_dquote},
-	{'$', start_sub},
-	{'\\', esp_escape}
-};
+int
+load_std_table()
+{
+	std['\0'] = end_line;
+	std['\t'] = blank;
+	std['\n'] = blank;
+	std[' '] = blank;
+	std['"'] = start_dquote;
+	std['#'] = comment;
+	std['$'] = start_sub;
+	std['&'] = background;
+	std['\''] = start_squote;
+	std['('] = error;
+	std[')'] = error;
+	std[';'] = end_pipe;
+	std['<'] = start_file_in;
+	std['>'] = start_file_out;
+	std['\\'] = escape;
+	std['{'] = here_doc;
+	std['}'] = error;
+	std['|'] = pipe_tok;
+	std['~'] = tilde_tokenize;
+	load_defaults(copy, &std);
+	return 0;
+}
 
-static const lexer sub[23] = {
-	{'\0', end_sub},
-	{'\t', end_sub},
-	{'\n', end_sub},
-	{' ', end_sub},
-	{'"', end_sub},
-	{'#', copy_and_end},
-	{'$', copy_and_end},
-	{'&', end_sub},
-	{'\'', end_sub},
-	{'(', start_subexec},
-	{')', end_sub},
-	{'-', copy_and_end},
-	{';', end_sub},
-	{'<', end_sub},
-	{'>', end_sub},
-	{'?', copy_and_end},
-	{'@', copy_and_end},
-	{'\\', end_sub},
-	{'_', copy_and_end},
-	{'{', end_sub},
-	{'}', end_sub},
-	{'|', end_sub},
-	{'~', end_sub}
-};
+int
+load_sub_table()
+{
+	sub['\0'] = end_sub;
+	sub['\t'] = end_sub;
+	sub['\n'] = end_sub;
+	sub[' '] = end_sub;
+	sub['"'] = end_sub;
+	sub['#'] = copy_and_end;
+	sub['$'] = copy_and_end;
+	sub['&'] = end_sub;
+	sub['\''] = end_sub;
+	sub['('] = end_sub;
+	sub[')'] = end_sub;
+	sub['-'] = copy_and_end;
+	sub[';'] = end_sub;
+	sub['<'] = end_sub;
+	sub['>'] = end_sub;
+	sub['?'] = copy_and_end;
+	sub['@'] = copy_and_end;
+	sub['\\'] = end_sub;
+	sub['_'] = copy_and_end;
+	sub['{'] = end_sub;
+	sub['}'] = end_sub;
+	sub['|'] = end_sub;
+	sub['~'] = end_sub;
+	load_defaults(copy, &sub);
+	return 0;
+}
 
-static const lexer file[22] = {
-	{'\0', end_file},
-	{'\t', end_file_started},
-	{'\n', end_file},
-	{' ', end_file_started},
-	{'"', start_dquote},
-	{'#', end_file},
-	{'$', start_sub},
-	{'&', end_file},
-	{'\'', start_squote},
-	{'(', error},
-	{')', error},
-	{'*', error},
-	{';', end_file},
-	{'<', end_file},
-	{'>', end_file},
-	{'?', error},
-	{'[', error},
-	{'\\', escape},
-	{'{', error},
-	{'}', error},
-	{'|', end_file},
-	{'~', tilde_tokenize}
-};
+int
+load_file_table()
+{
+	file['\0'] = end_file;
+	file['\t'] = end_file_started;
+	file['\n'] = end_file;
+	file[' '] = end_file_started;
+	file['"'] = start_dquote;
+	file['#'] = end_file;
+	file['$'] = start_sub;
+	file['&'] = end_file;
+	file['\''] = start_squote;
+	file['('] = error;
+	file[')'] = error;
+	file['*'] = error;
+	file[';'] = end_file;
+	file['<'] = end_file;
+	file['>'] = end_file;
+	file['?'] = error;
+	file['['] = error;
+	file['\\'] = escape;
+	file['{'] = error;
+	file['}'] = error;
+	file['|'] = end_file;
+	file['~'] = tilde_tokenize;
+	load_defaults(copy, &file);
+	return 0;
+}
+
+int
+load_sq_table()
+{
+	sq['\0'] = request_new_line;
+	sq['\''] = end_squote;
+	load_defaults(copy, &sq);
+	return 0;
+}
+
+int
+load_dq_table()
+{
+	dq['\0'] = request_new_line;
+	dq['"'] = end_dquote;
+	dq['$'] = start_sub;
+	dq['\\'] = esp_escape;
+	load_defaults(copy, &dq);
+	return 0;
+}
+
+int
+load_defaults(spec_char fun, spec_char(*table)[ASCII_CHARS])
+{
+	int i;
+
+	for (i = 0; i < ASCII_CHARS; i++)
+		if ((*table)[i] == NULL)
+			(*table)[i] = fun;
+	return 0;
+}
 
 // ------ Parse info --------
 
@@ -171,9 +217,7 @@ new_parse_info()
 	parse_info->has_arg_started = 0;
 	parse_info->finished = 0;
 	parse_info->copy = NULL;
-	parse_info->curr_lexer_size = sizeof(normal) / sizeof(normal[0]);
-	parse_info->curr_lexer = &normal;
-	parse_info->old_lexer_size = parse_info->curr_lexer_size;
+	parse_info->curr_lexer = &std;
 	parse_info->old_lexer = parse_info->curr_lexer;
 
 	return parse_info;
@@ -186,9 +230,7 @@ restore_parse_info(struct parse_info *parse_info)
 	parse_info->has_arg_started = 0;
 	parse_info->finished = 0;
 	parse_info->copy = NULL;
-	parse_info->curr_lexer_size = sizeof(normal) / sizeof(normal[0]);
-	parse_info->curr_lexer = &normal;
-	parse_info->old_lexer_size = parse_info->curr_lexer_size;
+	parse_info->curr_lexer = &std;
 	parse_info->old_lexer = parse_info->curr_lexer;
 };
 
@@ -213,7 +255,7 @@ find_command(char *line, char *buffer, FILE * src_file,
 	}
 // ---------------------------------------------------------------
 
-	while ((line = cmd_tokenize(line, exec_info))) {
+	while ((line = parse(line, exec_info))) {
 		switch (status_for_next_cmd) {
 		case DO_NOT_MATTER_TO_EXEC:
 			status =
@@ -258,6 +300,7 @@ find_command(char *line, char *buffer, FILE * src_file,
 	free(exec_info->file_info);
 	free(exec_info->sub_info);
 	free_command(exec_info->command);
+	memset(exec_info->line, 0, MAX_ARGUMENT_SIZE);
 	free(exec_info);
 	return status;
 }
@@ -276,7 +319,6 @@ new_sub_info()
 	}
 	memset(sub_info, 0, sizeof(struct sub_info));
 	sub_info->old_ptr = NULL;
-	sub_info->old_lexer_size = 0;
 	sub_info->old_lexer = NULL;
 
 	return sub_info;
@@ -285,10 +327,9 @@ new_sub_info()
 void
 restore_sub_info(struct sub_info *sub_info)
 {
-	memset(sub_info->last_alias, 0, MAX_ARGUMENT_SIZE);
+	//memset(sub_info->last_alias, 0, MAX_ARGUMENT_SIZE);
 	memset(sub_info->buffer, 0, MAX_ENV_SIZE);
 	sub_info->old_ptr = NULL;
-	sub_info->old_lexer_size = 0;
 	sub_info->old_lexer = NULL;
 }
 
@@ -360,7 +401,7 @@ restore_file_info(struct file_info *file_info)
 // New TOKENIZATION Recursive
 
 char *
-cmd_tokenize(char *ptr, struct exec_info *exec_info)
+parse(char *ptr, struct exec_info *exec_info)
 {
 	struct parse_info *parse_info = exec_info->parse_info;
 	struct command *cmd = exec_info->last_command;
@@ -376,17 +417,19 @@ cmd_tokenize(char *ptr, struct exec_info *exec_info)
 	cmd->current_arg += strlen(cmd->current_arg);
 	parse_info->copy = cmd->current_arg;
 
-	if (strlen(ptr) == 100 - 1) {
+	if (strlen(ptr) == MAX_ARGUMENT_SIZE - 1) {
 		exec_info->parse_info->request_line = 1;
 	}
 
 	for (; !parse_info->finished; ptr++) {
 		ptr = exec_lexer(ptr, exec_info);
+
 		if (ptr == NULL)
 			return ptr;
 	}
 
 	cmd = exec_info->last_command;
+
 	if (cmd->current_arg[0] != '\0') {
 		new_argument(exec_info);
 	} else {
@@ -403,9 +446,7 @@ start_squote(char *line, struct exec_info *exec_info)
 	struct parse_info *parse_info = exec_info->parse_info;
 
 	parse_info->old_lexer = parse_info->curr_lexer;
-	parse_info->old_lexer_size = parse_info->curr_lexer_size;
-	parse_info->curr_lexer = &hard;
-	parse_info->curr_lexer_size = sizeof(hard) / sizeof(hard[0]);
+	parse_info->curr_lexer = &sq;
 
 	parse_info->has_arg_started = 1;
 	return line;
@@ -415,13 +456,11 @@ char *
 end_squote(char *line, struct exec_info *exec_info)
 {
 	struct parse_info *parse_info = exec_info->parse_info;
-	const lexer(*tmp_lexer)[] = parse_info->curr_lexer;
-	int tmp_lexer_size = parse_info->curr_lexer_size;
+
+	spec_char(*tmp_lexer)[256] = parse_info->curr_lexer;
 
 	parse_info->curr_lexer = parse_info->old_lexer;
-	parse_info->curr_lexer_size = parse_info->old_lexer_size;
 	parse_info->old_lexer = tmp_lexer;
-	parse_info->old_lexer_size = tmp_lexer_size;
 	parse_info->finished = 0;
 	return line;
 }
@@ -432,9 +471,7 @@ start_dquote(char *line, struct exec_info *exec_info)
 	struct parse_info *parse_info = exec_info->parse_info;
 
 	parse_info->old_lexer = parse_info->curr_lexer;
-	parse_info->old_lexer_size = parse_info->curr_lexer_size;
-	parse_info->curr_lexer = &soft;
-	parse_info->curr_lexer_size = sizeof(soft) / sizeof(soft[0]);
+	parse_info->curr_lexer = &dq;
 
 	parse_info->has_arg_started = 1;
 
@@ -445,13 +482,11 @@ char *
 end_dquote(char *line, struct exec_info *exec_info)
 {
 	struct parse_info *parse_info = exec_info->parse_info;
-	const lexer(*tmp_lexer)[] = parse_info->curr_lexer;
-	int tmp_lexer_size = parse_info->curr_lexer_size;
+
+	spec_char(*tmp_lexer)[256] = parse_info->curr_lexer;
 
 	parse_info->curr_lexer = parse_info->old_lexer;
-	parse_info->curr_lexer_size = parse_info->old_lexer_size;
 	parse_info->old_lexer = tmp_lexer;
-	parse_info->old_lexer_size = tmp_lexer_size;
 	return line;
 }
 
@@ -461,18 +496,18 @@ start_sub(char *line, struct exec_info *exec_info)
 	struct parse_info *parse_info = exec_info->parse_info;
 	struct sub_info *sub_info = exec_info->sub_info;
 
-	sub_info->old_ptr = parse_info->copy;
-
 	parse_info->has_arg_started = 1;
-	parse_info->copy = sub_info->buffer;
 
- 	if (strstr(line, "$(") == line) {
+	if (strstr(line, "$(") == line) {
 		line++;
 		return start_subexec(line, exec_info);
 	}
 
+	sub_info->old_ptr = parse_info->copy;
+	parse_info->copy = sub_info->buffer;
+
+	sub_info->old_lexer = parse_info->curr_lexer;
 	parse_info->curr_lexer = &sub;
-	parse_info->curr_lexer_size = sizeof(sub) / sizeof(sub[0]);
 
 	return line;
 }
@@ -507,7 +542,6 @@ end_sub(char *line, struct exec_info *exec_info)
 	struct command *cmd = exec_info->last_command;
 
 	parse_info->curr_lexer = sub_info->old_lexer;
-	parse_info->curr_lexer_size = sub_info->old_lexer_size;
 	parse_info->copy = sub_info->old_ptr;
 
 	if (copy_substitution(parse_info, sub_info->buffer) < 0) {
@@ -551,25 +585,28 @@ start_subexec(char *line, struct exec_info *exec_info)
 		parse_info->copy += strlen(line_buf);
 		line++;
 		n_parenthesis++;
-	} 
-
+	}
 	//FIX: resolve parenthesis
 	line++;
 	for (ptr = line; ptr != NULL; ptr++) {
 		switch (*ptr) {
 		case '\0':
 			ptr = request_new_line(ptr, exec_info);
+
 			break;
 		case '(':
 			n_parenthesis++;
 			ptr = copy(ptr, exec_info);
+
 			break;
 		case ')':
 			n_parenthesis--;
 			ptr = copy(ptr, exec_info);
+
 			break;
 		default:
 			ptr = copy(ptr, exec_info);
+
 			break;
 		}
 		if (n_parenthesis <= 0) {
@@ -579,17 +616,18 @@ start_subexec(char *line, struct exec_info *exec_info)
 	}
 	find_command(line_buf, buffer, stdin, exec_info, NULL);
 	exec_info->parse_info->finished = 0;
-	cmd_tokenize(buffer, exec_info);
+	parse(buffer, exec_info);
+
 	parse_info->copy = old_ptr;
 	free(line_buf);
 	free(buffer);
-	return ptr;
+	return ptr++;
 }
 
 static char *
 start_math(char *line, struct exec_info *exec_info)
 {
-	
+
 //static const lexer m_a = { '\0', request_new_line };
 //static const lexer m_b = { '"', start_dquote };
 //static const lexer m_c = { '$', start_sub };
@@ -607,6 +645,7 @@ request_new_line(char *line, struct exec_info *exec_info)
 		return NULL;
 	}
 	exec_info->parse_info->has_arg_started = 0;
+
 	return --line;
 }
 
@@ -645,11 +684,12 @@ new_argument(struct exec_info *exec_info)
 	if (strcmp(exec_info->sub_info->last_alias, cmd->argv[0]) != 0) {
 		if (check_alias_cmd(cmd)) {
 			strcpy(exec_info->sub_info->last_alias, cmd->argv[0]);
+
 			reset_last_arg(cmd);
 			cmd->argc = 0;
 			cmd->current_arg = cmd->argv[0];
-			cmd_tokenize(get_alias(exec_info->sub_info->last_alias),
-				     exec_info);
+			parse(get_alias(exec_info->sub_info->last_alias),
+			      exec_info);
 			return;
 		}
 	}
@@ -672,8 +712,8 @@ here_doc(char *line, struct exec_info *exec_info)
 
 	if (strcmp(cmd->current_arg, "HERE") == 0) {
 		if (seek(++line)) {
-			// FIX: proper error
-			return error_token('{', line);
+			fprintf(stderr, "Mash: error text behind here doc\n");
+			return NULL;
 		}
 		line--;
 		// TODO: check input
@@ -681,6 +721,7 @@ here_doc(char *line, struct exec_info *exec_info)
 			reset_last_arg(cmd);
 			cmd->argc--;
 			exec_info->parse_info->copy = cmd->current_arg;
+
 			return line;
 		}
 	}
@@ -694,11 +735,10 @@ start_file_in(char *line, struct exec_info *exec_info)
 	struct parse_info *parse_info = exec_info->parse_info;
 
 	parse_info->old_lexer = parse_info->curr_lexer;
-	parse_info->old_lexer_size = parse_info->curr_lexer_size;
 	parse_info->curr_lexer = &file;
-	parse_info->curr_lexer_size = sizeof(file) / sizeof(file[0]);
 
 	parse_info->copy = exec_info->file_info->buffer;
+
 	parse_info->has_arg_started = 0;
 	exec_info->file_info->mode = INPUT_READ;
 
@@ -713,9 +753,7 @@ start_file_out(char *line, struct exec_info *exec_info)
 	struct command *cmd = exec_info->last_command;
 
 	parse_info->old_lexer = parse_info->curr_lexer;
-	parse_info->old_lexer_size = parse_info->curr_lexer_size;
 	parse_info->curr_lexer = &file;
-	parse_info->curr_lexer_size = sizeof(file) / sizeof(file[0]);
 
 	parse_info->copy = file_info->buffer;
 	parse_info->has_arg_started = 0;
@@ -740,13 +778,11 @@ end_file(char *line, struct exec_info *exec_info)
 	struct parse_info *parse_info = exec_info->parse_info;
 	struct file_info *file_info = exec_info->file_info;
 	struct command *cmd;
-	const lexer(*tmp_lexer)[] = parse_info->curr_lexer;
-	int tmp_lexer_size = parse_info->curr_lexer_size;
+
+	spec_char(*tmp_lexer)[256] = parse_info->curr_lexer;
 
 	parse_info->curr_lexer = parse_info->old_lexer;
-	parse_info->curr_lexer_size = parse_info->old_lexer_size;
 	parse_info->old_lexer = tmp_lexer;
-	parse_info->old_lexer_size = tmp_lexer_size;
 
 	if (!parse_info->has_arg_started) {
 		return error_token(*line, line);
@@ -785,6 +821,7 @@ tilde_tokenize(char *line, struct exec_info *exec_info)
 	// Check if next is ' ' '\n' or '/'then ok if not as '\'                       
 	if (parse_info->has_arg_started) {
 		line = copy(line, exec_info);
+
 		return line;
 	}
 
@@ -795,6 +832,7 @@ tilde_tokenize(char *line, struct exec_info *exec_info)
 	} else {
 		line--;
 		line = copy(line, exec_info);
+
 		line++;
 		line = copy(line, exec_info);
 	}
@@ -838,6 +876,7 @@ free_exec_info(struct exec_info *exec_info)
 	free(exec_info->file_info);
 	free(exec_info->sub_info);
 	free(exec_info->line);
+
 	if (exec_info->prev_exec_info != NULL) {
 		free_command_with_buf(exec_info->prev_exec_info->command);
 		free_exec_info(exec_info->prev_exec_info);
@@ -863,10 +902,12 @@ pipe_tok(char *line, struct exec_info *exec_info)
 	}
 
 	exec_info->last_command = new_command();
+
 	// Update old_cmd pipe
 	strcpy(exec_info->sub_info->last_alias, "");
 	pipe_command(old_cmd, exec_info->last_command);
 	parse_info->copy = exec_info->last_command->current_arg;
+
 	parse_info->has_arg_started = 0;
 	return line;
 }
@@ -889,14 +930,17 @@ background(char *line, struct exec_info *exec_info)
 		return line;
 	} else if (strstr(line, "&>") == line) {
 		line = copy(line, exec_info);
+
 		parse_info->has_arg_started = 1;
 		return line;
 	}
-	// TODO: check for char, then error
+
 	if (seek(line)) {
 		return error_token('&', line);
 	}
+
 	command->do_wait = DO_NOT_WAIT_TO_FINISH;
+
 	if (set_file_cmd(command, INPUT_READ, "/dev/null") < 0) {
 		return NULL;
 	}
@@ -931,6 +975,7 @@ esp_escape(char *line, struct exec_info *exec_info)
 	} else if (*line != '\n') {
 		line--;
 		line = copy(line, exec_info);
+
 		line++;
 		line = copy(line, exec_info);
 	}
@@ -947,6 +992,7 @@ blank(char *line, struct exec_info *exec_info)
 	if (parse_info->has_arg_started) {
 		new_argument(exec_info);
 		parse_info->copy = exec_info->last_command->current_arg;
+
 		parse_info->has_arg_started = 0;
 	}
 	return line;
@@ -956,9 +1002,9 @@ char *
 end_line(char *line, struct exec_info *exec_info)
 {
 	if (exec_info->parse_info->request_line) {
-		// FIX: add enum
 		memset(exec_info->line, 0, MAX_ARGUMENT_SIZE);
 		fgets(exec_info->line, MAX_ARGUMENT_SIZE, stdin);
+
 		if (ferror(stdin)) {
 			fprintf(stderr, "Error: fgets failed");
 			return NULL;
@@ -981,6 +1027,7 @@ comment(char *line, struct exec_info *exec_info)
 		// FIX: create a buffer to hold it
 		memset(exec_info->line, 0, MAX_ARGUMENT_SIZE);
 		fgets(exec_info->line, MAX_ARGUMENT_SIZE, stdin);
+
 		if (ferror(stdin)) {
 			fprintf(stderr, "Error: fgets failed");
 			return NULL;
@@ -992,6 +1039,7 @@ comment(char *line, struct exec_info *exec_info)
 	}
 
 	exec_info->parse_info->finished = 1;
+
 	line--;
 	return line;
 }
@@ -1014,6 +1062,7 @@ copy(char *line, struct exec_info *exec_info)
 {
 	*exec_info->parse_info->copy++ = *line;
 	exec_info->parse_info->has_arg_started = 1;
+
 	return line;
 }
 
@@ -1022,6 +1071,7 @@ copy_and_end(char *line, struct exec_info *exec_info)
 {
 	line = copy(line, exec_info);
 	line = end_line(line, exec_info);
+
 	return line;
 }
 
@@ -1029,6 +1079,7 @@ char *
 error(char *line, struct exec_info *exec_info)
 {
 	exec_info->parse_info->finished = 1;
+
 	error_token(*line, line);
 	return NULL;
 }
@@ -1036,20 +1087,9 @@ error(char *line, struct exec_info *exec_info)
 char *
 exec_lexer(char *line, struct exec_info *exec_info)
 {
-	int index;
-	int size = exec_info->parse_info->curr_lexer_size;
-	const lexer(*table)[] = exec_info->parse_info->curr_lexer;
+	int index = *line % ASCII_CHARS;
 
-	for (index = 0; index < (size + 1); index++) {
-		if (index == size) {
-			line = copy(line, exec_info);
-		} else {
-			if (*line == (*table)[index].token) {
-				line = (*table)[index].fun(line, exec_info);
-				break;
-			}
-		}
-	}
+	line = (*exec_info->parse_info->curr_lexer)[index] (line, exec_info);
 	return line;
 }
 

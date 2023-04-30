@@ -1,17 +1,17 @@
 test_file=test/ttest
 
-echo "Testing time to execute script $test_file 1000 times"
+echo "Testing time to execute script $test_file 100 times"
 echo -n "BASH:"
-time for i in {1..1000}; do 
+time for i in {1..100}; do 
   bash <$test_file >/dev/null
 done
 echo
 echo -n "MASH:"
-time for i in {1..1000}; do 
+time for i in {1..100}; do 
   build/mash <$test_file >/dev/null
 done
 echo
 echo -n "DASH:"
-time for i in {1..1000}; do 
+time for i in {1..100}; do 
   dash <$test_file >/dev/null
 done
