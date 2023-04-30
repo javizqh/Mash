@@ -58,114 +58,100 @@ static char *error(char *line, struct exec_info *exec_info);
 static char *tilde_tokenize(char *line, struct exec_info *exec_info);	// TODO: do not use 
 static char *start_subexec(char *line, struct exec_info *exec_info);
 static char *start_math(char *line, struct exec_info *exec_info);
-static char *end_math(char *line, struct exec_info *exec_info);
 static char *request_new_line(char *line, struct exec_info *exec_info);
 static char *here_doc(char *line, struct exec_info *exec_info);
+
 static char *exec_lexer(char *line, struct exec_info *exec_info);
+
 static int copy_substitution(struct parse_info *parse_info,
 			     const char *sub_buffer);
 static void new_argument(struct exec_info *exec_info);
 static char *error_token(char token, char *line);
 static int seek(char *line);
 
-static const lexer sb_a = { '\0', end_sub };
-static const lexer sb_b = { '\t', end_sub };
-static const lexer sb_c = { '\n', end_sub };
-static const lexer sb_d = { ' ', end_sub };
-static const lexer sb_e = { '"', end_sub };
-static const lexer sb_f = { '#', copy_and_end };
-static const lexer sb_g = { '$', copy_and_end };
-static const lexer sb_h = { '&', end_sub };
-static const lexer sb_i = { '\'', end_sub };
-static const lexer sb_j = { '(', start_subexec };
-static const lexer sb_k = { ')', end_sub };
-static const lexer sb_l = { '-', copy_and_end };
-static const lexer sb_m = { ';', end_sub };
-static const lexer sb_n = { '<', end_sub };
-static const lexer sb_o = { '>', end_sub };
-static const lexer sb_p = { '?', copy_and_end };
-static const lexer sb_q = { '@', copy_and_end };
-static const lexer sb_r = { '\\', end_sub };
-static const lexer sb_s = { '_', copy_and_end };
-static const lexer sb_t = { '{', end_sub };
-static const lexer sb_u = { '}', end_sub };
-static const lexer sb_v = { '|', end_sub };
-static const lexer sb_w = { '~', end_sub };
-
-static const lexer h_a = { '\0', request_new_line };
-static const lexer h_b = { '\'', end_squote };
-
-static const lexer s_b = { '"', end_dquote };
-static const lexer s_d = { '\\', esp_escape };
-
-static const lexer m_a = { '\0', request_new_line };
-static const lexer m_b = { '"', start_dquote };
-static const lexer m_c = { '$', start_sub };
-static const lexer m_d = { '\'', start_squote };
-static const lexer m_e = { ')', end_math };
-
-static const lexer x_a = { '\0', request_new_line };
-static const lexer x_b = { '$', start_sub };
-
-static const lexer n_a = { '\0', end_line };
-static const lexer n_b = { '\t', blank };
-static const lexer n_c = { '\n', blank };
-static const lexer n_d = { ' ', blank };
-static const lexer n_e = { '"', start_dquote };
-static const lexer n_f = { '#', comment };
-static const lexer n_g = { '$', start_sub };
-static const lexer n_h = { '&', background };
-static const lexer n_i = { '\'', start_squote };
-static const lexer n_j = { '(', error };
-static const lexer n_k = { ')', error };
-static const lexer n_l = { ';', end_pipe };
-static const lexer n_m = { '<', start_file_in };
-static const lexer n_n = { '>', start_file_out };
-static const lexer n_o = { '\\', escape };
-static const lexer n_p = { '{', here_doc };
-static const lexer n_q = { '}', error };
-static const lexer n_r = { '|', pipe_tok };
-static const lexer n_s = { '~', tilde_tokenize };
-
-static const lexer f_a = { '\0', end_file };
-static const lexer f_b = { '\t', end_file_started };
-static const lexer f_c = { '\n', end_file };
-static const lexer f_d = { ' ', end_file_started };
-static const lexer f_e = { '"', start_dquote };
-static const lexer f_f = { '#', end_file };
-static const lexer f_g = { '$', start_sub };
-static const lexer f_h = { '&', end_file };
-static const lexer f_i = { '\'', start_squote };
-static const lexer f_j = { '(', error };
-static const lexer f_k = { ')', error };
-static const lexer f_l = { '*', error };
-static const lexer f_m = { ';', end_file };
-static const lexer f_n = { '<', end_file };
-static const lexer f_o = { '>', end_file };
-static const lexer f_p = { '?', error };
-static const lexer f_q = { '[', error };
-static const lexer f_r = { '\\', escape };
-static const lexer f_s = { '{', error };
-static const lexer f_t = { '}', error };
-static const lexer f_u = { '|', end_file };
-static const lexer f_v = { '~', tilde_tokenize };
-
-static const lexer normal[22] =
-    { n_a, n_b, n_c, n_d, n_e, n_f, n_g, n_h, n_i, n_j, n_k, n_l, n_m, n_n, n_o,
-	n_p, n_q, n_r, n_s
-};
-static const lexer hard[2] = { h_a, h_b };
-static const lexer soft[4] = { h_a, s_b, n_g, s_d };
-
-static const lexer sub[23] =
-    { sb_a, sb_b, sb_c, sb_d, sb_e, sb_f, sb_g, sb_h, sb_i, sb_j, sb_k, sb_l,
-	sb_m, sb_n, sb_o,
-	sb_p, sb_q, sb_r, sb_s, sb_t, sb_u, sb_v, sb_w
+static const lexer normal[22] = {
+	{'\0', end_line},
+	{'\t', blank},
+	{'\n', blank},
+	{' ', blank},
+	{'"', start_dquote},
+	{'#', comment},
+	{'$', start_sub},
+	{'&', background},
+	{'\'', start_squote},
+	{'(', error},
+	{')', error},
+	{';', end_pipe},
+	{'<', start_file_in},
+	{'>', start_file_out},
+	{'\\', escape},
+	{'{', here_doc},
+	{'}', error},
+	{'|', pipe_tok},
+	{'~', tilde_tokenize}
 };
 
-static const lexer file[22] =
-    { f_a, f_b, f_c, f_d, f_e, f_f, f_g, f_h, f_i, f_j, f_k, f_l, f_m, f_n, f_o,
-	f_p, f_q, f_r, f_s, f_t, f_u, f_v
+static const lexer hard[2] = {
+	{'\0', request_new_line},
+	{'\'', end_squote}
+};
+
+static const lexer soft[4] = {
+	{'\0', request_new_line},
+	{'"', end_dquote},
+	{'$', start_sub},
+	{'\\', esp_escape}
+};
+
+static const lexer sub[23] = {
+	{'\0', end_sub},
+	{'\t', end_sub},
+	{'\n', end_sub},
+	{' ', end_sub},
+	{'"', end_sub},
+	{'#', copy_and_end},
+	{'$', copy_and_end},
+	{'&', end_sub},
+	{'\'', end_sub},
+	{'(', start_subexec},
+	{')', end_sub},
+	{'-', copy_and_end},
+	{';', end_sub},
+	{'<', end_sub},
+	{'>', end_sub},
+	{'?', copy_and_end},
+	{'@', copy_and_end},
+	{'\\', end_sub},
+	{'_', copy_and_end},
+	{'{', end_sub},
+	{'}', end_sub},
+	{'|', end_sub},
+	{'~', end_sub}
+};
+
+static const lexer file[22] = {
+	{'\0', end_file},
+	{'\t', end_file_started},
+	{'\n', end_file},
+	{' ', end_file_started},
+	{'"', start_dquote},
+	{'#', end_file},
+	{'$', start_sub},
+	{'&', end_file},
+	{'\'', start_squote},
+	{'(', error},
+	{')', error},
+	{'*', error},
+	{';', end_file},
+	{'<', end_file},
+	{'>', end_file},
+	{'?', error},
+	{'[', error},
+	{'\\', escape},
+	{'{', error},
+	{'}', error},
+	{'|', end_file},
+	{'~', tilde_tokenize}
 };
 
 // ------ Parse info --------
@@ -480,11 +466,7 @@ start_sub(char *line, struct exec_info *exec_info)
 	parse_info->has_arg_started = 1;
 	parse_info->copy = sub_info->buffer;
 
-	if (strstr(line, "$((") == line) {
-		//FIX: add math well
-		line++;
-		line++;
-	} else if (strstr(line, "$(") == line) {
+ 	if (strstr(line, "$(") == line) {
 		line++;
 		return start_subexec(line, exec_info);
 	}
@@ -564,6 +546,14 @@ start_subexec(char *line, struct exec_info *exec_info)
 
 	parse_info->copy = line_buf;
 
+	if (strstr(line, "((") == line) {
+		strcpy(line_buf, "math ");
+		parse_info->copy += strlen(line_buf);
+		line++;
+		n_parenthesis++;
+	} 
+
+	//FIX: resolve parenthesis
 	line++;
 	for (ptr = line; ptr != NULL; ptr++) {
 		switch (*ptr) {
@@ -599,13 +589,12 @@ start_subexec(char *line, struct exec_info *exec_info)
 static char *
 start_math(char *line, struct exec_info *exec_info)
 {
-	// Has $, ", '
-}
-
-static char *
-end_math(char *line, struct exec_info *exec_info)
-{
-
+	
+//static const lexer m_a = { '\0', request_new_line };
+//static const lexer m_b = { '"', start_dquote };
+//static const lexer m_c = { '$', start_sub };
+//static const lexer m_d = { '\'', start_squote };
+//static const lexer m_e = { ')', end_math };
 }
 
 char *
