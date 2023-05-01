@@ -28,6 +28,8 @@
 #include "builtin/source.h"
 #include "builtin/alias.h"
 #include "builtin/exit.h"
+#include "parse.h"
+#include "exec_info.h"
 #include "parse_line.h"
 #include "builtin/jobs.h"
 #include "builtin/fg.h"

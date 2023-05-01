@@ -26,6 +26,8 @@
 #include "builtin/ifok.h"
 #include "builtin/ifnot.h"
 #include "builtin/cd.h"
+#include "parse.h"
+#include "exec_info.h"
 #include "parse_line.h"
 #include "mash.h"
 #include "exec_cmd.h"
