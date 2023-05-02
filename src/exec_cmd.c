@@ -29,6 +29,8 @@
 #include "builtin/source.h"
 #include "builtin/alias.h"
 #include "builtin/exit.h"
+#include "parse.h"
+#include "exec_info.h"
 #include "parse_line.h"
 #include "builtin/jobs.h"
 #include "mash.h"
@@ -181,7 +183,7 @@ read_from_here_doc(struct command *start_command)
 	ssize_t count = MAX_BUFFER_IO_SIZE;
 	ssize_t bytes_stdin;
 
-	char *buffer_stdin = malloc(sizeof(char[MAX_BUFFER_IO_SIZE]));
+	char *buffer_stdin = malloc(MAX_BUFFER_IO_SIZE);
 
 	if (buffer_stdin == NULL)
 		err(EXIT_FAILURE, "malloc failed");
@@ -189,6 +191,7 @@ read_from_here_doc(struct command *start_command)
 
 	char *here_doc_buffer = new_here_doc_buffer();
 
+	//REVIEW: read line print line
 	do {
 		bytes_stdin = read(STDIN_FILENO, buffer_stdin, count);
 		if (*buffer_stdin == '}') {
@@ -460,16 +463,14 @@ close_all_fd_cmd(struct command *command, struct command *start_command)
 		    && start_command->input != new_cmd->input) {
 			close_fd(new_cmd->input);
 		}
-		if (new_cmd->output != STDOUT_FILENO) {
-			if (new_cmd->pipe_next != NULL) {
-				close_fd(new_cmd->output);
-			}
-		}
 		// IF fd is the same don't close it
 		if (new_cmd == command) {
 			close_fd(new_cmd->fd_pipe_input[1]);
 			close_fd(new_cmd->fd_pipe_output[0]);
 		} else {
+			if (new_cmd->output != STDOUT_FILENO) {
+				close_fd(new_cmd->output);
+			}
 			// Close if the cmd output is not the next input
 			if (new_cmd->fd_pipe_input[1] !=
 			    command->fd_pipe_output[1]) {

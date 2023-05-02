@@ -17,7 +17,8 @@ enum exec_state {
   STOPPED,
   DONE,
   FOREGROUND,
-  BACKGROUND
+  BACKGROUND,
+  SUB_EXECUTION
 };
 
 struct job {
@@ -58,7 +59,7 @@ pid_t get_pos_job_pid(int pos);
 pid_t get_relevance_job_pid(int relevance);
 int are_jobs_stopped();
 
-void stop_current_job();
+void stop_job(pid_t job_pid);
 void end_current_job();
 void wait_all_jobs();
 void update_jobs();

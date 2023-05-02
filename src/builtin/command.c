@@ -191,6 +191,11 @@ int set_file_cmd(struct command *command,int file_type, char *file) {
   case ERROR_AND_OUTPUT_WRITE:
     // GO TO LAST CMD IN PIPE
     struct command * last_err_out_cmd = get_last_command(command);
+    if (last_err_out_cmd->output !=
+		    STDOUT_FILENO) {
+			close(last_err_out_cmd->output);
+		}
+		last_err_out_cmd->output = open_write_file(file);
     last_err_out_cmd->err_output = last_err_out_cmd->output;
 		return last_err_out_cmd->err_output;
     break;

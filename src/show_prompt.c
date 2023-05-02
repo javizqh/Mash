@@ -24,6 +24,8 @@
 #include "builtin/export.h"
 #include "builtin/alias.h"
 #include "builtin/source.h"
+#include "parse.h"
+#include "exec_info.h"
 #include "parse_line.h"
 #include "show_prompt.h"
 

@@ -2,14 +2,19 @@
 \usepackage{graphicx} %LaTeX package to import graphics
 \usepackage{enumitem}
 \usepackage{geometry}
-\usepackage{xcolor}
+\usepackage[table]{xcolor}
+\setlength{\arrayrulewidth}{0.5mm}
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.045}
 \usepackage[utf8]{inputenc}
+\usepackage{float}
+\usepackage{lmodern}
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
 \hypersetup{colorlinks=true, linkcolor=black, filecolor=magenta, urlcolor=cyan,}
 \urlstyle{same}
 \usepackage{amsmath}
-\geometry{lmargin=30mm}
+\geometry{a4paper ,rmargin=10mm, lmargin=10mm}
 \usepackage[export]{adjustbox}
 \usepackage{titlesec}
 \titleformat{\chapter}{\normalfont\huge}{\thechapter}{20pt}{\huge\bf}
@@ -43,6 +48,54 @@ Introduction on the mash shell
 \part{Code}
 \chapter{Shell}
 Orden de busqueda de comandos: alias - builtin - script in directory - path
+\part{Syntax}
+\noindent Only for ASCII characters, if used for another type it won't work as expected.\\
+----- = Default or copy\\
+Color = Change in syntax table\\
+\textcolor[HTML]{C500FF}{Subexec} = Substitute by output of command inside
+\begin{table}[H]
+\begin{tabular}{ |c|c|c|c|c|c| }
+	\hline
+	\rowcolor{lightgray} \multicolumn{6}{|c|}{Syntax Table} \\
+	\hline
+	Character & Standard & File \cellcolor[HTML]{BEE9F9}& Substitution \cellcolor[HTML]{FFF49C}& 'Single Quote' \cellcolor[HTML]{E1E1E1} & "Double Quote"\cellcolor[HTML]{C8F3BE} \\
+	\hline
+	$\backslash$0 & end\_line & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}& request\_new\_line & request\_new\_line \\
+	$\backslash$t & blank & end\_file\_started \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	$\backslash$n & blank & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}& ----- & request\_new\_line \\
+	Space & blank & end\_file\_started \cellcolor[HTML]{BEE9F9}&  end\_sub\cellcolor[HTML]{FFF49C} & ----- & ----- \\
+	" & start\_dquote \cellcolor[HTML]{C8F3BE}& start\_dquote \cellcolor[HTML]{C8F3BE}&  end\_sub\cellcolor[HTML]{FFF49C} & ----- & end\_dquote \cellcolor[HTML]{C8F3BE}\\
+	\# & comment & end\_file \cellcolor[HTML]{BEE9F9}& copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	\$ & start\_sub \cellcolor[HTML]{FFF49C}& start\_sub \cellcolor[HTML]{FFF49C} & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}& ----- & start\_sub \cellcolor[HTML]{FFF49C} \\
+	\& & background & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub\cellcolor[HTML]{FFF49C} & ----- & ----- \\
+	' & start\_squote \cellcolor[HTML]{E1E1E1}& start\_squote \cellcolor[HTML]{E1E1E1}&  end\_sub\cellcolor[HTML]{FFF49C} & end\_squote \cellcolor[HTML]{E1E1E1} & ----- \\
+	$($ & error \cellcolor[HTML]{FF0044}& error \cellcolor[HTML]{FF0044} & end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	$)$ & error \cellcolor[HTML]{FF0044}& error \cellcolor[HTML]{FF0044} & end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	* & do\_glob & do\_glob & end\_sub\cellcolor[HTML]{FFF49C} & ----- & ----- \\
+	- & ----- & ----- &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	; & end\_pipe & end\_file\cellcolor[HTML]{BEE9F9} &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	< & start\_file\_in \cellcolor[HTML]{BEE9F9}& end\_file\cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	> & start\_file\_out \cellcolor[HTML]{BEE9F9}& end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	? & do\_glob & do\_glob & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	@ & ----- & ----- & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	$[$ & do\_glob & do\_glob &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	$\backslash$ & escape & escape &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & esp\_escape \\
+	\_ & end\_line & end\_file \cellcolor[HTML]{BEE9F9}& copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	\{ & here\_doc & error \cellcolor[HTML]{FF0044} &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	\} & error \cellcolor[HTML]{FF0044} & error \cellcolor[HTML]{FF0044} &  ----- & ----- & ----- \\
+	$|$ & pipe\_tok & end\_file\cellcolor[HTML]{BEE9F9} &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	\textasciitilde  & tilde\_tok \cellcolor[HTML]{FFF49C}& tilde\_tok \cellcolor[HTML]{FFF49C} &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	Rest  & ----- & ----- &  ----- & ----- & ----- \\
+	\hline
+	\&\&  & and & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub\cellcolor[HTML]{FFF49C} & ----- & ----- \\
+	$||$  & or & end\_file\cellcolor[HTML]{BEE9F9} &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	\$$($  & subexec\cellcolor[HTML]{C500FF} & subexec\cellcolor[HTML]{C500FF} &  ----- & ----- & subexec\cellcolor[HTML]{C500FF} \\
+	\&>  & start\_file\_out \cellcolor[HTML]{BEE9F9}& end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	2>  & start\_file\_out \cellcolor[HTML]{BEE9F9}& end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	1>  & start\_file\_out \cellcolor[HTML]{BEE9F9}& end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	\hline
+\end{tabular}
+\end{table}
 \chapter{Builtin commands}
 Explicacion de los builtins
 \section{Alias}

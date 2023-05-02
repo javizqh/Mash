@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['sub_5finfo_11',['sub_info',['../structsub__info.html',1,'']]]
+  ['job_13',['job',['../structjob.html',1,'']]],
+  ['job_5flist_14',['job_list',['../structjob__list.html',1,'']]]
 ];

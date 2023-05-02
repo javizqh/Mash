@@ -28,6 +28,8 @@
 #include "builtin/source.h"
 #include "builtin/alias.h"
 #include "builtin/exit.h"
+#include "parse.h"
+#include "exec_info.h"
 #include "parse_line.h"
 #include "mash.h"
 #include "exec_cmd.h"
@@ -160,9 +162,10 @@ pid_t substitute_jobspec(char* jobspec) {
 
 int
 launch_job(FILE * src_file, struct exec_info *exec_info, char * to_free_excess){
+	struct command * cmd = exec_info->command;
 
-	if (has_builtin_modify_cmd(exec_info->command)) {
-		switch (modify_cmd_builtin(exec_info->command)) {
+	if (has_builtin_modify_cmd(cmd)) {
+		switch (modify_cmd_builtin(cmd)) {
 			case CMD_EXIT_FAILURE:
 				return CMD_EXIT_FAILURE;
 				break;
@@ -172,15 +175,19 @@ launch_job(FILE * src_file, struct exec_info *exec_info, char * to_free_excess){
 		}
 	}
 
-	if (search_in_builtin && has_builtin_exec_in_shell(exec_info->command)) {
-		close_all_fd(exec_info->command);
-		return exec_builtin_in_shell(exec_info->command);
+	if (search_in_builtin && has_builtin_exec_in_shell(cmd)) {
+		close_all_fd(cmd);
+		return exec_builtin_in_shell(cmd);
 	}
 
 	struct job * job = new_job(exec_info->line);
 
-	if (exec_info->command->do_wait == DO_NOT_WAIT_TO_FINISH) {
+	if (cmd->do_wait == DO_NOT_WAIT_TO_FINISH) {
 		job->execution = BACKGROUND;
+	}
+
+	if (exec_info->parse_info->exec_depth) {
+		job->execution = SUB_EXECUTION;
 	}
 	
 	add_job(job);
@@ -238,27 +245,40 @@ exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * 
 	default:
 		job->pid = exec_info->command->pid;
 		job->end_pid = exec_info->last_command->pid;
-		//signal(SIGTTOU, SIG_IGN);
-    //signal(SIGTTIN, SIG_IGN);
-		//setpgid(exec_info->command->pid,0);
-		setpgid(exec_info->command->pid,getpid());
-		//tcsetpgrp(0, exec_info->command->pid);  //traspaso el foreground a ese
 		close_all_fd_io(exec_info->command, current_command);
+		if (job->execution == BACKGROUND) {
+			if (exec_info->command->output_buffer != NULL) {
+				write_to_buffer(current_command);
+			}
+			printf("[%d]\t%d\n", job->pos,job->pid);
+			exit_code = EXIT_SUCCESS;
+			break;
+		} else if (job->execution == SUB_EXECUTION) {
+			// BUG: should not stop execution
+			signal(SIGTSTP, SIG_IGN);
+			if (exec_info->command->output_buffer != NULL) {
+				write_to_buffer(current_command);
+			}
+			exit_code = wait_job(job);
+			signal(SIGTSTP, sig_handler);
+			break;
+		}
+		signal(SIGTTOU, SIG_IGN);
+		signal(SIGTTIN, SIG_IGN);
+		setpgid(job->pid,0);
 		if (exec_info->command->input == HERE_DOC_FILENO) {
 			read_from_here_doc(exec_info->command);
 		}
+		// Pass foreground to
+		tcsetpgrp(0, job->pid);
 		if (exec_info->command->output_buffer != NULL) {
 			write_to_buffer(current_command);
 		}
-		if (job->execution == FOREGROUND) {
-			exit_code = wait_job(job);
-		} else {
-			printf("[%d]\t%d\n", job->pos,job->pid);
-			exit_code = EXIT_SUCCESS;
-		}
-		//tcsetpgrp(0, getpgrp());  //recupero el foreground
-		//signal(SIGTTOU, sig_handler);
-    //signal(SIGTTIN, sig_handler);
+		exit_code = wait_job(job);
+		// Retrieve foreground
+		tcsetpgrp(0, getpgrp());
+		signal(SIGTTOU, SIG_DFL);
+    signal(SIGTTIN, SIG_DFL);
 		break;
 	}
 	return exit_code;
@@ -283,8 +303,12 @@ wait_job(struct job * job)
 				return WEXITSTATUS(wstatus);
 			}
 		} else if (WIFSTOPPED(wstatus)) {
+			stop_job(wait_pid);
 			return EXIT_SUCCESS;
 		} else if (WIFSIGNALED(wstatus)) {
+			if (wait_pid == job->end_pid) {
+				remove_job(job);
+			}
 			return EXIT_SUCCESS;
 		}
 	}
@@ -464,7 +488,8 @@ int remove_done_jobs() {
 	for (current = jobs_list.head; current; current = current->next_job) {
 		if (current->state == DONE) {
 			if (remove_job(current) < 0) {
-				// TODO: add error
+				fprintf(stderr, "Mash: jobs failed to remove job\n");
+				return 0;
 			}
 			if (previous == NULL) {
 				current = jobs_list.head;
@@ -525,14 +550,11 @@ int are_jobs_stopped() {
 	return stopped_jobs;
 }
 
-void stop_current_job() {
-	struct job * current_job = get_job(get_relevance_job_pid(0));
-	if (current_job != NULL) {
-		kill(current_job->pid, SIGTSTP);
-		current_job->state = STOPPED;
-		printf("\n");
-		print_job(current_job,0);
-	}
+void stop_job(pid_t job_pid) {
+	struct job * current_job = get_job(job_pid);
+	current_job->state = STOPPED;
+	printf("\n");
+	print_job(current_job,0);
 }
 
 void end_current_job() {
@@ -566,7 +588,7 @@ void update_jobs() {
 	// Check for finished jobs
 	struct job * current;
 	for (current = jobs_list.head; current; current = current->next_job) {
-		if ( current->state == RUNNING && kill(current->pid,0) < 0) {
+		if (kill(current->pid,0) < 0) {
 			current->state = DONE;
 			print_job(current,0);
 		}

@@ -28,6 +28,8 @@
 #include "builtin/source.h"
 #include "builtin/alias.h"
 #include "builtin/exit.h"
+#include "parse.h"
+#include "exec_info.h"
 #include "parse_line.h"
 #include "builtin/jobs.h"
 #include "builtin/fg.h"
@@ -40,6 +42,7 @@ static int usage() {
 int fg(int argc, char *argv[]) {
   argc--;argv++;
   struct job * job;
+  int exit_code = EXIT_SUCCESS;
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));
   } else if (argc == 1) {
@@ -53,5 +56,13 @@ int fg(int argc, char *argv[]) {
   job->execution = FOREGROUND;
   job->state = RUNNING;
   kill(job->pid, SIGCONT);
-  return wait_job(job);
+  signal(SIGTTOU, SIG_IGN);
+  signal(SIGTTIN, SIG_IGN);
+  setpgid(job->pid,0);
+  tcsetpgrp(0, job->pid);  //traspaso el foreground a ese
+  exit_code = wait_job(job);
+  tcsetpgrp(0, getpgrp());  //recupero el foreground
+  signal(SIGTTOU, SIG_DFL);
+  signal(SIGTTIN, SIG_DFL);
+  return exit_code;
 }

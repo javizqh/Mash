@@ -24,6 +24,8 @@
 #include "builtin/export.h"
 #include "builtin/alias.h"
 #include "builtin/source.h"
+#include "parse.h"
+#include "exec_info.h"
 #include "parse_line.h"
 #include "show_prompt.h"
 #include "builtin/exit.h"
@@ -51,6 +53,7 @@ main(int argc, char **argv)
 	signal(SIGINT, sig_handler);
 	signal(SIGTSTP, sig_handler);
 
+	load_lex_tables();
 	init_jobs_list();
 	add_source("env/.mashrc");
 	exec_sources();
@@ -66,15 +69,15 @@ main(int argc, char **argv)
 
 	// ---------- Read command line
 	// ------ Buffer
-	char *buf = malloc(1024);
+	char *buf = malloc(MAX_ARGUMENT_SIZE);
 
 	if (buf == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-	memset(buf, 0, 1024);
+	memset(buf, 0, MAX_ARGUMENT_SIZE);
 	// ------------
 	prompt(buf);
-	while (fgets(buf, 1024, stdin) != NULL) {	/* break with ^D or ^Z */
+	while (fgets(buf, MAX_ARGUMENT_SIZE, stdin) != NULL) {	/* break with ^D or ^Z */
 		status = find_command(buf, NULL, stdin, NULL, NULL);
 
 		if (has_to_exit) {
@@ -98,13 +101,8 @@ main(int argc, char **argv)
 void
 sig_handler(int sig)
 {
+	// Do nothing
 	switch (sig) {
-	case SIGINT:
-		end_current_job();
-		break;
-	case SIGTSTP:
-		stop_current_job();
-		break;
 	default:
 		break;
 	}
