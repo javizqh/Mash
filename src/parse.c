@@ -58,13 +58,14 @@ static char *start_subexec(char *line, struct exec_info *exec_info);
 static char *request_new_line(char *line, struct exec_info *exec_info);
 static char *here_doc(char *line, struct exec_info *exec_info);
 
-static char *exec_lexer(char *line, struct exec_info *exec_info);
+static char *parse_ch(char *line, struct exec_info *exec_info);
 
 static int copy_substitution(struct parse_info *parse_info,
 			     const char *sub_buffer);
 static void new_argument(struct exec_info *exec_info);
 static char *error_token(char token, char *line);
 static int seek(char *line);
+static int seekcmd(char *line);
 
 static int load_std_table();
 static int load_sub_table();
@@ -72,6 +73,11 @@ static int load_file_table();
 static int load_sq_table();
 static int load_dq_table();
 static int load_defaults(spec_char fun, spec_char(*table)[ASCII_CHARS]);
+
+// GLOBAL VARIABLES
+static int has_redirect_to_file = 0;
+static int syntax_error = 0;
+static int exec_depth = 0;
 
 static spec_char std[ASCII_CHARS];
 static spec_char sub[ASCII_CHARS];
@@ -160,12 +166,12 @@ load_file_table()
 	file['\''] = start_squote;
 	file['('] = error;
 	file[')'] = error;
-	file['*'] = error;
+	//file['*'] = error;
 	file[';'] = end_file;
 	file['<'] = end_file;
 	file['>'] = end_file;
-	file['?'] = error;
-	file['['] = error;
+	//file['?'] = error;
+	//file['['] = error;
 	file['\\'] = escape;
 	file['{'] = error;
 	file['}'] = error;
@@ -199,7 +205,7 @@ int
 load_defaults(spec_char fun, spec_char(*table)[ASCII_CHARS])
 {
 	// REVIEW: could change
-	int i;
+	//int i;
 
 	//for (i = 0; i < ASCII_CHARS; i++)
 	//      if ((*table)[i] == NULL)
@@ -218,6 +224,7 @@ new_parse_info()
 		err(EXIT_FAILURE, "malloc failed");
 	}
 	memset(parse_info, 0, sizeof(struct parse_info));
+	parse_info->exec_depth = 0;
 	parse_info->request_line = 0;
 	parse_info->has_arg_started = 0;
 	parse_info->finished = 0;
@@ -231,6 +238,7 @@ new_parse_info()
 void
 restore_parse_info(struct parse_info *parse_info)
 {
+	parse_info->exec_depth = 0;
 	parse_info->request_line = 0;
 	parse_info->has_arg_started = 0;
 	parse_info->finished = 0;
@@ -283,7 +291,11 @@ parse(char *ptr, struct exec_info *exec_info)
 	struct parse_info *parse_info = exec_info->parse_info;
 	struct command *cmd = exec_info->last_command;
 
+	has_redirect_to_file = 0;
+	syntax_error = 0;
 	parse_info->finished = 0;
+
+	parse_info->exec_depth = exec_depth;
 
 	// IF first char is \0 exit immediately
 	if (ptr == NULL)
@@ -299,7 +311,7 @@ parse(char *ptr, struct exec_info *exec_info)
 	}
 
 	for (; !parse_info->finished; ptr++) {
-		ptr = exec_lexer(ptr, exec_info);
+		ptr = parse_ch(ptr, exec_info);
 
 		if (ptr == NULL)
 			return ptr;
@@ -315,6 +327,21 @@ parse(char *ptr, struct exec_info *exec_info)
 
 	parse_info->finished = 0;
 	return ptr;
+}
+
+char *
+parse_ch(char *line, struct exec_info *exec_info)
+{
+	// REVIEW: could change
+	int index = *line % ASCII_CHARS;
+	spec_char fun = (*exec_info->parse_info->curr_lexer)[index];
+
+	if (fun) {
+		line = fun(line, exec_info);
+	} else {
+		line = copy(line, exec_info);
+	}
+	return line;
 }
 
 char *
@@ -338,7 +365,6 @@ end_squote(char *line, struct exec_info *exec_info)
 
 	parse_info->curr_lexer = parse_info->old_lexer;
 	parse_info->old_lexer = tmp_lexer;
-	parse_info->finished = 0;
 	return line;
 }
 
@@ -422,10 +448,9 @@ end_sub(char *line, struct exec_info *exec_info)
 	parse_info->copy = sub_info->old_ptr;
 
 	if (copy_substitution(parse_info, sub_info->buffer) < 0) {
-		line = NULL;
+		return NULL;
 	}
 
-	cmd->current_arg += strlen(cmd->current_arg);
 	parse_info->copy = cmd->current_arg;
 	return --line;
 }
@@ -435,6 +460,8 @@ start_subexec(char *line, struct exec_info *exec_info)
 {
 	struct parse_info *parse_info = exec_info->parse_info;
 	int n_parenthesis = 1;
+
+	exec_depth++;
 
 	// Read again and parse until )
 	char *buffer = malloc(1024);
@@ -457,12 +484,11 @@ start_subexec(char *line, struct exec_info *exec_info)
 
 	parse_info->copy = line_buf;
 
-	if (strstr(line, "((") == line) {
-		strcpy(line_buf, "math ");
-		parse_info->copy += strlen(line_buf);
-		line++;
-		n_parenthesis++;
-	}
+	//if (strstr(line, "((") == line) {
+	//      strcpy(line_buf, "math ");
+	//      parse_info->copy += strlen(line_buf);
+	//      line++;
+	//}
 	//FIX: resolve parenthesis
 	line++;
 	for (ptr = line; ptr != NULL; ptr++) {
@@ -492,7 +518,15 @@ start_subexec(char *line, struct exec_info *exec_info)
 		}
 	}
 	find_command(line_buf, buffer, stdin, exec_info, NULL);
-	exec_info->parse_info->finished = 0;
+
+	if (syntax_error) {
+		parse_info->finished = 1;
+		free(line_buf);
+		free(buffer);
+		return NULL;
+	}
+
+	exec_depth--;
 	parse(buffer, exec_info);
 
 	parse_info->copy = old_ptr;
@@ -501,23 +535,10 @@ start_subexec(char *line, struct exec_info *exec_info)
 	return ptr++;
 }
 
-char *
-request_new_line(char *line, struct exec_info *exec_info)
-{
-	prompt_request();
-	fgets(line, MAX_ARGUMENT_SIZE, stdin);
-	if (ferror(stdin)) {
-		fprintf(stderr, "Error: fgets failed");
-		return NULL;
-	}
-	exec_info->parse_info->has_arg_started = 0;
-
-	return --line;
-}
-
 void
 new_argument(struct exec_info *exec_info)
 {
+	// TODO: clean
 	struct command *cmd = exec_info->last_command;
 
 	if (cmd->argc > 0) {
@@ -527,6 +548,7 @@ new_argument(struct exec_info *exec_info)
 		if (glob(cmd->current_arg, GLOB_ERR, NULL, &gstruct) ==
 		    GLOB_NOESCAPE) {
 			fprintf(stderr, "Error: glob failed");
+			globfree(&gstruct);
 			return;
 		}
 
@@ -563,40 +585,41 @@ new_argument(struct exec_info *exec_info)
 }
 
 char *
-error_token(char token, char *line)
-{
-	fprintf(stderr,
-		"dash: syntax error in '%c' near unexpected token `%s", token,
-		line);
-	return NULL;
-}
-
-char *
 here_doc(char *line, struct exec_info *exec_info)
 {
 	struct command *cmd = exec_info->last_command;
 
 	if (strcmp(cmd->current_arg, "HERE") == 0) {
 		if (seek(++line)) {
-			fprintf(stderr, "Mash: error text behind here doc\n");
+			fprintf(stderr,
+				"Mash: Error: text behind here document\n");
 			return NULL;
 		}
 		line--;
-		// TODO: check input
-		if (set_file_cmd(cmd, HERE_DOC_READ, "") >= 0) {
-			reset_last_arg(cmd);
-			cmd->argc--;
-			exec_info->parse_info->copy = cmd->current_arg;
 
-			return line;
+		if (has_redirect_to_file) {
+			fprintf(stderr,
+				"Mash: Error: redirection before here document\n");
+			return NULL;
 		}
+
+		if (set_file_cmd(cmd, HERE_DOC_READ, "") < 0) {
+			fprintf(stderr,
+				"Mash: Error: failed redirection to here document\n");
+			return NULL;
+		}
+		reset_last_arg(cmd);
+		cmd->argc--;
+		exec_info->parse_info->copy = cmd->current_arg;
+
+		return line;
 	}
 	error_token('{', line);
 	return NULL;
 }
 
-char *
-start_file_in(char *line, struct exec_info *exec_info)
+void
+start_file(struct exec_info *exec_info)
 {
 	struct parse_info *parse_info = exec_info->parse_info;
 
@@ -606,6 +629,15 @@ start_file_in(char *line, struct exec_info *exec_info)
 	parse_info->copy = exec_info->file_info->buffer;
 
 	parse_info->has_arg_started = 0;
+	has_redirect_to_file = 1;
+
+	return;
+}
+
+char *
+start_file_in(char *line, struct exec_info *exec_info)
+{
+	start_file(exec_info);
 	exec_info->file_info->mode = INPUT_READ;
 
 	return line;
@@ -614,16 +646,10 @@ start_file_in(char *line, struct exec_info *exec_info)
 char *
 start_file_out(char *line, struct exec_info *exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
 	struct file_info *file_info = exec_info->file_info;
 	struct command *cmd = exec_info->last_command;
 
-	parse_info->old_lexer = parse_info->curr_lexer;
-	parse_info->curr_lexer = &file;
-
-	parse_info->copy = file_info->buffer;
-	parse_info->has_arg_started = 0;
-
+	start_file(exec_info);
 	file_info->mode = OUTPUT_WRITE;
 	if (strcmp(cmd->current_arg, "2") == 0) {
 		reset_last_arg(cmd);
@@ -644,11 +670,12 @@ end_file(char *line, struct exec_info *exec_info)
 	struct parse_info *parse_info = exec_info->parse_info;
 	struct file_info *file_info = exec_info->file_info;
 	struct command *cmd;
+	glob_t gstruct;
+	char **found;
+	int glob_found = 0;
 
-	spec_char(*tmp_lexer)[256] = parse_info->curr_lexer;
-
-	parse_info->curr_lexer = parse_info->old_lexer;
-	parse_info->old_lexer = tmp_lexer;
+	parse_info->old_lexer = parse_info->curr_lexer;
+	parse_info->curr_lexer = &std;
 
 	if (!parse_info->has_arg_started) {
 		return error_token(*line, line);
@@ -659,6 +686,29 @@ end_file(char *line, struct exec_info *exec_info)
 	} else {
 		cmd = exec_info->last_command;
 	}
+
+	if (glob(file_info->buffer, GLOB_ERR, NULL, &gstruct) == GLOB_NOESCAPE) {
+		fprintf(stderr, "Error: glob failed");
+		globfree(&gstruct);
+		return NULL;
+	}
+
+	found = gstruct.gl_pathv;
+
+	if (found != NULL && strcmp(cmd->current_arg, *found) != 0) {
+		while (*found != NULL) {
+			glob_found++;
+			if (glob_found > 1) {
+				fprintf(stderr, "Mash: ambiguous redirect\n");
+				globfree(&gstruct);
+				return NULL;
+			}
+			strcpy(file_info->buffer, *found);
+			found++;
+		}
+	}
+
+	globfree(&gstruct);
 
 	if (set_file_cmd(cmd, file_info->mode, file_info->buffer) < 0) {
 		return NULL;
@@ -723,7 +773,10 @@ pipe_tok(char *line, struct exec_info *exec_info)
 	if (parse_info->has_arg_started) {
 		new_argument(exec_info);
 	}
-	// FIX: request new line if not seek
+
+	if (!seekcmd(line)) {
+		exec_info->parse_info->request_line = 1;
+	}
 
 	exec_info->last_command = new_command();
 
@@ -759,9 +812,11 @@ background(char *line, struct exec_info *exec_info)
 		return line;
 	}
 
+	line++;
 	if (seek(line)) {
 		return error_token('&', line);
 	}
+	line--;
 
 	command->do_wait = DO_NOT_WAIT_TO_FINISH;
 
@@ -904,29 +959,36 @@ copy_and_end(char *line, struct exec_info *exec_info)
 }
 
 char *
+request_new_line(char *line, struct exec_info *exec_info)
+{
+	prompt_request();
+	fgets(line, MAX_ARGUMENT_SIZE, stdin);
+	if (ferror(stdin)) {
+		fprintf(stderr, "Error: fgets failed");
+		return NULL;
+	}
+	exec_info->parse_info->has_arg_started = 0;
+
+	return --line;
+}
+
+char *
 error(char *line, struct exec_info *exec_info)
 {
 	exec_info->parse_info->finished = 1;
+	syntax_error = 1;
 
 	error_token(*line, line);
 	return NULL;
 }
 
 char *
-exec_lexer(char *line, struct exec_info *exec_info)
+error_token(char token, char *line)
 {
-	// REVIEW: could change
-	int index = *line % ASCII_CHARS;
-	spec_char fun = (*exec_info->parse_info->curr_lexer)[index];
-
-	if (fun) {
-		line =
-		    (*exec_info->parse_info->curr_lexer)[index] (line,
-								 exec_info);
-	} else {
-		line = copy(line, exec_info);
-	}
-	return line;
+	fprintf(stderr,
+		"Mash: syntax error in '%c' near unexpected token `%s\n", token,
+		line);
+	return NULL;
 }
 
 int
@@ -936,6 +998,20 @@ seek(char *line)
 
 	for (ptr = line; *ptr != '\0'; ptr++) {
 		if (*ptr != ' ' && *ptr != '\n' && *ptr != '\t')
+			return 1;
+	}
+	return 0;
+}
+
+int
+seekcmd(char *line)
+{
+	char *ptr;
+	spec_char fun;
+
+	for (ptr = line; *ptr != '\0'; ptr++) {
+		fun = std[(int)*ptr];
+		if (fun == NULL)
 			return 1;
 	}
 	return 0;

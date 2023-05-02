@@ -23,6 +23,7 @@ typedef char *(*spec_char)(char *, struct exec_info *);
 int load_lex_tables();
 
 struct parse_info {
+	int exec_depth;
 	int request_line;
 	int has_arg_started;
 	int finished;

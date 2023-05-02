@@ -101,14 +101,5 @@ main(int argc, char **argv)
 void
 sig_handler(int sig)
 {
-	switch (sig) {
-	case SIGINT:
-		end_current_job();
-		break;
-	case SIGTSTP:
-		stop_current_job();
-		break;
-	default:
-		break;
-	}
+	// Do nothing
 }
