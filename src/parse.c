@@ -31,37 +31,37 @@
 #include "show_prompt.h"
 
 // DECLARE STATIC FUNCTIONS
-// Tokenize types
+static char *copy(char *line, struct exec_info *exec_info);
+static char *copy_and_end_sub(char *line, struct exec_info *exec_info);
+static char *do_glob(char *line, struct exec_info *exec_info);
 static char *start_squote(char *line, struct exec_info *exec_info);
 static char *end_squote(char *line, struct exec_info *exec_info);
 static char *start_dquote(char *line, struct exec_info *exec_info);
 static char *end_dquote(char *line, struct exec_info *exec_info);
-static char *pipe_tok(char *line, struct exec_info *exec_info);
 static char *start_sub(char *line, struct exec_info *exec_info);
+static char *tilde_tokenize(char *line, struct exec_info *exec_info);
 static char *end_sub(char *line, struct exec_info *exec_info);
+static char *pipe_tok(char *line, struct exec_info *exec_info);
 static char *start_file_in(char *line, struct exec_info *exec_info);
 static char *start_file_out(char *line, struct exec_info *exec_info);
+static char *here_doc(char *line, struct exec_info *exec_info);
 static char *end_file(char *line, struct exec_info *exec_info);
 static char *end_file_started(char *line, struct exec_info *exec_info);
-static char *background(char *line, struct exec_info *exec_info);
+static char *blank(char *line, struct exec_info *exec_info);
 static char *escape(char *line, struct exec_info *exec_info);
 static char *esp_escape(char *line, struct exec_info *exec_info);
-static char *blank(char *line, struct exec_info *exec_info);
+static char *background(char *line, struct exec_info *exec_info);
+static char *subexec(char *line, struct exec_info *exec_info);
+static char *end_pipe(char *line, struct exec_info *exec_info);
 static char *end_line(char *line, struct exec_info *exec_info);
 static char *comment(char *line, struct exec_info *exec_info);
-static char *end_pipe(char *line, struct exec_info *exec_info);
-static char *copy(char *line, struct exec_info *exec_info);
-static char *copy_and_end(char *line, struct exec_info *exec_info);
-static char *error(char *line, struct exec_info *exec_info);
-static char *tilde_tokenize(char *line, struct exec_info *exec_info);
-static char *start_subexec(char *line, struct exec_info *exec_info);
 static char *request_new_line(char *line, struct exec_info *exec_info);
-static char *here_doc(char *line, struct exec_info *exec_info);
+static char *error(char *line, struct exec_info *exec_info);
 
 static char *parse_ch(char *line, struct exec_info *exec_info);
 
-static int copy_substitution(struct parse_info *parse_info,
-			     const char *sub_buffer);
+static int substitute(char *to_substitute);
+static void start_file(struct exec_info *exec_info);
 static void new_argument(struct exec_info *exec_info);
 static char *error_token(char token, char *line);
 static int seek(char *line);
@@ -76,6 +76,7 @@ static int load_defaults(spec_char fun, spec_char(*table)[ASCII_CHARS]);
 
 // GLOBAL VARIABLES
 static int has_redirect_to_file = 0;
+static int require_glob = 0;
 static int syntax_error = 0;
 static int exec_depth = 0;
 
@@ -110,9 +111,12 @@ load_std_table()
 	std['\''] = start_squote;
 	std['('] = error;
 	std[')'] = error;
+	std['*'] = do_glob;
 	std[';'] = end_pipe;
 	std['<'] = start_file_in;
 	std['>'] = start_file_out;
+	std['?'] = do_glob;
+	std['['] = do_glob;
 	std['\\'] = escape;
 	std['{'] = here_doc;
 	std['}'] = error;
@@ -130,20 +134,20 @@ load_sub_table()
 	sub['\n'] = end_sub;
 	sub[' '] = end_sub;
 	sub['"'] = end_sub;
-	sub['#'] = copy_and_end;
-	sub['$'] = copy_and_end;
+	sub['#'] = copy_and_end_sub;
+	sub['$'] = copy_and_end_sub;
 	sub['&'] = end_sub;
 	sub['\''] = end_sub;
 	sub['('] = end_sub;
 	sub[')'] = end_sub;
-	sub['-'] = copy_and_end;
+	sub['-'] = copy_and_end_sub;
 	sub[';'] = end_sub;
 	sub['<'] = end_sub;
 	sub['>'] = end_sub;
-	sub['?'] = copy_and_end;
-	sub['@'] = copy_and_end;
+	sub['?'] = copy_and_end_sub;
+	sub['@'] = copy_and_end_sub;
 	sub['\\'] = end_sub;
-	sub['_'] = copy_and_end;
+	sub['_'] = copy_and_end_sub;
 	sub['{'] = end_sub;
 	sub['}'] = end_sub;
 	sub['|'] = end_sub;
@@ -166,12 +170,12 @@ load_file_table()
 	file['\''] = start_squote;
 	file['('] = error;
 	file[')'] = error;
-	//file['*'] = error;
+	file['*'] = do_glob;
 	file[';'] = end_file;
 	file['<'] = end_file;
 	file['>'] = end_file;
-	//file['?'] = error;
-	//file['['] = error;
+	file['?'] = do_glob;
+	file['['] = do_glob;
 	file['\\'] = escape;
 	file['{'] = error;
 	file['}'] = error;
@@ -246,44 +250,6 @@ restore_parse_info(struct parse_info *parse_info)
 	parse_info->curr_lexer = &std;
 	parse_info->old_lexer = parse_info->curr_lexer;
 };
-
-char *
-substitute(const char *to_substitute)
-{
-	char *ret = malloc(sizeof(char) * MAX_ENV_SIZE);
-
-	// Check if malloc failed
-	if (ret == NULL) {
-		err(EXIT_FAILURE, "malloc failed");
-	}
-	memset(ret, 0, sizeof(char) * MAX_ENV_SIZE);
-
-	if (strlen(to_substitute) == 1) {
-		// Could be ? or $ or # or @
-		if (*to_substitute == '$') {
-			sprintf(ret, "%d", getpid());
-			return ret;
-		} else if (*to_substitute == '?') {
-			char *result = getenv("result");
-
-			sprintf(ret, "%s", result);
-			return ret;
-		}
-	} else if (strlen(to_substitute) == 0) {
-		*ret = '$';
-		return ret;
-	}
-
-	if (getenv(to_substitute) == NULL) {
-		fprintf(stderr, "error: var %s does not exist\n",
-			to_substitute);
-		free(ret);
-		return NULL;
-	} else {
-		strcpy(ret, getenv(to_substitute));
-	}
-	return ret;
-}
 
 char *
 parse(char *ptr, struct exec_info *exec_info)
@@ -399,11 +365,13 @@ start_sub(char *line, struct exec_info *exec_info)
 	struct parse_info *parse_info = exec_info->parse_info;
 	struct sub_info *sub_info = exec_info->sub_info;
 
+	memset(sub_info->buffer, 0, MAX_ENV_SIZE);
+
 	parse_info->has_arg_started = 1;
 
 	if (strstr(line, "$(") == line) {
 		line++;
-		return start_subexec(line, exec_info);
+		return subexec(line, exec_info);
 	}
 
 	sub_info->old_ptr = parse_info->copy;
@@ -413,28 +381,6 @@ start_sub(char *line, struct exec_info *exec_info)
 	parse_info->curr_lexer = &sub;
 
 	return line;
-}
-
-int
-copy_substitution(struct parse_info *parse_info, const char *sub_buffer)
-{
-	if (strlen(sub_buffer) <= 0) {
-		//*parse_info->copy++ = '$';
-		return 0;
-	}
-	char *subst = substitute(sub_buffer);
-
-	if (subst != NULL) {
-		char *ptr;
-
-		for (ptr = subst; *ptr != '\0'; ptr++) {
-			*parse_info->copy++ = *ptr;
-		}
-		ptr = NULL;
-		free(subst);
-		return 0;
-	}
-	return -1;
 }
 
 char *
@@ -447,16 +393,75 @@ end_sub(char *line, struct exec_info *exec_info)
 	parse_info->curr_lexer = sub_info->old_lexer;
 	parse_info->copy = sub_info->old_ptr;
 
-	if (copy_substitution(parse_info, sub_info->buffer) < 0) {
+	switch (substitute(sub_info->buffer)) {
+	case 1:
+		if (parse_info->curr_lexer != &std) {
+			strcpy(parse_info->copy, sub_info->buffer);
+			cmd->current_arg += strlen(cmd->current_arg);
+		} else {
+			parse(sub_info->buffer, exec_info);
+			parse_info->has_arg_started = 0;
+		}
+		break;
+	case 2:
+		strcpy(parse_info->copy, sub_info->buffer);
+		cmd->current_arg += strlen(cmd->current_arg);
+		break;
+	default:
 		return NULL;
+		break;
 	}
 
 	parse_info->copy = cmd->current_arg;
+
 	return --line;
 }
 
+int
+substitute(char *to_substitute)
+{
+	char *sub_result;
+
+	if (strlen(to_substitute) == 1) {
+		// Could be ? or $ or # or @
+		if (*to_substitute == '$') {
+			memset(to_substitute, 0, MAX_ENV_SIZE);
+			sprintf(to_substitute, "%d", getpid());
+			return 2;
+		} else if (*to_substitute == '?') {
+			sub_result = getenv("result");
+			if (sub_result == NULL) {
+				return 0;
+			}
+			memset(to_substitute, 0, MAX_ENV_SIZE);
+			strcpy(to_substitute, sub_result);
+			return 2;
+		} else if (*to_substitute == '#') {
+			memset(to_substitute, 0, MAX_ENV_SIZE);
+			strcpy(to_substitute, "0");
+			return 2;
+		}
+		// TODO: add all of them
+	} else if (strlen(to_substitute) == 0) {
+		memset(to_substitute, 0, MAX_ENV_SIZE);
+		//strcpy(to_substitute, "$");
+		return 2;
+	}
+
+	sub_result = getenv(to_substitute);
+	if (sub_result == NULL) {
+		fprintf(stderr, "error: var %s does not exist\n",
+			to_substitute);
+		return 0;
+	} else {
+		memset(to_substitute, 0, MAX_ENV_SIZE);
+		strcpy(to_substitute, sub_result);
+	}
+	return 1;
+}
+
 char *
-start_subexec(char *line, struct exec_info *exec_info)
+subexec(char *line, struct exec_info *exec_info)
 {
 	struct parse_info *parse_info = exec_info->parse_info;
 	int n_parenthesis = 1;
@@ -541,7 +546,8 @@ new_argument(struct exec_info *exec_info)
 	// TODO: clean
 	struct command *cmd = exec_info->last_command;
 
-	if (cmd->argc > 0) {
+	if (require_glob && cmd->argc > 0) {
+		require_glob = 0;
 		// Do substitution and update command
 		glob_t gstruct;
 
@@ -687,28 +693,32 @@ end_file(char *line, struct exec_info *exec_info)
 		cmd = exec_info->last_command;
 	}
 
-	if (glob(file_info->buffer, GLOB_ERR, NULL, &gstruct) == GLOB_NOESCAPE) {
-		fprintf(stderr, "Error: glob failed");
-		globfree(&gstruct);
-		return NULL;
-	}
-
-	found = gstruct.gl_pathv;
-
-	if (found != NULL && strcmp(cmd->current_arg, *found) != 0) {
-		while (*found != NULL) {
-			glob_found++;
-			if (glob_found > 1) {
-				fprintf(stderr, "Mash: ambiguous redirect\n");
-				globfree(&gstruct);
-				return NULL;
-			}
-			strcpy(file_info->buffer, *found);
-			found++;
+	if (require_glob) {
+		require_glob = 0;
+		if (glob(file_info->buffer, GLOB_ERR, NULL, &gstruct) ==
+		    GLOB_NOESCAPE) {
+			fprintf(stderr, "Error: glob failed");
+			globfree(&gstruct);
+			return NULL;
 		}
-	}
 
-	globfree(&gstruct);
+		found = gstruct.gl_pathv;
+
+		if (found != NULL && strcmp(cmd->current_arg, *found) != 0) {
+			while (*found != NULL) {
+				glob_found++;
+				if (glob_found > 1) {
+					fprintf(stderr,
+						"Mash: error: ambiguous redirect\n");
+					globfree(&gstruct);
+					return NULL;
+				}
+				strcpy(file_info->buffer, *found);
+				found++;
+			}
+		}
+		globfree(&gstruct);
+	}
 
 	if (set_file_cmd(cmd, file_info->mode, file_info->buffer) < 0) {
 		return NULL;
@@ -716,6 +726,7 @@ end_file(char *line, struct exec_info *exec_info)
 
 	cmd->current_arg += strlen(cmd->current_arg);
 	parse_info->copy = cmd->current_arg;
+	parse_info->has_arg_started = 0;
 
 	return --line;
 }
@@ -765,7 +776,12 @@ pipe_tok(char *line, struct exec_info *exec_info)
 
 	// Check if next char is |
 	if (strstr(line, "||") == line) {
+		// Add an argument to old command
+		if (exec_info->parse_info->has_arg_started) {
+			new_argument(exec_info);
+		}
 		old_cmd->next_status_needed_to_exec = EXECUTE_IN_FAILURE;
+		parse_info->finished = 1;
 		line++;
 		return line;
 	}
@@ -935,7 +951,6 @@ end_pipe(char *line, struct exec_info *exec_info)
 	if (parse_info->has_arg_started) {
 		new_argument(exec_info);
 	}
-	line++;
 	parse_info->finished = 1;
 	return line;
 }
@@ -950,12 +965,11 @@ copy(char *line, struct exec_info *exec_info)
 }
 
 char *
-copy_and_end(char *line, struct exec_info *exec_info)
+copy_and_end_sub(char *line, struct exec_info *exec_info)
 {
 	line = copy(line, exec_info);
-	line = end_line(line, exec_info);
-
-	return line;
+	line = end_sub(line, exec_info);
+	return ++line;
 }
 
 char *
@@ -972,6 +986,14 @@ request_new_line(char *line, struct exec_info *exec_info)
 	return --line;
 }
 
+static char *
+do_glob(char *line, struct exec_info *exec_info)
+{
+	require_glob = 1;
+	exec_info->parse_info->has_arg_started = 1;
+	return copy(line, exec_info);
+}
+
 char *
 error(char *line, struct exec_info *exec_info)
 {
@@ -985,6 +1007,7 @@ error(char *line, struct exec_info *exec_info)
 char *
 error_token(char token, char *line)
 {
+	strtok(line, "\n");
 	fprintf(stderr,
 		"Mash: syntax error in '%c' near unexpected token `%s\n", token,
 		line);

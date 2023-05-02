@@ -102,4 +102,8 @@ void
 sig_handler(int sig)
 {
 	// Do nothing
+	switch (sig) {
+	default:
+		break;
+	}
 }
