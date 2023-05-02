@@ -39,7 +39,7 @@ static char *end_squote(char *line, struct exec_info *exec_info);
 static char *start_dquote(char *line, struct exec_info *exec_info);
 static char *end_dquote(char *line, struct exec_info *exec_info);
 static char *start_sub(char *line, struct exec_info *exec_info);
-static char *tilde_tokenize(char *line, struct exec_info *exec_info);
+static char *tilde_tok(char *line, struct exec_info *exec_info);
 static char *end_sub(char *line, struct exec_info *exec_info);
 static char *pipe_tok(char *line, struct exec_info *exec_info);
 static char *start_file_in(char *line, struct exec_info *exec_info);
@@ -52,6 +52,8 @@ static char *escape(char *line, struct exec_info *exec_info);
 static char *esp_escape(char *line, struct exec_info *exec_info);
 static char *background(char *line, struct exec_info *exec_info);
 static char *subexec(char *line, struct exec_info *exec_info);
+static char *or(char *line, struct exec_info *exec_info);
+static char *and(char *line, struct exec_info *exec_info);
 static char *end_pipe(char *line, struct exec_info *exec_info);
 static char *end_line(char *line, struct exec_info *exec_info);
 static char *comment(char *line, struct exec_info *exec_info);
@@ -121,7 +123,7 @@ load_std_table()
 	std['{'] = here_doc;
 	std['}'] = error;
 	std['|'] = pipe_tok;
-	std['~'] = tilde_tokenize;
+	std['~'] = tilde_tok;
 	load_defaults(copy, &std);
 	return 0;
 }
@@ -180,7 +182,7 @@ load_file_table()
 	file['{'] = error;
 	file['}'] = error;
 	file['|'] = end_file;
-	file['~'] = tilde_tokenize;
+	file['~'] = tilde_tok;
 	load_defaults(copy, &file);
 	return 0;
 }
@@ -464,6 +466,7 @@ char *
 subexec(char *line, struct exec_info *exec_info)
 {
 	struct parse_info *parse_info = exec_info->parse_info;
+	struct command *cmd = exec_info->last_command;
 	int n_parenthesis = 1;
 
 	exec_depth++;
@@ -532,9 +535,18 @@ subexec(char *line, struct exec_info *exec_info)
 	}
 
 	exec_depth--;
-	parse(buffer, exec_info);
-
 	parse_info->copy = old_ptr;
+
+	if (parse_info->curr_lexer != &std) {
+		strtok(buffer, "\n");
+		strcpy(parse_info->copy, buffer);
+		cmd->current_arg += strlen(cmd->current_arg);
+		parse_info->copy = cmd->current_arg;
+	} else {
+		parse(buffer, exec_info);
+		parse_info->has_arg_started = 0;
+	}
+
 	free(line_buf);
 	free(buffer);
 	return ptr++;
@@ -741,7 +753,7 @@ end_file_started(char *line, struct exec_info *exec_info)
 }
 
 char *
-tilde_tokenize(char *line, struct exec_info *exec_info)
+tilde_tok(char *line, struct exec_info *exec_info)
 {
 	struct parse_info *parse_info = exec_info->parse_info;
 
@@ -776,14 +788,7 @@ pipe_tok(char *line, struct exec_info *exec_info)
 
 	// Check if next char is |
 	if (strstr(line, "||") == line) {
-		// Add an argument to old command
-		if (exec_info->parse_info->has_arg_started) {
-			new_argument(exec_info);
-		}
-		old_cmd->next_status_needed_to_exec = EXECUTE_IN_FAILURE;
-		parse_info->finished = 1;
-		line++;
-		return line;
+		return or(line, exec_info);
 	}
 
 	if (parse_info->has_arg_started) {
@@ -813,14 +818,7 @@ background(char *line, struct exec_info *exec_info)
 
 	// Check if next char is & or >
 	if (strstr(line, "&&") == line) {
-		// Add an argument to old command
-		if (exec_info->parse_info->has_arg_started) {
-			new_argument(exec_info);
-		}
-		command->next_status_needed_to_exec = EXECUTE_IN_SUCCESS;
-		parse_info->finished = 1;
-		line++;
-		return line;
+		return and(line, exec_info);
 	} else if (strstr(line, "&>") == line) {
 		line = copy(line, exec_info);
 
@@ -992,6 +990,34 @@ do_glob(char *line, struct exec_info *exec_info)
 	require_glob = 1;
 	exec_info->parse_info->has_arg_started = 1;
 	return copy(line, exec_info);
+}
+
+char *
+and(char *line, struct exec_info *exec_info)
+{
+	line++;
+	// Add an argument to old command
+	if (exec_info->parse_info->has_arg_started) {
+		new_argument(exec_info);
+	}
+	exec_info->last_command->next_status_needed_to_exec =
+	    EXECUTE_IN_SUCCESS;
+	exec_info->parse_info->finished = 1;
+	return ++line;
+}
+
+char *
+or(char *line, struct exec_info *exec_info)
+{
+	line++;
+	// Add an argument to old command
+	if (exec_info->parse_info->has_arg_started) {
+		new_argument(exec_info);
+	}
+	exec_info->last_command->next_status_needed_to_exec =
+	    EXECUTE_IN_FAILURE;
+	exec_info->parse_info->finished = 1;
+	return line;
 }
 
 char *
