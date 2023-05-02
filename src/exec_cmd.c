@@ -191,7 +191,7 @@ read_from_here_doc(struct command *start_command)
 
 	char *here_doc_buffer = new_here_doc_buffer();
 
-	//FIX: read line print line
+	//REVIEW: read line print line
 	do {
 		bytes_stdin = read(STDIN_FILENO, buffer_stdin, count);
 		if (*buffer_stdin == '}') {
