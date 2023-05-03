@@ -175,12 +175,24 @@ launch_job(FILE * src_file, struct exec_info *exec_info, char * to_free_excess){
 		}
 	}
 
+	struct job * job = new_job(exec_info->line);
+
 	if (search_in_builtin && has_builtin_exec_in_shell(cmd)) {
-		close_all_fd(cmd);
+		if (cmd->do_wait == DO_NOT_WAIT_TO_FINISH) {
+			job->execution = BACKGROUND;
+			job->pid = getpid();
+			add_job(job);
+			printf("[%d]\t%d\n", job->pos,job->pid);
+			print_job(job,0);
+			remove_job(job);
+			return EXIT_SUCCESS;
+		}
+		free(job->command);
+		free(job);
+		close_all_fd_no_fork(cmd);
 		return exec_builtin_in_shell(cmd);
 	}
 
-	struct job * job = new_job(exec_info->line);
 
 	if (cmd->do_wait == DO_NOT_WAIT_TO_FINISH) {
 		job->execution = BACKGROUND;
@@ -254,8 +266,8 @@ exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * 
 			exit_code = EXIT_SUCCESS;
 			break;
 		} else if (job->execution == SUB_EXECUTION) {
-			// BUG: should not stop execution
 			signal(SIGTSTP, SIG_IGN);
+			setpgid(job->pid,0);
 			if (exec_info->command->output_buffer != NULL) {
 				write_to_buffer(current_command);
 			}
@@ -270,6 +282,9 @@ exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * 
 			read_from_here_doc(exec_info->command);
 		}
 		// Pass foreground to
+		if (!isatty(0)) {
+			// FIX: error
+		}
 		tcsetpgrp(0, job->pid);
 		if (exec_info->command->output_buffer != NULL) {
 			write_to_buffer(current_command);

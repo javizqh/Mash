@@ -409,6 +409,31 @@ close_all_fd(struct command *start_command)
 		if (command->output != STDOUT_FILENO) {
 			close_fd(command->output);
 		}
+		if (command->err_output != STDERR_FILENO) {
+			close_fd(command->err_output);
+		}
+		close_fd(command->fd_pipe_input[0]);
+		close_fd(command->fd_pipe_input[1]);
+		close_fd(command->fd_pipe_output[0]);
+		close_fd(command->fd_pipe_output[1]);
+		command = command->pipe_next;
+	}
+
+	return 1;
+}
+
+int
+close_all_fd_no_fork(struct command *start_command)
+{
+	struct command *command = start_command;
+
+	while (command != NULL) {
+		if (command->input != STDIN_FILENO) {
+			close_fd(command->input);
+		}
+		if (command->output != STDOUT_FILENO) {
+			close_fd(command->output);
+		}
 		close_fd(command->fd_pipe_input[0]);
 		close_fd(command->fd_pipe_input[1]);
 		close_fd(command->fd_pipe_output[0]);

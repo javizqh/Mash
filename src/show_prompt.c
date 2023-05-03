@@ -40,6 +40,10 @@ set_prompt_mode(int mode)
 int
 prompt(char *line)
 {
+	if (syntax_mode == BASIC_SYNTAX) {
+		printf("$ ");
+		return 1;
+	}
 	char *result = getenv("result");
 
 	if (shell_mode == INTERACTIVE_MODE) {

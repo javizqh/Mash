@@ -32,6 +32,8 @@
 #include "exec_cmd.h"
 #include "builtin/jobs.h"
 
+int use_jobs = 1;
+
 int
 find_command(char *line, char *buffer, FILE * src_file,
 	     struct exec_info *prev_exec_info, char *to_free_excess)
@@ -55,21 +57,31 @@ find_command(char *line, char *buffer, FILE * src_file,
 	while ((line = parse(line, exec_info))) {
 		switch (status_for_next_cmd) {
 		case DO_NOT_MATTER_TO_EXEC:
-			status =
-			    launch_job(src_file, exec_info, to_free_excess);
-			break;
-		case EXECUTE_IN_SUCCESS:
-			if (status == 0) {
+			if (use_jobs) {
 				status =
 				    launch_job(src_file, exec_info,
 					       to_free_excess);
+			} else {
+			}
+			break;
+		case EXECUTE_IN_SUCCESS:
+			if (status == 0) {
+				if (use_jobs) {
+					status =
+					    launch_job(src_file, exec_info,
+						       to_free_excess);
+				} else {
+				}
 			}
 			break;
 		case EXECUTE_IN_FAILURE:
 			if (status != 0) {
-				status =
-				    launch_job(src_file, exec_info,
-					       to_free_excess);
+				if (use_jobs) {
+					status =
+					    launch_job(src_file, exec_info,
+						       to_free_excess);
+				} else {
+				}
 			} else {
 				status = 0;
 			}

@@ -55,6 +55,7 @@ int fg(int argc, char *argv[]) {
   }
   job->execution = FOREGROUND;
   job->state = RUNNING;
+  printf("%s\n", job->command);
   kill(job->pid, SIGCONT);
   signal(SIGTTOU, SIG_IGN);
   signal(SIGTTIN, SIG_IGN);

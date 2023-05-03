@@ -41,5 +41,6 @@ int set_err_output_shell_pipe(struct command *command);
 
 int close_fd(int fd);
 int close_all_fd(struct command *start_command);
+int close_all_fd_no_fork(struct command *start_command);
 int close_all_fd_io(struct command *start_command, struct command *last_command);
 int close_all_fd_cmd(struct command *command, struct command *start_command);

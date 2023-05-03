@@ -14,6 +14,7 @@
 
 extern int reading_from_file;
 
-int main(int argc, char **argv);
+int set_arguments(char *argv[]);
+int init_mash();
 
 void sig_handler(int sig);

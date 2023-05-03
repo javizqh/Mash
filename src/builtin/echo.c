@@ -43,11 +43,14 @@ int echo(int argc, char* argv[]) {
       argc--; argv++;
     }
   }
-
-  for (i = 0; i < argc - 1; i++) {
-    printf("%s ",argv[i]);
+  
+  if (argc) {
+    for (i = 0; i < argc - 1; i++) {
+      printf("%s ",argv[i]);
+    }
+    printf("%s",argv[i]);
   }
-  printf("%s",argv[i]);
+
 
   if (print_newline) {
     printf("\n");

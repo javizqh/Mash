@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <unistd.h>
+#include <err.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -137,6 +138,14 @@ exec_builtin_in_shell(struct command *command)
 	}
 	args[i] = NULL;
 
+	if (command->err_output != STDERR_FILENO) {
+		if (dup2(command->err_output, STDERR_FILENO) == -1) {
+			err(EXIT_FAILURE, "Failed to dup stderr %i",
+			    command->err_output);
+		}
+		close_fd(command->err_output);
+	}
+
 
 	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
 		return add_env(command->argv[0]);
@@ -198,10 +207,11 @@ exec_builtin(struct command *start_scommand, struct command *command)
 		return_value = echo(i,args);
 	} else if (strcmp(args[0], "jobs") == 0) {
 		return_value = jobs(i,args);
-	} else {
-    if (exec_builtin_in_shell(command) != 0) {
-			modify_cmd_builtin(command);
-		}
+	} else if (strcmp(args[0], "exit") != 0){
+    if (has_builtin_exec_in_shell(command)) {
+			exec_builtin_in_shell(command);
+		} 
+		modify_cmd_builtin(command);
   }
 	free_command_with_buf(start_scommand);
 	exit_mash(0,NULL);
