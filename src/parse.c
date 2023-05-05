@@ -53,7 +53,9 @@ static char *start_file_out(char *line, struct exec_info *exec_info);
 static char *basic_start_file_out(char *line, struct exec_info *exec_info);
 static char *here_doc(char *line, struct exec_info *exec_info);
 static char *end_file(char *line, struct exec_info *exec_info);
+static char *end_basic_file(char *line, struct exec_info *exec_info);
 static char *end_file_started(char *line, struct exec_info *exec_info);
+static char *end_basic_file_started(char *line, struct exec_info *exec_info);
 static char *blank(char *line, struct exec_info *exec_info);
 static char *escape(char *line, struct exec_info *exec_info);
 static char *esp_escape(char *line, struct exec_info *exec_info);
@@ -76,6 +78,7 @@ static void new_argument(struct exec_info *exec_info);
 static char *error_token(char token, char *line);
 static int seek(char *line);
 static int seekcmd(char *line);
+static int seekfile(char *line, char filetype);
 
 static int load_std_table();
 static int load_basic_std_table();
@@ -226,24 +229,24 @@ load_file_table()
 int
 load_basic_file_table()
 {
-	file['\0'] = end_file;
-	file['\t'] = end_file_started;
-	file['\n'] = end_file;
-	file[' '] = end_file_started;
-	file['#'] = end_file;
+	file['\0'] = end_basic_file;
+	file['\t'] = end_basic_file_started;
+	file['\n'] = end_basic_file;
+	file[' '] = end_basic_file_started;
+	file['#'] = end_basic_file;
 	file['$'] = start_sub;
-	file['&'] = end_file;
+	file['&'] = end_basic_file;
 	file['('] = error;
 	file[')'] = error;
 	file['*'] = do_glob;
-	file[';'] = end_file;
-	file['<'] = end_file;
-	file['>'] = end_file;
+	file[';'] = end_basic_file;
+	file['<'] = end_basic_file;
+	file['>'] = end_basic_file;
 	file['?'] = do_glob;
 	file['['] = do_glob;
 	file['{'] = error;
 	file['}'] = error;
-	file['|'] = end_file;
+	file['|'] = end_basic_file;
 	file['~'] = tilde_tok;
 	return 0;
 }
@@ -336,10 +339,14 @@ parse(char *ptr, struct exec_info *exec_info)
 
 	cmd = exec_info->last_command;
 
-	if (cmd->current_arg[0] != '\0') {
+	if (strlen(cmd->current_arg) > 0) {
 		new_argument(exec_info);
 	} else {
 		reset_last_arg(cmd);
+	}
+
+	if (strlen(exec_info->command->argv[0]) == 0) {
+		return NULL;
 	}
 
 	parse_info->finished = 0;
@@ -731,11 +738,7 @@ start_file_in(char *line, struct exec_info *exec_info)
 char *
 basic_start_file_in(char *line, struct exec_info *exec_info)
 {
-	// TODO:
-	start_file(exec_info);
-	exec_info->file_info->mode = INPUT_READ;
-
-	return line;
+	return start_file_in(line, exec_info);
 }
 
 char *
@@ -762,10 +765,8 @@ start_file_out(char *line, struct exec_info *exec_info)
 char *
 basic_start_file_out(char *line, struct exec_info *exec_info)
 {
-	// TODO:
 	start_file(exec_info);
 	exec_info->file_info->mode = OUTPUT_WRITE;
-
 	return line;
 }
 
@@ -831,12 +832,37 @@ end_file(char *line, struct exec_info *exec_info)
 }
 
 char *
+end_basic_file(char *line, struct exec_info *exec_info)
+{
+	char filetype;
+
+	if (exec_info->file_info->mode == INPUT_READ) {
+		filetype = '>';
+	} else {
+		filetype = '<';
+	}
+	if (seekfile(line, filetype)) {
+		return error_token(*line, line);
+	}
+	return end_file(line, exec_info);
+}
+
+char *
 end_file_started(char *line, struct exec_info *exec_info)
 {
 	if (!exec_info->parse_info->has_arg_started) {
 		return line;
 	}
 	return end_file(line, exec_info);
+}
+
+char *
+end_basic_file_started(char *line, struct exec_info *exec_info)
+{
+	if (!exec_info->parse_info->has_arg_started) {
+		return line;
+	}
+	return end_basic_file(line, exec_info);
 }
 
 char *
@@ -1212,6 +1238,23 @@ seekcmd(char *line)
 		fun = std[(int)*ptr];
 		if (fun == NULL)
 			return 1;
+	}
+	return 0;
+}
+
+int
+seekfile(char *line, char filetype)
+{
+	char *ptr;
+
+	for (ptr = line; *ptr != '\0'; ptr++) {
+		if (*ptr != ' ' && *ptr != '\n' && *ptr != '\t') {
+			if (*ptr == filetype || *ptr == '&') {
+				return 0;
+			} else {
+				return 1;
+			}
+		}
 	}
 	return 0;
 }

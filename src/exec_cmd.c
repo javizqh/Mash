@@ -213,35 +213,6 @@ read_from_here_doc(struct command *start_command)
 }
 
 void
-read_from_file(struct command *start_command)
-{
-	if (start_command->input == STDIN_FILENO)
-		return;
-
-	// Create stdin buffer
-	ssize_t count = MAX_BUFFER_IO_SIZE;
-	ssize_t bytes_stdin;
-	char *buffer_stdin = malloc(sizeof(char[MAX_BUFFER_IO_SIZE]));
-
-	if (buffer_stdin == NULL) {
-		err(EXIT_FAILURE, "malloc failed");
-	}
-	// Initialize buffer to 0
-	memset(buffer_stdin, 0, MAX_BUFFER_IO_SIZE);
-	do {
-		bytes_stdin = read(start_command->input, buffer_stdin, count);
-		if (write(start_command->fd_pipe_input[1], buffer_stdin,
-			  bytes_stdin) < 0) {
-			break;
-		}
-	} while (bytes_stdin > 0);
-
-	close_fd(start_command->fd_pipe_input[1]);
-	close_fd(start_command->input);
-	free(buffer_stdin);
-}
-
-void
 write_to_buffer(struct command *last_command)
 {
 	ssize_t count = MAX_BUFFER_IO_SIZE;

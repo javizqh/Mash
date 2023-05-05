@@ -31,6 +31,7 @@
 #include "show_prompt.h"
 #include "exec_cmd.h"
 #include "builtin/jobs.h"
+#include "exec_pipe.h"
 
 int use_jobs = 1;
 
@@ -62,6 +63,8 @@ find_command(char *line, char *buffer, FILE * src_file,
 				    launch_job(src_file, exec_info,
 					       to_free_excess);
 			} else {
+				status = launch_pipe(src_file, exec_info,
+						     to_free_excess);
 			}
 			break;
 		case EXECUTE_IN_SUCCESS:
@@ -71,6 +74,9 @@ find_command(char *line, char *buffer, FILE * src_file,
 					    launch_job(src_file, exec_info,
 						       to_free_excess);
 				} else {
+					status =
+					    launch_pipe(src_file, exec_info,
+							to_free_excess);
 				}
 			}
 			break;
@@ -81,6 +87,9 @@ find_command(char *line, char *buffer, FILE * src_file,
 					    launch_job(src_file, exec_info,
 						       to_free_excess);
 				} else {
+					status =
+					    launch_pipe(src_file, exec_info,
+							to_free_excess);
 				}
 			} else {
 				status = 0;

@@ -103,11 +103,11 @@ set_arguments(char *argv[])
 					break;
 				case 'b':
 					syntax_mode = BASIC_SYNTAX;
+					use_jobs = 0;
 					break;
 				case 'e':
 					syntax_mode = EXTENDED_SYNTAX;
-					break;
-				case 'j':
+					use_jobs = 1;
 					break;
 				default:
 					usage();
@@ -137,8 +137,9 @@ init_mash()
 		exec_sources();
 	}
 
-	init_jobs_list();
-
+	if (use_jobs) {
+		init_jobs_list();
+	}
 	// TODO: check for errors
 	add_env_by_name("HOME", getpwuid(getuid())->pw_dir);
 	char cwd[MAX_ENV_SIZE];
