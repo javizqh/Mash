@@ -41,7 +41,9 @@ static int usage() {
 
 int bg(int argc, char *argv[]) {
   argc--;argv++;
+  char relevance;
   struct job * job;
+
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));
   } else if (argc == 1) {
@@ -51,6 +53,23 @@ int bg(int argc, char *argv[]) {
     }
   } else {
     return usage();
+  }
+
+	switch (job->relevance) {
+	case 0:
+		relevance = '+';
+		break;
+	case 1:
+		relevance = '-';
+		break;
+	default:
+		relevance = ' ';
+		break;
+	}
+  printf("[%d]%c\t%s\n",job->pos,relevance,job->command);
+
+  if (job->execution == FOREGROUND) {
+    // FIX: only stop if reading from stdin
   }
   job->execution = BACKGROUND;
   job->state = RUNNING;

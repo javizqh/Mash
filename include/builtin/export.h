@@ -23,4 +23,6 @@ int add_env(const char * line);
 
 int add_env_by_name(const char *key, const char *value);
 
+char * get_env_by_name(const char *key);
+
 void print_env();

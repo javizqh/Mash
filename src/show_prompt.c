@@ -243,6 +243,11 @@ parse_prompt(char *prompt, char *line)
 			match = 1;
 		} else if (strstr(token, "where") == token) {
 			char *cwd = getenv("PWD");
+
+			if (cwd == NULL) {
+				match = 1;
+				break;
+			}
 			char *tmp = malloc(1024);
 			char *tmp_s = tmp;
 
@@ -250,14 +255,22 @@ parse_prompt(char *prompt, char *line)
 				err(EXIT_FAILURE, "malloc failed");
 			memset(tmp, 0, 1024);
 			strcpy(tmp, cwd);
-			// FIX: read from HOME
-			if (strstr(tmp, "/home/javier") == tmp) {
-				tmp += strlen("/home/javier");
+
+			char *home = get_env_by_name("HOME");
+
+			if (home == NULL) {
+				match = 1;
+				free(tmp_s);
+				break;
+			}
+			if (strstr(tmp, home) == tmp) {
+				tmp += strlen(home);
 				*--tmp = '~';
 			}
 
 			token += strlen("where");
 			printf("%s%s", tmp, token);
+			free(home);
 			free(tmp_s);
 			match = 1;
 		} else if (strstr(token, "host") == token) {

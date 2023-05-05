@@ -102,7 +102,9 @@ find_command(char *line, char *buffer, FILE * src_file,
 		add_env_by_name("result", result);
 		// Update cwd
 		if (getcwd(cwd, MAX_ENV_SIZE) == NULL) {
-			// TODO: error, load from home
+			exit_mash(0, NULL);
+			err(EXIT_FAILURE,
+			    "error getting current working directory");
 		}
 		add_env_by_name("PWD", cwd);
 		if (has_to_exit) {

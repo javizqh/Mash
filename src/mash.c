@@ -124,6 +124,8 @@ set_arguments(char *argv[])
 int
 init_mash()
 {
+	char cwd[MAX_ENV_SIZE];
+
 	if (ftell(stdin) >= 0) {
 		reading_from_file = 1;
 	}
@@ -140,12 +142,12 @@ init_mash()
 	if (use_jobs) {
 		init_jobs_list();
 	}
-	// TODO: check for errors
+
 	add_env_by_name("HOME", getpwuid(getuid())->pw_dir);
-	char cwd[MAX_ENV_SIZE];
 
 	if (getcwd(cwd, MAX_ENV_SIZE) == NULL) {
-		// TODO: error, load from home
+		exit_mash(0, NULL);
+		err(EXIT_FAILURE, "error getting current working directory");
 	}
 	add_env_by_name("PWD", cwd);
 
