@@ -83,6 +83,7 @@ find_path(struct command *command)
 	}
 	char *path_ptr = path;
 
+	//REVIEW: could change much better
 	// Then separate the path by : using strtok
 	char path_tok[MAX_ENV_SIZE][MAX_PATH_SIZE];
 
@@ -97,8 +98,8 @@ find_path(struct command *command)
 	int i;
 
 	for (i = 0; i < path_len; i++) {
+		strcat(path_tok[i], "/");
 		strcat(path_tok[i], command->argv[0]);
-
 		if (command_exists(path_tok[i])) {
 			strcpy(command->argv[0], path_tok[i]);
 			free(path);
@@ -191,21 +192,24 @@ read_from_here_doc(struct command *start_command)
 
 	char *here_doc_buffer = new_here_doc_buffer();
 
-	//REVIEW: read line print line
 	do {
 		bytes_stdin = read(STDIN_FILENO, buffer_stdin, count);
-		if (*buffer_stdin == '}') {
-			if (*++buffer_stdin == '\n') {
-				--buffer_stdin;
-				break;
-			}
-			--buffer_stdin;
+		if (*buffer_stdin == '}' && strlen(buffer_stdin) == 2) {
+			break;
 		}
 		strcat(here_doc_buffer, buffer_stdin);
-	} while (bytes_stdin > 0);
+		memset(buffer_stdin, 0, MAX_BUFFER_IO_SIZE);
+	} while (bytes_stdin > 0
+		 && strlen(here_doc_buffer) < MAX_HERE_DOC_BUFFER);
 
-	write(start_command->fd_pipe_input[1], here_doc_buffer,
-	      strlen(here_doc_buffer));
+	if (strlen(here_doc_buffer) >= MAX_HERE_DOC_BUFFER) {
+		fprintf(stderr,
+			"Mash: error: exceeded max size of %d of here document\n",
+			MAX_HERE_DOC_BUFFER);
+	} else {
+		write(start_command->fd_pipe_input[1], here_doc_buffer,
+		      strlen(here_doc_buffer));
+	}
 
 	close_fd(start_command->fd_pipe_input[1]);
 	free(buffer_stdin);
