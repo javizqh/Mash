@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2023.1.25)  2 MAY 2023 21:12
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2023.1.25)  3 MAY 2023 17:09
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -595,13 +595,13 @@ Overfull \hbox (7.94438pt too wide) in paragraph at lines 57--98
 [][] 
  []
 
-[7]
+[7] [8]
 Chapter 2.
-[8
+[9
 
-] [9
+] [10
 
-] [10] [11
+] [11] [12
 
 ] (./mash_documentation_guide.aux)
 Package rerunfilecheck Info: File `mash_documentation_guide.out' has not change
@@ -609,9 +609,9 @@ d.
 (rerunfilecheck)             Checksum: E909171F10B5F6438D2BA4E454C3E11E;1072.
  ) 
 Here is how much of TeX's memory you used:
- 12133 strings out of 478287
- 190561 string characters out of 5849289
- 520257 words of memory out of 5000000
+ 12134 strings out of 478287
+ 190568 string characters out of 5849289
+ 530257 words of memory out of 5000000
  30111 multiletter control sequences out of 15000+600000
  524509 words of font info for 53 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -622,10 +622,10 @@ ips/lm/lm-mathsy.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-ec.enc}</usr/share
 /lmcsc10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr12.pfb></usr/share/texm
 f/fonts/type1/public/lm/lmr17.pfb></usr/share/texmf/fonts/type1/public/lm/lmri1
 2.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb>
-Output written on mash_documentation_guide.pdf (12 pages, 176653 bytes).
+Output written on mash_documentation_guide.pdf (13 pages, 178831 bytes).
 PDF statistics:
- 165 PDF objects out of 1000 (max. 8388607)
- 135 compressed objects within 2 object streams
- 27 named destinations out of 1000 (max. 500000)
+ 170 PDF objects out of 1000 (max. 8388607)
+ 139 compressed objects within 2 object streams
+ 28 named destinations out of 1000 (max. 500000)
  102 words of extra memory for PDF output out of 10000 (max. 10000000)
 

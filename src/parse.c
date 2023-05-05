@@ -29,6 +29,9 @@
 #include "exec_info.h"
 #include "parse_line.h"
 #include "show_prompt.h"
+#include "exec_cmd.h"
+
+int syntax_mode = EXTENDED_SYNTAX;
 
 // DECLARE STATIC FUNCTIONS
 static char *copy(char *line, struct exec_info *exec_info);
@@ -39,18 +42,25 @@ static char *end_squote(char *line, struct exec_info *exec_info);
 static char *start_dquote(char *line, struct exec_info *exec_info);
 static char *end_dquote(char *line, struct exec_info *exec_info);
 static char *start_sub(char *line, struct exec_info *exec_info);
+static char *basic_start_sub(char *line, struct exec_info *exec_info);
 static char *tilde_tok(char *line, struct exec_info *exec_info);
 static char *end_sub(char *line, struct exec_info *exec_info);
 static char *pipe_tok(char *line, struct exec_info *exec_info);
+static char *basic_pipe_tok(char *line, struct exec_info *exec_info);
 static char *start_file_in(char *line, struct exec_info *exec_info);
+static char *basic_start_file_in(char *line, struct exec_info *exec_info);
 static char *start_file_out(char *line, struct exec_info *exec_info);
+static char *basic_start_file_out(char *line, struct exec_info *exec_info);
 static char *here_doc(char *line, struct exec_info *exec_info);
 static char *end_file(char *line, struct exec_info *exec_info);
+static char *end_basic_file(char *line, struct exec_info *exec_info);
 static char *end_file_started(char *line, struct exec_info *exec_info);
+static char *end_basic_file_started(char *line, struct exec_info *exec_info);
 static char *blank(char *line, struct exec_info *exec_info);
 static char *escape(char *line, struct exec_info *exec_info);
 static char *esp_escape(char *line, struct exec_info *exec_info);
 static char *background(char *line, struct exec_info *exec_info);
+static char *basic_background(char *line, struct exec_info *exec_info);
 static char *subexec(char *line, struct exec_info *exec_info);
 static char *or(char *line, struct exec_info *exec_info);
 static char *and(char *line, struct exec_info *exec_info);
@@ -68,13 +78,15 @@ static void new_argument(struct exec_info *exec_info);
 static char *error_token(char token, char *line);
 static int seek(char *line);
 static int seekcmd(char *line);
+static int seekfile(char *line, char filetype);
 
 static int load_std_table();
+static int load_basic_std_table();
 static int load_sub_table();
 static int load_file_table();
+static int load_basic_file_table();
 static int load_sq_table();
 static int load_dq_table();
-static int load_defaults(spec_char fun, spec_char(*table)[ASCII_CHARS]);
 
 // GLOBAL VARIABLES
 static int has_redirect_to_file = 0;
@@ -96,6 +108,15 @@ load_lex_tables()
 	load_file_table();
 	load_sq_table();
 	load_dq_table();
+	return 0;
+}
+
+int
+load_basic_lex_tables()
+{
+	load_basic_std_table();
+	load_sub_table();
+	load_basic_file_table();
 	return 0;
 }
 
@@ -124,7 +145,28 @@ load_std_table()
 	std['}'] = error;
 	std['|'] = pipe_tok;
 	std['~'] = tilde_tok;
-	load_defaults(copy, &std);
+	return 0;
+}
+
+int
+load_basic_std_table()
+{
+	std['\0'] = end_line;
+	std['\t'] = blank;
+	std['\n'] = blank;
+	std[' '] = blank;
+	std['$'] = basic_start_sub;
+	std['&'] = basic_background;
+	std['('] = error;
+	std[')'] = error;
+	std['*'] = do_glob;
+	std['<'] = basic_start_file_in;
+	std['>'] = basic_start_file_out;
+	std['?'] = do_glob;
+	std['['] = do_glob;
+	std['{'] = here_doc;
+	std['}'] = error;
+	std['|'] = basic_pipe_tok;
 	return 0;
 }
 
@@ -154,7 +196,6 @@ load_sub_table()
 	sub['}'] = end_sub;
 	sub['|'] = end_sub;
 	sub['~'] = end_sub;
-	load_defaults(copy, &sub);
 	return 0;
 }
 
@@ -182,8 +223,31 @@ load_file_table()
 	file['{'] = error;
 	file['}'] = error;
 	file['|'] = end_file;
+	return 0;
+}
+
+int
+load_basic_file_table()
+{
+	file['\0'] = end_basic_file;
+	file['\t'] = end_basic_file_started;
+	file['\n'] = end_basic_file;
+	file[' '] = end_basic_file_started;
+	file['#'] = end_basic_file;
+	file['$'] = start_sub;
+	file['&'] = end_basic_file;
+	file['('] = error;
+	file[')'] = error;
+	file['*'] = do_glob;
+	file[';'] = end_basic_file;
+	file['<'] = end_basic_file;
+	file['>'] = end_basic_file;
+	file['?'] = do_glob;
+	file['['] = do_glob;
+	file['{'] = error;
+	file['}'] = error;
+	file['|'] = end_basic_file;
 	file['~'] = tilde_tok;
-	load_defaults(copy, &file);
 	return 0;
 }
 
@@ -192,7 +256,6 @@ load_sq_table()
 {
 	sq['\0'] = request_new_line;
 	sq['\''] = end_squote;
-	load_defaults(copy, &sq);
 	return 0;
 }
 
@@ -203,19 +266,6 @@ load_dq_table()
 	dq['"'] = end_dquote;
 	dq['$'] = start_sub;
 	dq['\\'] = esp_escape;
-	load_defaults(copy, &dq);
-	return 0;
-}
-
-int
-load_defaults(spec_char fun, spec_char(*table)[ASCII_CHARS])
-{
-	// REVIEW: could change
-	//int i;
-
-	//for (i = 0; i < ASCII_CHARS; i++)
-	//      if ((*table)[i] == NULL)
-	//              (*table)[i] = fun;
 	return 0;
 }
 
@@ -281,16 +331,22 @@ parse(char *ptr, struct exec_info *exec_info)
 	for (; !parse_info->finished; ptr++) {
 		ptr = parse_ch(ptr, exec_info);
 
-		if (ptr == NULL)
+		if (ptr == NULL) {
+			close_all_fd(exec_info->command);
 			return ptr;
+		}
 	}
 
 	cmd = exec_info->last_command;
 
-	if (cmd->current_arg[0] != '\0') {
+	if (strlen(cmd->current_arg) > 0) {
 		new_argument(exec_info);
 	} else {
 		reset_last_arg(cmd);
+	}
+
+	if (strlen(exec_info->command->argv[0]) == 0) {
+		return NULL;
 	}
 
 	parse_info->finished = 0;
@@ -300,7 +356,6 @@ parse(char *ptr, struct exec_info *exec_info)
 char *
 parse_ch(char *line, struct exec_info *exec_info)
 {
-	// REVIEW: could change
 	int index = *line % ASCII_CHARS;
 	spec_char fun = (*exec_info->parse_info->curr_lexer)[index];
 
@@ -375,6 +430,25 @@ start_sub(char *line, struct exec_info *exec_info)
 		line++;
 		return subexec(line, exec_info);
 	}
+
+	sub_info->old_ptr = parse_info->copy;
+	parse_info->copy = sub_info->buffer;
+
+	sub_info->old_lexer = parse_info->curr_lexer;
+	parse_info->curr_lexer = &sub;
+
+	return line;
+}
+
+char *
+basic_start_sub(char *line, struct exec_info *exec_info)
+{
+	struct parse_info *parse_info = exec_info->parse_info;
+	struct sub_info *sub_info = exec_info->sub_info;
+
+	memset(sub_info->buffer, 0, MAX_ENV_SIZE);
+
+	parse_info->has_arg_started = 1;
 
 	sub_info->old_ptr = parse_info->copy;
 	parse_info->copy = sub_info->buffer;
@@ -558,7 +632,7 @@ new_argument(struct exec_info *exec_info)
 	// TODO: clean
 	struct command *cmd = exec_info->last_command;
 
-	if (require_glob && cmd->argc > 0) {
+	if (require_glob) {
 		require_glob = 0;
 		// Do substitution and update command
 		glob_t gstruct;
@@ -662,6 +736,12 @@ start_file_in(char *line, struct exec_info *exec_info)
 }
 
 char *
+basic_start_file_in(char *line, struct exec_info *exec_info)
+{
+	return start_file_in(line, exec_info);
+}
+
+char *
 start_file_out(char *line, struct exec_info *exec_info)
 {
 	struct file_info *file_info = exec_info->file_info;
@@ -679,6 +759,14 @@ start_file_out(char *line, struct exec_info *exec_info)
 		reset_last_arg(cmd);
 	}
 
+	return line;
+}
+
+char *
+basic_start_file_out(char *line, struct exec_info *exec_info)
+{
+	start_file(exec_info);
+	exec_info->file_info->mode = OUTPUT_WRITE;
 	return line;
 }
 
@@ -744,12 +832,37 @@ end_file(char *line, struct exec_info *exec_info)
 }
 
 char *
+end_basic_file(char *line, struct exec_info *exec_info)
+{
+	char filetype;
+
+	if (exec_info->file_info->mode == INPUT_READ) {
+		filetype = '>';
+	} else {
+		filetype = '<';
+	}
+	if (seekfile(line, filetype)) {
+		return error_token(*line, line);
+	}
+	return end_file(line, exec_info);
+}
+
+char *
 end_file_started(char *line, struct exec_info *exec_info)
 {
 	if (!exec_info->parse_info->has_arg_started) {
 		return line;
 	}
 	return end_file(line, exec_info);
+}
+
+char *
+end_basic_file_started(char *line, struct exec_info *exec_info)
+{
+	if (!exec_info->parse_info->has_arg_started) {
+		return line;
+	}
+	return end_basic_file(line, exec_info);
 }
 
 char *
@@ -789,6 +902,39 @@ pipe_tok(char *line, struct exec_info *exec_info)
 	// Check if next char is |
 	if (strstr(line, "||") == line) {
 		return or(line, exec_info);
+	}
+
+	if (strlen(old_cmd->argv[0]) == 0) {
+		return error_token('|', line);
+	}
+
+	if (parse_info->has_arg_started) {
+		new_argument(exec_info);
+	}
+
+	if (!seekcmd(line)) {
+		exec_info->parse_info->request_line = 1;
+	}
+
+	exec_info->last_command = new_command();
+
+	// Update old_cmd pipe
+	strcpy(exec_info->sub_info->last_alias, "");
+	pipe_command(old_cmd, exec_info->last_command);
+	parse_info->copy = exec_info->last_command->current_arg;
+
+	parse_info->has_arg_started = 0;
+	return line;
+}
+
+char *
+basic_pipe_tok(char *line, struct exec_info *exec_info)
+{
+	struct parse_info *parse_info = exec_info->parse_info;
+	struct command *old_cmd = exec_info->last_command;
+
+	if (strlen(old_cmd->argv[0]) == 0) {
+		return error_token('|', line);
 	}
 
 	if (parse_info->has_arg_started) {
@@ -834,8 +980,33 @@ background(char *line, struct exec_info *exec_info)
 
 	command->do_wait = DO_NOT_WAIT_TO_FINISH;
 
-	if (set_file_cmd(command, INPUT_READ, "/dev/null") < 0) {
-		return NULL;
+	if (command->input == STDIN_FILENO) {
+		if (set_file_cmd(command, INPUT_READ, "/dev/null") < 0) {
+			return NULL;
+		}
+	}
+	parse_info->has_arg_started = 0;
+	return line;
+}
+
+char *
+basic_background(char *line, struct exec_info *exec_info)
+{
+	struct parse_info *parse_info = exec_info->parse_info;
+	struct command *command = exec_info->last_command;
+
+	line++;
+	if (seek(line)) {
+		return error_token('&', line);
+	}
+	line--;
+
+	command->do_wait = DO_NOT_WAIT_TO_FINISH;
+
+	if (command->input == STDIN_FILENO) {
+		if (set_file_cmd(command, INPUT_READ, "/dev/null") < 0) {
+			return NULL;
+		}
 	}
 	parse_info->has_arg_started = 0;
 	return line;
@@ -1024,8 +1195,6 @@ char *
 error(char *line, struct exec_info *exec_info)
 {
 	exec_info->parse_info->finished = 1;
-	syntax_error = 1;
-
 	error_token(*line, line);
 	return NULL;
 }
@@ -1033,10 +1202,17 @@ error(char *line, struct exec_info *exec_info)
 char *
 error_token(char token, char *line)
 {
+	syntax_error = 1;
+	if (token == '\n') {
+		fprintf(stderr,
+			"Mash: syntax error near unexpected token `newline'\n");
+		return NULL;
+	}
+
 	strtok(line, "\n");
 	fprintf(stderr,
-		"Mash: syntax error in '%c' near unexpected token `%s\n", token,
-		line);
+		"Mash: syntax error in '%c' near unexpected token `%s'\n",
+		token, line);
 	return NULL;
 }
 
@@ -1062,6 +1238,23 @@ seekcmd(char *line)
 		fun = std[(int)*ptr];
 		if (fun == NULL)
 			return 1;
+	}
+	return 0;
+}
+
+int
+seekfile(char *line, char filetype)
+{
+	char *ptr;
+
+	for (ptr = line; *ptr != '\0'; ptr++) {
+		if (*ptr != ' ' && *ptr != '\n' && *ptr != '\t') {
+			if (*ptr == filetype || *ptr == '&') {
+				return 0;
+			} else {
+				return 1;
+			}
+		}
 	}
 	return 0;
 }

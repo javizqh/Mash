@@ -35,37 +35,26 @@
 
 int reading_from_file = 0;
 
+static void
+usage()
+{
+	fprintf(stderr, "Usage: mash [-ibej]\n");
+	exit(EXIT_FAILURE);
+}
+
 int
-main(int argc, char **argv)
+main(int argc, char *argv[])
 {
 	int status;
 
 	argc--;
 	argv++;
-	// TODO: add proper check
-	if (argc == 1 && strcmp(argv[0], "-i") == 0) {
-		shell_mode = INTERACTIVE_MODE;
-	}
-	if (ftell(stdin) >= 0) {
-		reading_from_file = 1;
-	}
 
 	signal(SIGINT, sig_handler);
 	signal(SIGTSTP, sig_handler);
 
-	load_lex_tables();
-	init_jobs_list();
-	add_source("env/.mashrc");
-	exec_sources();
-
-	// TODO: check for errors
-	add_env_by_name("HOME", getpwuid(getuid())->pw_dir);
-	char cwd[MAX_ENV_SIZE];
-
-	if (getcwd(cwd, MAX_ENV_SIZE) == NULL) {
-		// TODO: error, load from home
-	}
-	add_env_by_name("PWD", cwd);
+	set_arguments(argv);
+	init_mash();
 
 	// ---------- Read command line
 	// ------ Buffer
@@ -96,6 +85,73 @@ main(int argc, char **argv)
 	}
 	free(buf);
 	return status;
+}
+
+int
+set_arguments(char *argv[])
+{
+	char *arg_ptr;
+
+	for (; *argv != NULL; argv++) {
+		if (*argv[0] == '-') {
+			arg_ptr = argv[0];
+			arg_ptr++;
+			for (; *arg_ptr != '\0'; arg_ptr++) {
+				switch (*arg_ptr) {
+				case 'i':
+					shell_mode = INTERACTIVE_MODE;
+					break;
+				case 'b':
+					syntax_mode = BASIC_SYNTAX;
+					use_jobs = 0;
+					break;
+				case 'e':
+					syntax_mode = EXTENDED_SYNTAX;
+					use_jobs = 1;
+					break;
+				default:
+					usage();
+					break;
+				}
+			}
+		} else {
+			usage();
+		}
+	}
+	return 1;
+}
+
+int
+init_mash()
+{
+	char cwd[MAX_ENV_SIZE];
+
+	if (ftell(stdin) >= 0) {
+		reading_from_file = 1;
+	}
+
+	if (syntax_mode == BASIC_SYNTAX) {
+		load_basic_lex_tables();
+		add_env_by_name("PATH", "/usr/local/bin/:/usr/bin/");
+	} else {
+		load_lex_tables();
+		add_source("env/.mashrc");
+		exec_sources();
+	}
+
+	if (use_jobs) {
+		init_jobs_list();
+	}
+
+	add_env_by_name("HOME", getpwuid(getuid())->pw_dir);
+
+	if (getcwd(cwd, MAX_ENV_SIZE) == NULL) {
+		exit_mash(0, NULL);
+		err(EXIT_FAILURE, "error getting current working directory");
+	}
+	add_env_by_name("PWD", cwd);
+
+	return 1;
 }
 
 void

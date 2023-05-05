@@ -31,6 +31,9 @@
 #include "show_prompt.h"
 #include "exec_cmd.h"
 #include "builtin/jobs.h"
+#include "exec_pipe.h"
+
+int use_jobs = 1;
 
 int
 find_command(char *line, char *buffer, FILE * src_file,
@@ -55,21 +58,39 @@ find_command(char *line, char *buffer, FILE * src_file,
 	while ((line = parse(line, exec_info))) {
 		switch (status_for_next_cmd) {
 		case DO_NOT_MATTER_TO_EXEC:
-			status =
-			    launch_job(src_file, exec_info, to_free_excess);
-			break;
-		case EXECUTE_IN_SUCCESS:
-			if (status == 0) {
+			if (use_jobs) {
 				status =
 				    launch_job(src_file, exec_info,
 					       to_free_excess);
+			} else {
+				status = launch_pipe(src_file, exec_info,
+						     to_free_excess);
+			}
+			break;
+		case EXECUTE_IN_SUCCESS:
+			if (status == 0) {
+				if (use_jobs) {
+					status =
+					    launch_job(src_file, exec_info,
+						       to_free_excess);
+				} else {
+					status =
+					    launch_pipe(src_file, exec_info,
+							to_free_excess);
+				}
 			}
 			break;
 		case EXECUTE_IN_FAILURE:
 			if (status != 0) {
-				status =
-				    launch_job(src_file, exec_info,
-					       to_free_excess);
+				if (use_jobs) {
+					status =
+					    launch_job(src_file, exec_info,
+						       to_free_excess);
+				} else {
+					status =
+					    launch_pipe(src_file, exec_info,
+							to_free_excess);
+				}
 			} else {
 				status = 0;
 			}
@@ -81,7 +102,9 @@ find_command(char *line, char *buffer, FILE * src_file,
 		add_env_by_name("result", result);
 		// Update cwd
 		if (getcwd(cwd, MAX_ENV_SIZE) == NULL) {
-			// TODO: error, load from home
+			exit_mash(0, NULL);
+			err(EXIT_FAILURE,
+			    "error getting current working directory");
 		}
 		add_env_by_name("PWD", cwd);
 		if (has_to_exit) {

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <err.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,6 +59,21 @@ int add_env(const char * line) {
 
 int add_env_by_name(const char *key, const char *value) {
   return setenv(key, value, 1);
+}
+
+char * get_env_by_name(const char *key) {
+  char *env = malloc(MAX_ENV_SIZE);
+  if (env == NULL) {
+    err(EXIT_FAILURE, "error maloc failed");
+  }
+  memset(env, 0, MAX_ENV_SIZE);
+  char *ret = getenv(key);
+  if (ret == NULL) {
+    free(env);
+    return NULL;
+  }
+  strcpy(env, ret);
+  return env;
 }
 
 void print_env() {

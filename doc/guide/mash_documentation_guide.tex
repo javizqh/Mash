@@ -56,7 +56,7 @@ Color = Change in syntax table\\
 \begin{table}[H]
 \begin{tabular}{ |c|c|c|c|c|c| }
 	\hline
-	\rowcolor{lightgray} \multicolumn{6}{|c|}{Syntax Table} \\
+	\rowcolor{lightgray} \multicolumn{6}{|c|}{Extended Syntax Table} \\
 	\hline
 	Character & Standard & File \cellcolor[HTML]{BEE9F9}& Substitution \cellcolor[HTML]{FFF49C}& 'Single Quote' \cellcolor[HTML]{E1E1E1} & "Double Quote"\cellcolor[HTML]{C8F3BE} \\
 	\hline
@@ -72,7 +72,7 @@ Color = Change in syntax table\\
 	$($ & error \cellcolor[HTML]{FF0044}& error \cellcolor[HTML]{FF0044} & end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
 	$)$ & error \cellcolor[HTML]{FF0044}& error \cellcolor[HTML]{FF0044} & end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
 	* & do\_glob & do\_glob & end\_sub\cellcolor[HTML]{FFF49C} & ----- & ----- \\
-	- & ----- & ----- &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	- & ----- & ----- &  copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
 	; & end\_pipe & end\_file\cellcolor[HTML]{BEE9F9} &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
 	< & start\_file\_in \cellcolor[HTML]{BEE9F9}& end\_file\cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
 	> & start\_file\_out \cellcolor[HTML]{BEE9F9}& end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
@@ -80,9 +80,9 @@ Color = Change in syntax table\\
 	@ & ----- & ----- & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
 	$[$ & do\_glob & do\_glob &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
 	$\backslash$ & escape & escape &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & esp\_escape \\
-	\_ & end\_line & end\_file \cellcolor[HTML]{BEE9F9}& copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
+	\_ & ----- & end\_file \cellcolor[HTML]{BEE9F9}& copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
 	\{ & here\_doc & error \cellcolor[HTML]{FF0044} &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
-	\} & error \cellcolor[HTML]{FF0044} & error \cellcolor[HTML]{FF0044} &  ----- & ----- & ----- \\
+	\} & error \cellcolor[HTML]{FF0044} & error \cellcolor[HTML]{FF0044} & end\_sub \cellcolor[HTML]{FFF49C} & ----- & ----- \\
 	$|$ & pipe\_tok & end\_file\cellcolor[HTML]{BEE9F9} &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
 	\textasciitilde  & tilde\_tok \cellcolor[HTML]{FFF49C}& tilde\_tok \cellcolor[HTML]{FFF49C} &  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
 	Rest  & ----- & ----- &  ----- & ----- & ----- \\
@@ -95,6 +95,43 @@ Color = Change in syntax table\\
 	1>  & start\_file\_out \cellcolor[HTML]{BEE9F9}& end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}& ----- & ----- \\
 	\hline
 \end{tabular}
+\end{table}
+\begin{table}[H]
+	\centering
+	\begin{tabular}{ |c|c|c|c| }
+		\hline
+		\rowcolor{lightgray} \multicolumn{4}{|c|}{Basic Syntax Table} \\
+		\hline
+		Character & Standard & File \cellcolor[HTML]{BEE9F9}& Substitution \cellcolor[HTML]{FFF49C}\\
+		\hline
+		$\backslash$0 & end\_line & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
+		$\backslash$t & blank & end\_file\_started \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
+		$\backslash$n & blank & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
+		Space & blank & end\_file\_started \cellcolor[HTML]{BEE9F9}&  end\_sub\cellcolor[HTML]{FFF49C}\\
+		" & ----- & ----- &  end\_sub\cellcolor[HTML]{FFF49C}\\
+		\# & ----- & end\_file \cellcolor[HTML]{BEE9F9}& copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
+		\$ & start\_sub \cellcolor[HTML]{FFF49C}& start\_sub \cellcolor[HTML]{FFF49C} & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
+		\& & background & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub\cellcolor[HTML]{FFF49C}\\
+		' & ----- & ----- &  end\_sub\cellcolor[HTML]{FFF49C}\\
+		$($ & error \cellcolor[HTML]{FF0044}& error \cellcolor[HTML]{FF0044} & end\_sub \cellcolor[HTML]{FFF49C}\\
+		$)$ & error \cellcolor[HTML]{FF0044}& error \cellcolor[HTML]{FF0044} & end\_sub \cellcolor[HTML]{FFF49C}\\
+		* & do\_glob & do\_glob & end\_sub\cellcolor[HTML]{FFF49C} \\
+		- & ----- & ----- &  copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
+		; & ----- & end\_file\cellcolor[HTML]{BEE9F9} &  end\_sub \cellcolor[HTML]{FFF49C}\\
+		< & start\_file\_in \cellcolor[HTML]{BEE9F9}& end\_file\cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
+		> & start\_file\_out \cellcolor[HTML]{BEE9F9}& end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
+		? & do\_glob & do\_glob & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
+		@ & ----- & ----- & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
+		$[$ & do\_glob & do\_glob &  end\_sub \cellcolor[HTML]{FFF49C}\\
+		$\backslash$ & ----- & ----- &  end\_sub \cellcolor[HTML]{FFF49C}\\
+		\_ & ----- & end\_file \cellcolor[HTML]{BEE9F9}& copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
+		\{ & here\_doc & error \cellcolor[HTML]{FF0044} &  end\_sub \cellcolor[HTML]{FFF49C}\\
+		\} & error \cellcolor[HTML]{FF0044} & error \cellcolor[HTML]{FF0044} &  end\_sub \cellcolor[HTML]{FFF49C} \\
+		$|$ & pipe\_tok & end\_file\cellcolor[HTML]{BEE9F9} &  end\_sub \cellcolor[HTML]{FFF49C}\\
+		\textasciitilde  & ----- & ----- &  end\_sub \cellcolor[HTML]{FFF49C}\\
+		Rest  & ----- & ----- &  ----- \\
+		\hline
+	\end{tabular}
 \end{table}
 \chapter{Builtin commands}
 Explicacion de los builtins
