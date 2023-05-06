@@ -20,8 +20,7 @@ enum exec_state {
   BACKGROUND,
   SUB_EXECUTION
 };
-
-struct job {
+typedef struct Job {
   int execution; 
   int pos;
   int relevance;
@@ -29,31 +28,31 @@ struct job {
   pid_t end_pid;
   int state;
   char *command;
-  struct job *next_job;
-};
+  struct Job *next_job;
+} Job;
 
-struct job_list {
-  struct job * head;
-  struct job * last;
+typedef struct JobList {
+  Job * head;
+  Job * last;
   int n_jobs;
-};
+} JobList;
 
 int jobs(int argc, char *argv[]);
 pid_t substitute_jobspec(char* jobspec);
 
-int launch_job(FILE * src_file, struct exec_info *exec_info, char * to_free_excess);
-int exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * to_free_excess);
-int wait_job(struct job * job);
+int launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess);
+int exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess);
+int wait_job(Job * job);
 
-struct job * new_job(char * line);
-void print_job(struct job * job, int print_id);
+Job * new_job(char * line);
+void print_job(Job * job, int print_id);
 
 int init_jobs_list();
 void free_jobs_list();
 
-int add_job(struct job * job);
-struct job * get_job(pid_t job_pid);
-int remove_job(struct job * job);
+int add_job(Job * job);
+Job * get_job(pid_t job_pid);
+int remove_job(Job * job);
 int remove_done_jobs();
 pid_t get_pos_job_pid(int pos);
 pid_t get_relevance_job_pid(int relevance);

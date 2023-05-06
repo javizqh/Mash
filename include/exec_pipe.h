@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-int launch_pipe(FILE * src_file, struct exec_info *exec_info, char * to_free_excess);
+int launch_pipe(FILE * src_file, ExecInfo *exec_info, char * to_free_excess);
 
-int exec_pipe(FILE * src_file, struct exec_info *exec_info, char * to_free_excess);
+int exec_pipe(FILE * src_file, ExecInfo *exec_info, char * to_free_excess);
 
 int wait_pipe(pid_t pipe_pid);

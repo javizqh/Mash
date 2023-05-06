@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['parse_5finfo_6',['parse_info',['../structparse__info.html',1,'']]]
+  ['parseinfo_6',['ParseInfo',['../structParseInfo.html',1,'']]]
 ];

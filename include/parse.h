@@ -23,14 +23,14 @@ enum ascii {
 	ASCII_CHARS = 256
 };
 
-struct exec_info;
+struct ExecInfo;
 
-typedef char *(*spec_char)(char *, struct exec_info *);
+typedef char *(*spec_char)(char *, struct ExecInfo *);
 
 int load_lex_tables();
 int load_basic_lex_tables();
 
-struct parse_info {
+typedef struct ParseInfo {
 	int exec_depth;
 	int request_line;
 	int has_arg_started;
@@ -38,9 +38,9 @@ struct parse_info {
 	char *copy;
 	spec_char (*curr_lexer)[ASCII_CHARS];
 	spec_char (*old_lexer)[ASCII_CHARS];
-};
+} ParseInfo;
 
-struct parse_info *new_parse_info();
-void restore_parse_info(struct parse_info *parse_info);
+ParseInfo *new_parse_info();
+void restore_parse_info(ParseInfo *parse_info);
 
-char *parse(char *line, struct exec_info *exec_info);
+char *parse(char *line, struct ExecInfo *exec_info);

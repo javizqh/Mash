@@ -36,9 +36,9 @@
 #include "exec_pipe.h"
 
 int
-launch_pipe(FILE * src_file, struct exec_info *exec_info, char *to_free_excess)
+launch_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 {
-	struct command *cmd = exec_info->command;
+	Command *cmd = exec_info->command;
 
 	if (has_builtin_modify_cmd(cmd)) {
 		switch (modify_cmd_builtin(cmd)) {
@@ -63,9 +63,9 @@ launch_pipe(FILE * src_file, struct exec_info *exec_info, char *to_free_excess)
 }
 
 int
-exec_pipe(FILE * src_file, struct exec_info *exec_info, char *to_free_excess)
+exec_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 {
-	struct command *current_command;
+	Command *current_command;
 
 	if (set_input_shell_pipe(exec_info->command)
 	    || set_output_shell_pipe(exec_info->command)
@@ -91,7 +91,7 @@ exec_pipe(FILE * src_file, struct exec_info *exec_info, char *to_free_excess)
 		return EXIT_FAILURE;
 		break;
 	case 0:
-		struct command *start_command = exec_info->command;
+		Command * start_command = exec_info->command;
 
 		free_exec_info(exec_info);
 		free(to_free_excess);

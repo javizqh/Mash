@@ -13,11 +13,11 @@
 // limitations under the License.
 
 // Builtin command
-int builtin(struct command * command);
+int builtin(Command * command);
 // ---------------
 
-int has_builtin_modify_cmd(struct command *command);
-int modify_cmd_builtin(struct command *modify_command);
+int has_builtin_modify_cmd(Command *command);
+int modify_cmd_builtin(Command *modify_command);
 
 /**
  * @brief Executes builtins that need to be executed in the parent process
@@ -25,8 +25,8 @@ int modify_cmd_builtin(struct command *modify_command);
  * @param command 
  * @return 1 = Need to execute in child | 0 = Executed in parent process
  */
-int has_builtin_exec_in_shell(struct command *command);
-int exec_builtin_in_shell(struct command *command);
+int has_builtin_exec_in_shell(Command *command);
+int exec_builtin_in_shell(Command *command);
 
-int find_builtin(struct command *command);
-void exec_builtin(struct command *start_scommand, struct command *command);
+int find_builtin(Command *command);
+void exec_builtin(Command *start_scommand, Command *command);

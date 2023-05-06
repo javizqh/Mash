@@ -51,7 +51,7 @@ static int usage() {
 	return CMD_EXIT_FAILURE;
 }
 
-int builtin(struct command * command) {
+int builtin(Command * command) {
   int i;
 
   if (command->argc < 2) {
@@ -75,7 +75,7 @@ int builtin(struct command * command) {
 }
 // ---------------
 
-int has_builtin_modify_cmd(struct command *command){
+int has_builtin_modify_cmd(Command *command){
   int i;
 	for (i = 0; i < 4; i++)
   {
@@ -86,7 +86,7 @@ int has_builtin_modify_cmd(struct command *command){
 	return 0;
 }
 
-int modify_cmd_builtin(struct command *modify_command){
+int modify_cmd_builtin(Command *modify_command){
 	if (strcmp(modify_command->argv[0], "command") == 0) {
 		return command(modify_command);
 	} else if (strcmp(modify_command->argv[0], "builtin") == 0) {
@@ -101,7 +101,7 @@ int modify_cmd_builtin(struct command *modify_command){
 
 
 int
-has_builtin_exec_in_shell(struct command *command)
+has_builtin_exec_in_shell(Command *command)
 { 
   int i;
 
@@ -124,7 +124,7 @@ has_builtin_exec_in_shell(struct command *command)
 }
 
 int
-exec_builtin_in_shell(struct command *command)
+exec_builtin_in_shell(Command *command)
 {
 	int i;
 	char *args[command->argc];
@@ -175,7 +175,7 @@ exec_builtin_in_shell(struct command *command)
 }
 
 int
-find_builtin(struct command *command)
+find_builtin(Command *command)
 {
   int i;
   for (i = 0; i < 2; i++)
@@ -189,7 +189,7 @@ find_builtin(struct command *command)
 }
 
 void
-exec_builtin(struct command *start_scommand, struct command *command)
+exec_builtin(Command *start_scommand, Command *command)
 {
 	int i;
 	int return_value = EXIT_FAILURE;

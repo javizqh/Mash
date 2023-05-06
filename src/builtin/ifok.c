@@ -27,7 +27,7 @@ static int usage() {
 	return CMD_EXIT_FAILURE;
 }
 
-int ifok(struct command * command) {
+int ifok(Command * command) {
   int i;
   char* result = getenv("result");
   if (result == NULL) {

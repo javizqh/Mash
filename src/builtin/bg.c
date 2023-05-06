@@ -44,7 +44,7 @@ static int usage() {
 int bg(int argc, char *argv[]) {
   argc--;argv++;
   char relevance;
-  struct job * job;
+  Job * job;
 
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));

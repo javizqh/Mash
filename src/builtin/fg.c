@@ -42,7 +42,7 @@ static int usage() {
 
 int fg(int argc, char *argv[]) {
   argc--;argv++;
-  struct job * job;
+  Job * job;
   int exit_code = EXIT_SUCCESS;
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));
