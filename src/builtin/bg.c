@@ -74,5 +74,18 @@ int bg(int argc, char *argv[]) {
   job->state = RUNNING;
   kill(job->pid, SIGTTOU);
   kill(job->pid, SIGCONT);
+
+  int wstatus;
+	pid_t wait_pid;
+
+  wait_pid = waitpid(job->pid,&wstatus,WNOHANG|WUNTRACED);
+  if (wait_pid == -1) {
+    perror("waitpid failed 2");
+  }
+  
+  if (WIFSTOPPED(wstatus) || WIFSIGNALED(wstatus)) {
+    stop_job(job->pid);
+    waitpid(job->pid,&wstatus,WUNTRACED);
+  }
   return EXIT_SUCCESS;
 }

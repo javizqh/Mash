@@ -356,6 +356,9 @@ char *
 parse_ch(char *line, ExecInfo * exec_info)
 {
 	int index = *line % ASCII_CHARS;
+
+	if (index < 0)
+		index += ASCII_CHARS;
 	spec_char fun = (*exec_info->parse_info->curr_lexer)[index];
 
 	if (fun) {
