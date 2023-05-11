@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sys/types.h>
 #include <sys/wait.h>
-#include <signal.h>
-#include <unistd.h>
-#include <err.h>
-#include <errno.h>
-#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "open_files.h"
@@ -27,10 +21,8 @@
 #include "builtin/export.h"
 #include "builtin/source.h"
 #include "builtin/alias.h"
-#include "builtin/exit.h"
 #include "parse.h"
 #include "exec_info.h"
-#include "parse_line.h"
 #include "builtin/jobs.h"
 #include "builtin/wait.h"
 
@@ -41,8 +33,6 @@ static int usage() {
 
 int wait_for_job(int argc, char *argv[]) {
   argc--;argv++;
-  int wstatus;
-  pid_t wait_pid;
   Job * job;
 
   if (argc == 0) {
@@ -54,11 +44,12 @@ int wait_for_job(int argc, char *argv[]) {
       // Pid
       job = get_job(atoi(argv[0]));
     }
-    if (job == NULL) {
-      return usage(); 
-    }
   } else {
     return usage();
+  }
+
+  if (job == NULL) {
+    return no_job("wait"); 
   }
 
   if (job->state == STOPPED) {

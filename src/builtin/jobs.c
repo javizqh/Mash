@@ -89,16 +89,16 @@ int jobs(int argc, char *argv[]) {
 				}
 			}
 		} else if (*argv[i] == '%') {
-			if ((only_job = substitute_jobspec(argv[i])) < 0) {
-				return usage();
-			}
+			only_job = substitute_jobspec(argv[i]);
 		} else {
 			return usage();
 		}
 	}
-
 	if (only_job) {
 		current = get_job(only_job);
+		if (current == NULL) {
+			return no_job("jobs");
+		}
 		print_job_builtin(current, only_run, only_stop, only_id, print_id);
 		return EXIT_SUCCESS;
 	} else {
@@ -141,6 +141,11 @@ static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, 
 			print_job(job,flag_print_id);
 		}
 	}
+}
+
+int no_job(char *command) {
+  fprintf(stderr,"mash: %s: no such a job\n",command);
+	return EXIT_FAILURE;
 }
 
 pid_t substitute_jobspec(char* jobspec) {
@@ -318,14 +323,14 @@ wait_job(Job * job)
 				return WEXITSTATUS(wstatus);
 			}
 		} else if (WIFSTOPPED(wstatus)) {
+			kill(job->pid, SIGTTOU);
 			stop_job(wait_pid);
 			return EXIT_SUCCESS;
 		} else if (WIFSIGNALED(wstatus)) {
-			fprintf(stderr,"mash: %d\n",WTERMSIG(wstatus));
 			if (wait_pid == job->end_pid) {
 				remove_job(job);
+				return EXIT_SUCCESS;
 			}
-			return EXIT_SUCCESS;
 		}
 	}
 	return EXIT_FAILURE;
@@ -379,6 +384,9 @@ void print_job(Job * job, int print_id) {
 		break;
 	case DONE:
 		state = "Done";
+		break;
+	default:
+		state = strsignal(job->state);
 		break;
 	}
 	if (print_id) {

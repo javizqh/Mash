@@ -50,11 +50,12 @@ int bg(int argc, char *argv[]) {
     job = get_job(get_relevance_job_pid(0));
   } else if (argc == 1) {
     job = get_job(substitute_jobspec(argv[0]));
-    if (job == NULL) {
-      return usage(); 
-    }
   } else {
     return usage();
+  }
+
+  if (job == NULL) {
+    return no_job("bg"); 
   }
 
 	switch (job->relevance) {
@@ -70,12 +71,8 @@ int bg(int argc, char *argv[]) {
 	}
   printf("[%d]%c\t%s\n",job->pos,relevance,job->command);
 
-  if (job->execution == FOREGROUND) {
-    // BUG: only stop if reading from stdin
-    stop_job(job->pid);
-    return EXIT_SUCCESS;
-  }
   job->state = RUNNING;
+  kill(job->pid, SIGTTOU);
   kill(job->pid, SIGCONT);
   return EXIT_SUCCESS;
 }

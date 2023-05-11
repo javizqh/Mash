@@ -13,9 +13,9 @@
 // limitations under the License.
 
 enum exec_state {
-  RUNNING,
-  STOPPED,
-  DONE,
+  RUNNING = -2,
+  STOPPED = -1,
+  DONE = 0,
   FOREGROUND,
   BACKGROUND,
   SUB_EXECUTION
@@ -38,6 +38,7 @@ typedef struct JobList {
 } JobList;
 
 int jobs(int argc, char *argv[]);
+int no_job(char * command);
 pid_t substitute_jobspec(char* jobspec);
 
 int launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess);

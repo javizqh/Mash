@@ -36,10 +36,11 @@
 #include "builtin/fg.h"
 #include "builtin/bg.h"
 #include "builtin/wait.h"
+#include "builtin/kill.h"
 #include "builtin/builtin.h"
 
 char *builtins_modify_cmd[4] = {"ifnot","ifok","builtin","command"};
-char *builtins_in_shell[9] = {"wait","bg","fg","cd","export","alias","exit","source","."};
+char *builtins_in_shell[10] = {"kill","wait","bg","fg","cd","export","alias","exit","source","."};
 char *builtins_fork[2] = {"echo","jobs"};
 
 // Builtin command
@@ -114,7 +115,7 @@ has_builtin_exec_in_shell(Command *command)
 		return 1;
 	}
 
-  for (i = 0; i < 9; i++)
+  for (i = 0; i < 10; i++)
   {
     if (strcmp(command->argv[0], builtins_in_shell[i]) == 0) {
       return 1;
@@ -173,6 +174,8 @@ exec_builtin_in_shell(Command *command)
 		return bg(i,args);
 	} else if (strcmp(args[0], "wait") == 0) {
 		return wait_for_job(i,args);
+	} else if (strcmp(args[0], "kill") == 0) {
+		return kill_job(i,args);
 	}
 	return 1;
 }
