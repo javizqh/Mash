@@ -71,9 +71,10 @@ int bg(int argc, char *argv[]) {
   printf("[%d]%c\t%s\n",job->pos,relevance,job->command);
 
   if (job->execution == FOREGROUND) {
-    // FIX: only stop if reading from stdin
+    // BUG: only stop if reading from stdin
+    stop_job(job->pid);
+    return EXIT_SUCCESS;
   }
-  job->execution = BACKGROUND;
   job->state = RUNNING;
   kill(job->pid, SIGCONT);
   return EXIT_SUCCESS;

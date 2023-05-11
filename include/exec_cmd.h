@@ -26,7 +26,6 @@ enum iobuffer {
 };
 
 void read_from_here_doc(Command *start_command);
-void read_from_file(Command *start_command);
 void write_to_buffer(Command *last_command);
 
 // Redirect input and output: Child

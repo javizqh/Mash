@@ -35,10 +35,11 @@
 #include "builtin/jobs.h"
 #include "builtin/fg.h"
 #include "builtin/bg.h"
+#include "builtin/wait.h"
 #include "builtin/builtin.h"
 
 char *builtins_modify_cmd[4] = {"ifnot","ifok","builtin","command"};
-char *builtins_in_shell[8] = {"bg","fg","cd","export","alias","exit","source","."};
+char *builtins_in_shell[9] = {"wait","bg","fg","cd","export","alias","exit","source","."};
 char *builtins_fork[2] = {"echo","jobs"};
 
 // Builtin command
@@ -113,7 +114,7 @@ has_builtin_exec_in_shell(Command *command)
 		return 1;
 	}
 
-  for (i = 0; i < 8; i++)
+  for (i = 0; i < 9; i++)
   {
     if (strcmp(command->argv[0], builtins_in_shell[i]) == 0) {
       return 1;
@@ -170,6 +171,8 @@ exec_builtin_in_shell(Command *command)
 		return fg(i,args);
 	} else if (strcmp(command->argv[0], "bg") == 0) {
 		return bg(i,args);
+	} else if (strcmp(args[0], "wait") == 0) {
+		return wait_for_job(i,args);
 	}
 	return 1;
 }
@@ -207,6 +210,8 @@ exec_builtin(Command *start_scommand, Command *command)
 		return_value = echo(i,args);
 	} else if (strcmp(args[0], "jobs") == 0) {
 		return_value = jobs(i,args);
+	} else if (strcmp(args[0], "wait") == 0) {
+		return_value = wait_for_job(i,args);
 	} else if (strcmp(args[0], "exit") != 0){
     if (has_builtin_exec_in_shell(command)) {
 			exec_builtin_in_shell(command);

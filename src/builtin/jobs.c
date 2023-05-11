@@ -89,7 +89,7 @@ int jobs(int argc, char *argv[]) {
 				}
 			}
 		} else if (*argv[i] == '%') {
-			if ((only_job = substitute_jobspec(arg_ptr)) < 0) {
+			if ((only_job = substitute_jobspec(argv[i])) < 0) {
 				return usage();
 			}
 		} else {
@@ -144,18 +144,19 @@ static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, 
 }
 
 pid_t substitute_jobspec(char* jobspec) {
-	if (strlen(jobspec) == 0) {
+	char *ptr = ++jobspec;
+	if (strlen(ptr) == 0) {
 		return get_relevance_job_pid(0);
 	}
-	if (strlen(jobspec) == 1) {
-		if (*jobspec == '+' || *jobspec == '%') {
+	if (strlen(ptr) == 1) {
+		if (*ptr == '+' || *ptr == '%') {
 			return get_relevance_job_pid(0);
-		} else if (*jobspec == '-'){
+		} else if (*ptr == '-'){
 			return get_relevance_job_pid(1);
 		}
 	}
-	if (atoi(jobspec) > 0) {
-		return get_pos_job_pid(atoi(jobspec));
+	if (atoi(ptr) > 0) {
+		return get_pos_job_pid(atoi(ptr));
 	} 
 	return -1;
 }
@@ -304,7 +305,6 @@ wait_job(Job * job)
 {
 	int wstatus;
 	pid_t wait_pid;
-	
 	while (1) {
 		wait_pid = waitpid(-1,&wstatus,WUNTRACED);
 		if (WIFEXITED(wstatus)) {
@@ -321,6 +321,7 @@ wait_job(Job * job)
 			stop_job(wait_pid);
 			return EXIT_SUCCESS;
 		} else if (WIFSIGNALED(wstatus)) {
+			fprintf(stderr,"mash: %d\n",WTERMSIG(wstatus));
 			if (wait_pid == job->end_pid) {
 				remove_job(job);
 			}
