@@ -34,7 +34,7 @@ enum exit_code {
 	CMD_EXIT_NOT_EXECUTE
 };
 
-struct command {
+typedef struct Command {
 	char argv[MAX_ARGUMENTS][MAX_ARGUMENT_SIZE];
 	int argc;
 	char *current_arg;
@@ -49,37 +49,37 @@ struct command {
 	int err_output;
 	int fd_pipe_input[2];
 	int fd_pipe_output[2];
-	struct command *pipe_next;
+	struct Command *pipe_next;
 	// Only used when $()
 	char * output_buffer;
-};
+} Command;
 
 // Builtin command
 extern int search_in_builtin;
 
-int command(struct command * command);
+int command(Command * command);
 // ---------------
 
 
-struct command *new_command();
+Command *new_command();
 
-void reset_command(struct command *command);
+void reset_command(Command *command);
 
-void free_command(struct command *command);
-void free_command_with_buf(struct command *command);
+void free_command(Command *command);
+void free_command_with_buf(Command *command);
 
-int check_alias_cmd(struct command *command);
+int check_alias_cmd(Command *command);
 
-int add_arg(struct command *command);
+int add_arg(Command *command);
 
-int reset_last_arg(struct command *command);
+int reset_last_arg(Command *command);
 
-int set_file_cmd(struct command *command,int file_type, char *file);
+int set_file_cmd(Command *command,int file_type, char *file);
 
-int set_buffer_cmd(struct command *command, char *buffer);
+int set_buffer_cmd(Command *command, char *buffer);
 
-int set_to_background_cmd(struct command *command);
+int set_to_background_cmd(Command *command);
 
-struct command * get_last_command(struct command *command);
+Command * get_last_command(Command *command);
 
-int pipe_command(struct command *in_command, struct command * out_command);
+int pipe_command(Command *in_command, Command * out_command);

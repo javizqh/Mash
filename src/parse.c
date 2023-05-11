@@ -34,47 +34,47 @@
 int syntax_mode = EXTENDED_SYNTAX;
 
 // DECLARE STATIC FUNCTIONS
-static char *copy(char *line, struct exec_info *exec_info);
-static char *copy_and_end_sub(char *line, struct exec_info *exec_info);
-static char *do_glob(char *line, struct exec_info *exec_info);
-static char *start_squote(char *line, struct exec_info *exec_info);
-static char *end_squote(char *line, struct exec_info *exec_info);
-static char *start_dquote(char *line, struct exec_info *exec_info);
-static char *end_dquote(char *line, struct exec_info *exec_info);
-static char *start_sub(char *line, struct exec_info *exec_info);
-static char *basic_start_sub(char *line, struct exec_info *exec_info);
-static char *tilde_tok(char *line, struct exec_info *exec_info);
-static char *end_sub(char *line, struct exec_info *exec_info);
-static char *pipe_tok(char *line, struct exec_info *exec_info);
-static char *basic_pipe_tok(char *line, struct exec_info *exec_info);
-static char *start_file_in(char *line, struct exec_info *exec_info);
-static char *basic_start_file_in(char *line, struct exec_info *exec_info);
-static char *start_file_out(char *line, struct exec_info *exec_info);
-static char *basic_start_file_out(char *line, struct exec_info *exec_info);
-static char *here_doc(char *line, struct exec_info *exec_info);
-static char *end_file(char *line, struct exec_info *exec_info);
-static char *end_basic_file(char *line, struct exec_info *exec_info);
-static char *end_file_started(char *line, struct exec_info *exec_info);
-static char *end_basic_file_started(char *line, struct exec_info *exec_info);
-static char *blank(char *line, struct exec_info *exec_info);
-static char *escape(char *line, struct exec_info *exec_info);
-static char *esp_escape(char *line, struct exec_info *exec_info);
-static char *background(char *line, struct exec_info *exec_info);
-static char *basic_background(char *line, struct exec_info *exec_info);
-static char *subexec(char *line, struct exec_info *exec_info);
-static char *or(char *line, struct exec_info *exec_info);
-static char *and(char *line, struct exec_info *exec_info);
-static char *end_pipe(char *line, struct exec_info *exec_info);
-static char *end_line(char *line, struct exec_info *exec_info);
-static char *comment(char *line, struct exec_info *exec_info);
-static char *request_new_line(char *line, struct exec_info *exec_info);
-static char *error(char *line, struct exec_info *exec_info);
+static char *copy(char *line, ExecInfo * exec_info);
+static char *copy_and_end_sub(char *line, ExecInfo * exec_info);
+static char *do_glob(char *line, ExecInfo * exec_info);
+static char *start_squote(char *line, ExecInfo * exec_info);
+static char *end_squote(char *line, ExecInfo * exec_info);
+static char *start_dquote(char *line, ExecInfo * exec_info);
+static char *end_dquote(char *line, ExecInfo * exec_info);
+static char *start_sub(char *line, ExecInfo * exec_info);
+static char *basic_start_sub(char *line, ExecInfo * exec_info);
+static char *tilde_tok(char *line, ExecInfo * exec_info);
+static char *end_sub(char *line, ExecInfo * exec_info);
+static char *pipe_tok(char *line, ExecInfo * exec_info);
+static char *basic_pipe_tok(char *line, ExecInfo * exec_info);
+static char *start_file_in(char *line, ExecInfo * exec_info);
+static char *basic_start_file_in(char *line, ExecInfo * exec_info);
+static char *start_file_out(char *line, ExecInfo * exec_info);
+static char *basic_start_file_out(char *line, ExecInfo * exec_info);
+static char *here_doc(char *line, ExecInfo * exec_info);
+static char *end_file(char *line, ExecInfo * exec_info);
+static char *end_basic_file(char *line, ExecInfo * exec_info);
+static char *end_file_started(char *line, ExecInfo * exec_info);
+static char *end_basic_file_started(char *line, ExecInfo * exec_info);
+static char *blank(char *line, ExecInfo * exec_info);
+static char *escape(char *line, ExecInfo * exec_info);
+static char *esp_escape(char *line, ExecInfo * exec_info);
+static char *background(char *line, ExecInfo * exec_info);
+static char *basic_background(char *line, ExecInfo * exec_info);
+static char *subexec(char *line, ExecInfo * exec_info);
+static char *or(char *line, ExecInfo * exec_info);
+static char *and(char *line, ExecInfo * exec_info);
+static char *end_pipe(char *line, ExecInfo * exec_info);
+static char *end_line(char *line, ExecInfo * exec_info);
+static char *comment(char *line, ExecInfo * exec_info);
+static char *request_new_line(char *line, ExecInfo * exec_info);
+static char *error(char *line, ExecInfo * exec_info);
 
-static char *parse_ch(char *line, struct exec_info *exec_info);
+static char *parse_ch(char *line, ExecInfo * exec_info);
 
 static int substitute(char *to_substitute);
-static void start_file(struct exec_info *exec_info);
-static void new_argument(struct exec_info *exec_info);
+static void start_file(ExecInfo * exec_info);
+static void new_argument(ExecInfo * exec_info);
 static char *error_token(char token, char *line);
 static int seek(char *line);
 static int seekcmd(char *line);
@@ -269,17 +269,16 @@ load_dq_table()
 	return 0;
 }
 
-struct parse_info *
+ParseInfo *
 new_parse_info()
 {
-	struct parse_info *parse_info =
-	    (struct parse_info *)malloc(sizeof(struct parse_info));
+	ParseInfo *parse_info = (ParseInfo *) malloc(sizeof(ParseInfo));
 
 	// Check if malloc failed
 	if (parse_info == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-	memset(parse_info, 0, sizeof(struct parse_info));
+	memset(parse_info, 0, sizeof(ParseInfo));
 	parse_info->exec_depth = 0;
 	parse_info->request_line = 0;
 	parse_info->has_arg_started = 0;
@@ -292,7 +291,7 @@ new_parse_info()
 }
 
 void
-restore_parse_info(struct parse_info *parse_info)
+restore_parse_info(ParseInfo * parse_info)
 {
 	parse_info->exec_depth = 0;
 	parse_info->request_line = 0;
@@ -304,10 +303,10 @@ restore_parse_info(struct parse_info *parse_info)
 };
 
 char *
-parse(char *ptr, struct exec_info *exec_info)
+parse(char *ptr, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
-	struct command *cmd = exec_info->last_command;
+	ParseInfo *parse_info = exec_info->parse_info;
+	Command *cmd = exec_info->last_command;
 
 	has_redirect_to_file = 0;
 	syntax_error = 0;
@@ -354,9 +353,12 @@ parse(char *ptr, struct exec_info *exec_info)
 }
 
 char *
-parse_ch(char *line, struct exec_info *exec_info)
+parse_ch(char *line, ExecInfo * exec_info)
 {
 	int index = *line % ASCII_CHARS;
+
+	if (index < 0)
+		index += ASCII_CHARS;
 	spec_char fun = (*exec_info->parse_info->curr_lexer)[index];
 
 	if (fun) {
@@ -368,9 +370,9 @@ parse_ch(char *line, struct exec_info *exec_info)
 }
 
 char *
-start_squote(char *line, struct exec_info *exec_info)
+start_squote(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
+	ParseInfo *parse_info = exec_info->parse_info;
 
 	parse_info->old_lexer = parse_info->curr_lexer;
 	parse_info->curr_lexer = &sq;
@@ -380,9 +382,9 @@ start_squote(char *line, struct exec_info *exec_info)
 }
 
 char *
-end_squote(char *line, struct exec_info *exec_info)
+end_squote(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
+	ParseInfo *parse_info = exec_info->parse_info;
 
 	spec_char(*tmp_lexer)[256] = parse_info->curr_lexer;
 
@@ -392,9 +394,9 @@ end_squote(char *line, struct exec_info *exec_info)
 }
 
 char *
-start_dquote(char *line, struct exec_info *exec_info)
+start_dquote(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
+	ParseInfo *parse_info = exec_info->parse_info;
 
 	parse_info->old_lexer = parse_info->curr_lexer;
 	parse_info->curr_lexer = &dq;
@@ -405,9 +407,9 @@ start_dquote(char *line, struct exec_info *exec_info)
 }
 
 char *
-end_dquote(char *line, struct exec_info *exec_info)
+end_dquote(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
+	ParseInfo *parse_info = exec_info->parse_info;
 
 	spec_char(*tmp_lexer)[256] = parse_info->curr_lexer;
 
@@ -417,10 +419,10 @@ end_dquote(char *line, struct exec_info *exec_info)
 }
 
 char *
-start_sub(char *line, struct exec_info *exec_info)
+start_sub(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
-	struct sub_info *sub_info = exec_info->sub_info;
+	ParseInfo *parse_info = exec_info->parse_info;
+	SubInfo *sub_info = exec_info->sub_info;
 
 	memset(sub_info->buffer, 0, MAX_ENV_SIZE);
 
@@ -441,10 +443,10 @@ start_sub(char *line, struct exec_info *exec_info)
 }
 
 char *
-basic_start_sub(char *line, struct exec_info *exec_info)
+basic_start_sub(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
-	struct sub_info *sub_info = exec_info->sub_info;
+	ParseInfo *parse_info = exec_info->parse_info;
+	SubInfo *sub_info = exec_info->sub_info;
 
 	memset(sub_info->buffer, 0, MAX_ENV_SIZE);
 
@@ -460,11 +462,11 @@ basic_start_sub(char *line, struct exec_info *exec_info)
 }
 
 char *
-end_sub(char *line, struct exec_info *exec_info)
+end_sub(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
-	struct sub_info *sub_info = exec_info->sub_info;
-	struct command *cmd = exec_info->last_command;
+	ParseInfo *parse_info = exec_info->parse_info;
+	SubInfo *sub_info = exec_info->sub_info;
+	Command *cmd = exec_info->last_command;
 
 	parse_info->curr_lexer = sub_info->old_lexer;
 	parse_info->copy = sub_info->old_ptr;
@@ -537,10 +539,10 @@ substitute(char *to_substitute)
 }
 
 char *
-subexec(char *line, struct exec_info *exec_info)
+subexec(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
-	struct command *cmd = exec_info->last_command;
+	ParseInfo *parse_info = exec_info->parse_info;
+	Command *cmd = exec_info->last_command;
 	int n_parenthesis = 1;
 
 	exec_depth++;
@@ -627,10 +629,10 @@ subexec(char *line, struct exec_info *exec_info)
 }
 
 void
-new_argument(struct exec_info *exec_info)
+new_argument(ExecInfo * exec_info)
 {
 	// TODO: clean
-	struct command *cmd = exec_info->last_command;
+	Command *cmd = exec_info->last_command;
 
 	if (require_glob) {
 		require_glob = 0;
@@ -677,9 +679,9 @@ new_argument(struct exec_info *exec_info)
 }
 
 char *
-here_doc(char *line, struct exec_info *exec_info)
+here_doc(char *line, ExecInfo * exec_info)
 {
-	struct command *cmd = exec_info->last_command;
+	Command *cmd = exec_info->last_command;
 
 	if (strcmp(cmd->current_arg, "HERE") == 0) {
 		if (seek(++line)) {
@@ -711,9 +713,9 @@ here_doc(char *line, struct exec_info *exec_info)
 }
 
 void
-start_file(struct exec_info *exec_info)
+start_file(ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
+	ParseInfo *parse_info = exec_info->parse_info;
 
 	parse_info->old_lexer = parse_info->curr_lexer;
 	parse_info->curr_lexer = &file;
@@ -727,7 +729,7 @@ start_file(struct exec_info *exec_info)
 }
 
 char *
-start_file_in(char *line, struct exec_info *exec_info)
+start_file_in(char *line, ExecInfo * exec_info)
 {
 	start_file(exec_info);
 	exec_info->file_info->mode = INPUT_READ;
@@ -736,16 +738,16 @@ start_file_in(char *line, struct exec_info *exec_info)
 }
 
 char *
-basic_start_file_in(char *line, struct exec_info *exec_info)
+basic_start_file_in(char *line, ExecInfo * exec_info)
 {
 	return start_file_in(line, exec_info);
 }
 
 char *
-start_file_out(char *line, struct exec_info *exec_info)
+start_file_out(char *line, ExecInfo * exec_info)
 {
-	struct file_info *file_info = exec_info->file_info;
-	struct command *cmd = exec_info->last_command;
+	FileInfo *file_info = exec_info->file_info;
+	Command *cmd = exec_info->last_command;
 
 	start_file(exec_info);
 	file_info->mode = OUTPUT_WRITE;
@@ -763,7 +765,7 @@ start_file_out(char *line, struct exec_info *exec_info)
 }
 
 char *
-basic_start_file_out(char *line, struct exec_info *exec_info)
+basic_start_file_out(char *line, ExecInfo * exec_info)
 {
 	start_file(exec_info);
 	exec_info->file_info->mode = OUTPUT_WRITE;
@@ -771,11 +773,11 @@ basic_start_file_out(char *line, struct exec_info *exec_info)
 }
 
 char *
-end_file(char *line, struct exec_info *exec_info)
+end_file(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
-	struct file_info *file_info = exec_info->file_info;
-	struct command *cmd;
+	ParseInfo *parse_info = exec_info->parse_info;
+	FileInfo *file_info = exec_info->file_info;
+	Command *cmd;
 	glob_t gstruct;
 	char **found;
 	int glob_found = 0;
@@ -832,7 +834,7 @@ end_file(char *line, struct exec_info *exec_info)
 }
 
 char *
-end_basic_file(char *line, struct exec_info *exec_info)
+end_basic_file(char *line, ExecInfo * exec_info)
 {
 	char filetype;
 
@@ -848,7 +850,7 @@ end_basic_file(char *line, struct exec_info *exec_info)
 }
 
 char *
-end_file_started(char *line, struct exec_info *exec_info)
+end_file_started(char *line, ExecInfo * exec_info)
 {
 	if (!exec_info->parse_info->has_arg_started) {
 		return line;
@@ -857,7 +859,7 @@ end_file_started(char *line, struct exec_info *exec_info)
 }
 
 char *
-end_basic_file_started(char *line, struct exec_info *exec_info)
+end_basic_file_started(char *line, ExecInfo * exec_info)
 {
 	if (!exec_info->parse_info->has_arg_started) {
 		return line;
@@ -866,9 +868,9 @@ end_basic_file_started(char *line, struct exec_info *exec_info)
 }
 
 char *
-tilde_tok(char *line, struct exec_info *exec_info)
+tilde_tok(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
+	ParseInfo *parse_info = exec_info->parse_info;
 
 	// Check if next is ' ' '\n' or '/'then ok if not as '\'                       
 	if (parse_info->has_arg_started) {
@@ -894,10 +896,10 @@ tilde_tok(char *line, struct exec_info *exec_info)
 }
 
 char *
-pipe_tok(char *line, struct exec_info *exec_info)
+pipe_tok(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
-	struct command *old_cmd = exec_info->last_command;
+	ParseInfo *parse_info = exec_info->parse_info;
+	Command *old_cmd = exec_info->last_command;
 
 	// Check if next char is |
 	if (strstr(line, "||") == line) {
@@ -928,10 +930,10 @@ pipe_tok(char *line, struct exec_info *exec_info)
 }
 
 char *
-basic_pipe_tok(char *line, struct exec_info *exec_info)
+basic_pipe_tok(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
-	struct command *old_cmd = exec_info->last_command;
+	ParseInfo *parse_info = exec_info->parse_info;
+	Command *old_cmd = exec_info->last_command;
 
 	if (strlen(old_cmd->argv[0]) == 0) {
 		return error_token('|', line);
@@ -957,10 +959,10 @@ basic_pipe_tok(char *line, struct exec_info *exec_info)
 }
 
 char *
-background(char *line, struct exec_info *exec_info)
+background(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
-	struct command *command = exec_info->last_command;
+	ParseInfo *parse_info = exec_info->parse_info;
+	Command *command = exec_info->last_command;
 
 	// Check if next char is & or >
 	if (strstr(line, "&&") == line) {
@@ -990,10 +992,10 @@ background(char *line, struct exec_info *exec_info)
 }
 
 char *
-basic_background(char *line, struct exec_info *exec_info)
+basic_background(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
-	struct command *command = exec_info->last_command;
+	ParseInfo *parse_info = exec_info->parse_info;
+	Command *command = exec_info->last_command;
 
 	line++;
 	if (seek(line)) {
@@ -1013,9 +1015,9 @@ basic_background(char *line, struct exec_info *exec_info)
 }
 
 char *
-escape(char *line, struct exec_info *exec_info)
+escape(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
+	ParseInfo *parse_info = exec_info->parse_info;
 
 	line++;
 	// if escape \n do not copy
@@ -1028,9 +1030,9 @@ escape(char *line, struct exec_info *exec_info)
 }
 
 char *
-esp_escape(char *line, struct exec_info *exec_info)
+esp_escape(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
+	ParseInfo *parse_info = exec_info->parse_info;
 
 	line++;
 
@@ -1049,9 +1051,9 @@ esp_escape(char *line, struct exec_info *exec_info)
 }
 
 char *
-blank(char *line, struct exec_info *exec_info)
+blank(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
+	ParseInfo *parse_info = exec_info->parse_info;
 
 	if (parse_info->has_arg_started) {
 		new_argument(exec_info);
@@ -1063,7 +1065,7 @@ blank(char *line, struct exec_info *exec_info)
 }
 
 char *
-end_line(char *line, struct exec_info *exec_info)
+end_line(char *line, ExecInfo * exec_info)
 {
 	if (exec_info->parse_info->request_line) {
 		memset(exec_info->line, 0, MAX_ARGUMENT_SIZE);
@@ -1085,7 +1087,7 @@ end_line(char *line, struct exec_info *exec_info)
 }
 
 char *
-comment(char *line, struct exec_info *exec_info)
+comment(char *line, ExecInfo * exec_info)
 {
 	char *line_buf = malloc(1024);
 
@@ -1113,9 +1115,9 @@ comment(char *line, struct exec_info *exec_info)
 }
 
 char *
-end_pipe(char *line, struct exec_info *exec_info)
+end_pipe(char *line, ExecInfo * exec_info)
 {
-	struct parse_info *parse_info = exec_info->parse_info;
+	ParseInfo *parse_info = exec_info->parse_info;
 
 	if (parse_info->has_arg_started) {
 		new_argument(exec_info);
@@ -1125,7 +1127,7 @@ end_pipe(char *line, struct exec_info *exec_info)
 }
 
 char *
-copy(char *line, struct exec_info *exec_info)
+copy(char *line, ExecInfo * exec_info)
 {
 	*exec_info->parse_info->copy++ = *line;
 	exec_info->parse_info->has_arg_started = 1;
@@ -1134,7 +1136,7 @@ copy(char *line, struct exec_info *exec_info)
 }
 
 char *
-copy_and_end_sub(char *line, struct exec_info *exec_info)
+copy_and_end_sub(char *line, ExecInfo * exec_info)
 {
 	line = copy(line, exec_info);
 	line = end_sub(line, exec_info);
@@ -1142,7 +1144,7 @@ copy_and_end_sub(char *line, struct exec_info *exec_info)
 }
 
 char *
-request_new_line(char *line, struct exec_info *exec_info)
+request_new_line(char *line, ExecInfo * exec_info)
 {
 	prompt_request();
 	fgets(line, MAX_ARGUMENT_SIZE, stdin);
@@ -1156,7 +1158,7 @@ request_new_line(char *line, struct exec_info *exec_info)
 }
 
 static char *
-do_glob(char *line, struct exec_info *exec_info)
+do_glob(char *line, ExecInfo * exec_info)
 {
 	require_glob = 1;
 	exec_info->parse_info->has_arg_started = 1;
@@ -1164,7 +1166,7 @@ do_glob(char *line, struct exec_info *exec_info)
 }
 
 char *
-and(char *line, struct exec_info *exec_info)
+and(char *line, ExecInfo * exec_info)
 {
 	line++;
 	// Add an argument to old command
@@ -1178,7 +1180,7 @@ and(char *line, struct exec_info *exec_info)
 }
 
 char *
-or(char *line, struct exec_info *exec_info)
+or(char *line, ExecInfo * exec_info)
 {
 	line++;
 	// Add an argument to old command
@@ -1192,7 +1194,7 @@ or(char *line, struct exec_info *exec_info)
 }
 
 char *
-error(char *line, struct exec_info *exec_info)
+error(char *line, ExecInfo * exec_info)
 {
 	exec_info->parse_info->finished = 1;
 	error_token(*line, line);

@@ -50,9 +50,6 @@ main(int argc, char *argv[])
 	argc--;
 	argv++;
 
-	signal(SIGINT, sig_handler);
-	signal(SIGTSTP, sig_handler);
-
 	set_arguments(argv);
 	init_mash();
 
@@ -132,8 +129,9 @@ init_mash()
 
 	if (syntax_mode == BASIC_SYNTAX) {
 		load_basic_lex_tables();
-		add_env_by_name("PATH", "/usr/local/bin/:/usr/bin/");
 	} else {
+		signal(SIGINT, sig_handler);
+		signal(SIGTSTP, sig_handler);
 		load_lex_tables();
 		add_source("env/.mashrc");
 		exec_sources();

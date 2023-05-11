@@ -14,7 +14,7 @@
 
 enum {
   MAX_ENV_SIZE = 256,
-  MAX_PATH_SIZE = 64
+  MAX_PATH_SIZE = 256
 };
 
 int export(int argc, char* argv[]);

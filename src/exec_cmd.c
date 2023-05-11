@@ -39,7 +39,7 @@
 pid_t active_command = 0;
 
 int
-find_path(struct command *command)
+find_path(Command * command)
 {
 	// Check if the first character is /
 	if (*command->argv[0] == '/') {
@@ -69,12 +69,12 @@ find_path(struct command *command)
 	}
 	free(cwd);
 	// First get the path from env PATH
-	char *path = malloc(sizeof(char) * MAX_ENV_SIZE);
+	char *path = malloc(MAX_ENV_SIZE);
 
 	if (path == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-	memset(path, 0, sizeof(char) * MAX_ENV_SIZE);
+	memset(path, 0, MAX_ENV_SIZE);
 	// Copy the path
 	strcpy(path, getenv("PATH"));
 	if (path == NULL) {
@@ -83,6 +83,7 @@ find_path(struct command *command)
 	}
 	char *path_ptr = path;
 
+	//REVIEW: could change much better
 	// Then separate the path by : using strtok
 	char path_tok[MAX_ENV_SIZE][MAX_PATH_SIZE];
 
@@ -97,8 +98,8 @@ find_path(struct command *command)
 	int i;
 
 	for (i = 0; i < path_len; i++) {
+		strcat(path_tok[i], "/");
 		strcat(path_tok[i], command->argv[0]);
-
 		if (command_exists(path_tok[i])) {
 			strcpy(command->argv[0], path_tok[i]);
 			free(path);
@@ -125,8 +126,7 @@ command_exists(char *path)
 }
 
 void
-exec_cmd(struct command *command, struct command *start_command,
-	 struct command *last_command)
+exec_cmd(Command * command, Command * start_command, Command * last_command)
 {
 	int i;
 	char *args[command->argc + 1];
@@ -177,7 +177,7 @@ exec_cmd(struct command *command, struct command *start_command,
 // Redirect input and output: Parent
 
 void
-read_from_here_doc(struct command *start_command)
+read_from_here_doc(Command * start_command)
 {
 	// Create stdin buffer
 	ssize_t count = MAX_BUFFER_IO_SIZE;
@@ -191,21 +191,24 @@ read_from_here_doc(struct command *start_command)
 
 	char *here_doc_buffer = new_here_doc_buffer();
 
-	//REVIEW: read line print line
 	do {
 		bytes_stdin = read(STDIN_FILENO, buffer_stdin, count);
-		if (*buffer_stdin == '}') {
-			if (*++buffer_stdin == '\n') {
-				--buffer_stdin;
-				break;
-			}
-			--buffer_stdin;
+		if (*buffer_stdin == '}' && strlen(buffer_stdin) == 2) {
+			break;
 		}
 		strcat(here_doc_buffer, buffer_stdin);
-	} while (bytes_stdin > 0);
+		memset(buffer_stdin, 0, MAX_BUFFER_IO_SIZE);
+	} while (bytes_stdin > 0
+		 && strlen(here_doc_buffer) < MAX_HERE_DOC_BUFFER);
 
-	write(start_command->fd_pipe_input[1], here_doc_buffer,
-	      strlen(here_doc_buffer));
+	if (strlen(here_doc_buffer) >= MAX_HERE_DOC_BUFFER) {
+		fprintf(stderr,
+			"Mash: error: exceeded max size of %d of here document\n",
+			MAX_HERE_DOC_BUFFER);
+	} else {
+		write(start_command->fd_pipe_input[1], here_doc_buffer,
+		      strlen(here_doc_buffer));
+	}
 
 	close_fd(start_command->fd_pipe_input[1]);
 	free(buffer_stdin);
@@ -213,7 +216,7 @@ read_from_here_doc(struct command *start_command)
 }
 
 void
-write_to_buffer(struct command *last_command)
+write_to_buffer(Command * last_command)
 {
 	ssize_t count = MAX_BUFFER_IO_SIZE;
 	ssize_t bytes_stdout;
@@ -239,7 +242,7 @@ write_to_buffer(struct command *last_command)
 
 // Redirect input and output: Child
 void
-redirect_stdin(struct command *command, struct command *start_command)
+redirect_stdin(Command * command, Command * start_command)
 {
 // NOT INPUT COMMAND OR INPUT COMMAND WITH FILE
 	if (command->pid != start_command->pid
@@ -258,7 +261,7 @@ redirect_stdin(struct command *command, struct command *start_command)
 }
 
 void
-redirect_stdout(struct command *command, struct command *last_command)
+redirect_stdout(Command * command, Command * last_command)
 {
 	// NOT LAST COMMAND OR LAST COMMAND WITH FILE OR BUFFER
 	if (last_command != NULL || command->output_buffer != NULL
@@ -279,7 +282,7 @@ redirect_stdout(struct command *command, struct command *last_command)
 }
 
 void
-redirect_stderr(struct command *command, struct command *last_command)
+redirect_stderr(Command * command, Command * last_command)
 {
 	// NOT LAST COMMAND OR LAST COMMAND WITH FILE OR BUFFER
 	if (last_command != NULL || command->err_output != STDERR_FILENO) {
@@ -300,7 +303,7 @@ redirect_stderr(struct command *command, struct command *last_command)
 // File descriptor
 
 int
-set_input_shell_pipe(struct command *start_command)
+set_input_shell_pipe(Command * start_command)
 {
 	// SET INPUT PIPE
 	if (start_command->input != STDIN_FILENO) {
@@ -317,11 +320,11 @@ set_input_shell_pipe(struct command *start_command)
 }
 
 int
-set_output_shell_pipe(struct command *start_command)
+set_output_shell_pipe(Command * start_command)
 {
 	// SET OUTOUT PIPE
 	// Find last one and add it
-	struct command *last_command = get_last_command(start_command);
+	Command *last_command = get_last_command(start_command);
 
 	if (last_command->output != STDOUT_FILENO
 	    || last_command->output_buffer != NULL) {
@@ -338,11 +341,11 @@ set_output_shell_pipe(struct command *start_command)
 }
 
 int
-set_err_output_shell_pipe(struct command *start_command)
+set_err_output_shell_pipe(Command * start_command)
 {
 	// SET OUTOUT PIPE
 	// Find last one and add it
-	struct command *last_command = get_last_command(start_command);
+	Command *last_command = get_last_command(start_command);
 
 	if (last_command->err_output != STDERR_FILENO
 	    && last_command->err_output != last_command->output) {
@@ -369,9 +372,9 @@ close_fd(int fd)
 }
 
 int
-close_all_fd(struct command *start_command)
+close_all_fd(Command * start_command)
 {
-	struct command *command = start_command;
+	Command *command = start_command;
 
 	while (command != NULL) {
 		if (command->input != STDIN_FILENO) {
@@ -394,9 +397,9 @@ close_all_fd(struct command *start_command)
 }
 
 int
-close_all_fd_no_fork(struct command *start_command)
+close_all_fd_no_fork(Command * start_command)
 {
-	struct command *command = start_command;
+	Command *command = start_command;
 
 	while (command != NULL) {
 		if (command->input != STDIN_FILENO) {
@@ -416,9 +419,9 @@ close_all_fd_no_fork(struct command *start_command)
 }
 
 int
-close_all_fd_io(struct command *start_command, struct command *last_command)
+close_all_fd_io(Command * start_command, Command * last_command)
 {
-	struct command *command = start_command;
+	Command *command = start_command;
 
 	while (command != NULL) {
 		close_fd(command->fd_pipe_input[0]);
@@ -447,12 +450,12 @@ close_all_fd_io(struct command *start_command, struct command *last_command)
 }
 
 int
-close_all_fd_cmd(struct command *command, struct command *start_command)
+close_all_fd_cmd(Command * command, Command * start_command)
 {
 	// CLOSE ALL PIPES EXCEPT MINE INPUT 0 OUTPUT 1
 	// PREVIOUS CMD OUTPUT 0
 	// NEXT CMD INPUT 1
-	struct command *new_cmd = start_command;
+	Command *new_cmd = start_command;
 
 	while (new_cmd != NULL) {
 		if (new_cmd->input != STDIN_FILENO

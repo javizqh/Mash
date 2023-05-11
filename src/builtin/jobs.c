@@ -37,9 +37,9 @@
 
 // DECLARE STATIC FUNCTIONS
 static int usage();
-static void print_job_builtin(struct job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id);
+static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id);
 
-struct job_list jobs_list;
+JobList jobs_list;
 
 static int usage() {
 	fprintf(stderr,"Usage: jobs [-lprs] [jobspec]\n");
@@ -58,7 +58,7 @@ int jobs(int argc, char *argv[]) {
 	int only_stop = 0;
 	pid_t only_job = 0;
 
-	struct job * current;
+	Job * current;
 	remove_job(get_job(get_relevance_job_pid(0)));  // Remove itself
 	if (argc > 2) {
 		return usage();
@@ -89,16 +89,16 @@ int jobs(int argc, char *argv[]) {
 				}
 			}
 		} else if (*argv[i] == '%') {
-			if ((only_job = substitute_jobspec(arg_ptr)) < 0) {
-				return usage();
-			}
+			only_job = substitute_jobspec(argv[i]);
 		} else {
 			return usage();
 		}
 	}
-
 	if (only_job) {
 		current = get_job(only_job);
+		if (current == NULL) {
+			return no_job("jobs");
+		}
 		print_job_builtin(current, only_run, only_stop, only_id, print_id);
 		return EXIT_SUCCESS;
 	} else {
@@ -109,7 +109,7 @@ int jobs(int argc, char *argv[]) {
 	return EXIT_SUCCESS;
 }
 
-static void print_job_builtin(struct job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id) {
+static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id) {
 	if (flag_only_id) {
 		if (flag_only_run || flag_only_stop) {
 			if (flag_only_run) {
@@ -143,26 +143,32 @@ static void print_job_builtin(struct job * job, int flag_only_run, int flag_only
 	}
 }
 
+int no_job(char *command) {
+  fprintf(stderr,"mash: %s: no such a job\n",command);
+	return EXIT_FAILURE;
+}
+
 pid_t substitute_jobspec(char* jobspec) {
-	if (strlen(jobspec) == 0) {
+	char *ptr = ++jobspec;
+	if (strlen(ptr) == 0) {
 		return get_relevance_job_pid(0);
 	}
-	if (strlen(jobspec) == 1) {
-		if (*jobspec == '+' || *jobspec == '%') {
+	if (strlen(ptr) == 1) {
+		if (*ptr == '+' || *ptr == '%') {
 			return get_relevance_job_pid(0);
-		} else if (*jobspec == '-'){
+		} else if (*ptr == '-'){
 			return get_relevance_job_pid(1);
 		}
 	}
-	if (atoi(jobspec) > 0) {
-		return get_pos_job_pid(atoi(jobspec));
+	if (atoi(ptr) > 0) {
+		return get_pos_job_pid(atoi(ptr));
 	} 
 	return -1;
 }
 
 int
-launch_job(FILE * src_file, struct exec_info *exec_info, char * to_free_excess){
-	struct command * cmd = exec_info->command;
+launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess){
+	Command * cmd = exec_info->command;
 
 	if (has_builtin_modify_cmd(cmd)) {
 		switch (modify_cmd_builtin(cmd)) {
@@ -175,7 +181,7 @@ launch_job(FILE * src_file, struct exec_info *exec_info, char * to_free_excess){
 		}
 	}
 
-	struct job * job = new_job(exec_info->line);
+	Job * job = new_job(exec_info->line);
 
 	if (search_in_builtin && has_builtin_exec_in_shell(cmd)) {
 		if (cmd->do_wait == DO_NOT_WAIT_TO_FINISH) {
@@ -213,10 +219,10 @@ launch_job(FILE * src_file, struct exec_info *exec_info, char * to_free_excess){
 }
 
 int
-exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * to_free_excess)
+exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 {
 	int exit_code = EXIT_FAILURE;
-	struct command *current_command;
+	Command *current_command;
 
 	if (set_input_shell_pipe(exec_info->command) || set_output_shell_pipe(exec_info->command)
 	    || set_err_output_shell_pipe(exec_info->command)) {
@@ -242,7 +248,7 @@ exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * 
 		return EXIT_FAILURE;
 		break;
 	case 0:
-		struct command *start_command = exec_info->command;
+		Command *start_command = exec_info->command;
 		free_exec_info(exec_info);
 		free(to_free_excess);
 		if (src_file != stdin)
@@ -259,6 +265,7 @@ exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * 
 		job->end_pid = exec_info->last_command->pid;
 		close_all_fd_io(exec_info->command, current_command);
 		if (job->execution == BACKGROUND) {
+			//kill(job->pid, SIGTTOU);
 			if (exec_info->command->output_buffer != NULL) {
 				write_to_buffer(current_command);
 			}
@@ -300,11 +307,10 @@ exec_job(FILE * src_file, struct exec_info *exec_info, struct job * job, char * 
 }
 
 int
-wait_job(struct job * job)
+wait_job(Job * job)
 {
 	int wstatus;
 	pid_t wait_pid;
-	
 	while (1) {
 		wait_pid = waitpid(-1,&wstatus,WUNTRACED);
 		if (WIFEXITED(wstatus)) {
@@ -318,24 +324,25 @@ wait_job(struct job * job)
 				return WEXITSTATUS(wstatus);
 			}
 		} else if (WIFSTOPPED(wstatus)) {
+			kill(job->pid, SIGTTOU);
 			stop_job(wait_pid);
 			return EXIT_SUCCESS;
 		} else if (WIFSIGNALED(wstatus)) {
 			if (wait_pid == job->end_pid) {
 				remove_job(job);
+				return EXIT_SUCCESS;
 			}
-			return EXIT_SUCCESS;
 		}
 	}
 	return EXIT_FAILURE;
 }
 
-struct job * new_job(char * line) {
-  struct job * job = malloc(sizeof(struct job));
+Job * new_job(char * line) {
+  Job * job = malloc(sizeof(Job));
   if (job == NULL) {
     err(EXIT_FAILURE, "malloc failed");
   }
-  memset(job, 0, sizeof(struct job));
+  memset(job, 0, sizeof(Job));
 	job->execution = FOREGROUND;
   job->pos = 0;
   job->relevance = 0;
@@ -355,7 +362,7 @@ struct job * new_job(char * line) {
   return job;
 }
 
-void print_job(struct job * job, int print_id) {
+void print_job(Job * job, int print_id) {
 	char relevance;
 	char *state;
 	switch (job->relevance) {
@@ -379,6 +386,9 @@ void print_job(struct job * job, int print_id) {
 	case DONE:
 		state = "Done";
 		break;
+	default:
+		state = strsignal(job->state);
+		break;
 	}
 	if (print_id) {
 		printf("[%d]%c\t%d\t%s\t\t%s\n", job->pos, relevance,job->pid, state, job->command);
@@ -395,8 +405,8 @@ int init_jobs_list() {
 }
 
 void free_jobs_list() {
-	struct job * current;
-	struct job * to_free;
+	Job * current;
+	Job * to_free;
 
 	for (current = jobs_list.head; current;) {
 		to_free = current;
@@ -406,10 +416,10 @@ void free_jobs_list() {
 	}
 }
 
-int add_job(struct job * job) {
+int add_job(Job * job) {
 	int n_foregrounds = 0;
 	int max_pos = 0;
-	struct job * current;
+	Job * current;
 
 	if (job->execution == FOREGROUND) {
 		for (current = jobs_list.head; current; current = current->next_job) {
@@ -450,8 +460,8 @@ int add_job(struct job * job) {
 	return jobs_list.n_jobs;
 }
 
-struct job * get_job(pid_t job_pid) {
-	struct job * current;
+Job * get_job(pid_t job_pid) {
+	Job * current;
 	for (current = jobs_list.head; current; current = current->next_job) {
 		if (current->pid == job_pid) {
 			return current;
@@ -460,9 +470,9 @@ struct job * get_job(pid_t job_pid) {
 	return NULL;
 }
 
-int remove_job(struct job * job) {
-	struct job * current;
-	struct job * previous = NULL;
+int remove_job(Job * job) {
+	Job * current;
+	Job * previous = NULL;
 
 	// Update relevance
 	for (current = jobs_list.head; current; current = current->next_job) {
@@ -496,12 +506,13 @@ int remove_job(struct job * job) {
 	return -1;
 }
 
-int remove_done_jobs() {
-	struct job * current;
-	struct job * previous = NULL;
+int remove_all_status_jobs(int status) {
+	Job * current;
+	Job * previous = NULL;
 	int add_relevance = 0;
+
 	for (current = jobs_list.head; current; current = current->next_job) {
-		if (current->state == DONE) {
+		if (status == ALL || current->state == status) {
 			if (remove_job(current) < 0) {
 				fprintf(stderr, "Mash: jobs failed to remove job\n");
 				return 0;
@@ -531,7 +542,7 @@ int remove_done_jobs() {
 }
 
 pid_t get_pos_job_pid(int pos) {
-	struct job * current;
+	Job * current;
 	if (jobs_list.n_jobs < pos) {
 		return 0;
 	}
@@ -545,7 +556,7 @@ pid_t get_pos_job_pid(int pos) {
 }
 
 pid_t get_relevance_job_pid(int relevance) {
-	struct job * current;
+	Job * current;
 	for (current = jobs_list.head; current; current = current->next_job) {
 		if (current->relevance == relevance) {
 			return current->pid;
@@ -556,7 +567,7 @@ pid_t get_relevance_job_pid(int relevance) {
 
 int are_jobs_stopped() {
 	int stopped_jobs = 0;
-	struct job * current;
+	Job * current;
 	for (current = jobs_list.head; current; current = current->next_job) {
 		if (current->state == STOPPED) {
 			stopped_jobs++;
@@ -566,14 +577,14 @@ int are_jobs_stopped() {
 }
 
 void stop_job(pid_t job_pid) {
-	struct job * current_job = get_job(job_pid);
+	Job * current_job = get_job(job_pid);
 	current_job->state = STOPPED;
 	printf("\n");
 	print_job(current_job,0);
 }
 
 void end_current_job() {
-	struct job * current_job = get_job(get_relevance_job_pid(0));
+	Job * current_job = get_job(get_relevance_job_pid(0));
 	if (current_job != NULL) {
 		kill(current_job->pid, SIGINT);
 		remove_job(current_job);
@@ -591,7 +602,7 @@ void wait_all_jobs() {
 	while (jobs_list.n_jobs > 0) {
 		wait_pid = waitpid(-1,&wstatus,WUNTRACED);
 		if (wait_pid == -1) {
-			perror("waitpid failed");
+			// perror("waitpid failed");
 			return;
 		}
 		jobs_list.n_jobs--;
@@ -601,12 +612,12 @@ void wait_all_jobs() {
 
 void update_jobs() {
 	// Check for finished jobs
-	struct job * current;
+	Job * current;
 	for (current = jobs_list.head; current; current = current->next_job) {
 		if (kill(current->pid,0) < 0) {
 			current->state = DONE;
 			print_job(current,0);
 		}
 	}
-	remove_done_jobs();
+	remove_all_status_jobs(DONE);
 }

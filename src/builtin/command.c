@@ -38,7 +38,7 @@ static int usage() {
 	return CMD_EXIT_FAILURE;
 }
 
-int command(struct command * command) {
+int command(Command * command) {
   int i;
 
   if (command->argc < 2) {
@@ -56,16 +56,16 @@ int command(struct command * command) {
   return CMD_EXIT_SUCCESS;
 }
 // ---------------
-struct command *
+Command *
 new_command()
 {
-	struct command *command =
-	    (struct command *)malloc(sizeof(struct command));
+	Command *command =
+	    (Command *)malloc(sizeof(Command));
 	// Check if malloc failed
 	if (command == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-	memset(command, 0, sizeof(struct command));
+	memset(command, 0, sizeof(Command));
 
 	command->argc = 0;
 	command->current_arg = command->argv[0];
@@ -85,7 +85,7 @@ new_command()
 	return command;
 }
 
-void reset_command(struct command *command) {
+void reset_command(Command *command) {
   free_command(command->pipe_next);
   memset(command, 0, sizeof(*command));
   command->argc = 0;
@@ -105,9 +105,9 @@ void reset_command(struct command *command) {
 };
 
 void 
-free_command(struct command *command) {
-  struct command * to_free = command;
-  struct command * next = command;
+free_command(Command *command) {
+  Command * to_free = command;
+  Command * next = command;
   while (next != NULL)
   { 
     to_free = next;
@@ -117,9 +117,9 @@ free_command(struct command *command) {
 }
 
 void 
-free_command_with_buf(struct command *command) {
-  struct command * to_free = command;
-  struct command * next = command;
+free_command_with_buf(Command *command) {
+  Command * to_free = command;
+  Command * next = command;
   while (next != NULL)
   { 
     to_free = next;
@@ -129,7 +129,7 @@ free_command_with_buf(struct command *command) {
   }
 }
 
-extern int check_alias_cmd(struct command *command) {
+extern int check_alias_cmd(Command *command) {
   if (command->argc == 0) {
     if (get_alias(command->argv[0]) != NULL) {
       return 1;
@@ -139,20 +139,20 @@ extern int check_alias_cmd(struct command *command) {
 };
 
 int
-add_arg(struct command *command)
+add_arg(Command *command)
 {
 	if (++command->argc > MAX_ARGUMENTS) return 0;
 	command->current_arg = command->argv[command->argc];
 	return 1;
 }
 
-int reset_last_arg(struct command *command) {
+int reset_last_arg(Command *command) {
   memset(command->current_arg,0,MAX_ARGUMENT_SIZE);
   command->current_arg = command->argv[command->argc - 1];
   return 1;
 };
 
-int set_file_cmd(struct command *command,int file_type, char *file) {
+int set_file_cmd(Command *command,int file_type, char *file) {
   switch (file_type) {
   case HERE_DOC_READ:
     if (command->input != STDIN_FILENO) {
@@ -170,7 +170,7 @@ int set_file_cmd(struct command *command,int file_type, char *file) {
 		break;
 	case OUTPUT_WRITE:
     // GO TO LAST CMD IN PIPE
-    struct command * last_cmd = get_last_command(command);
+    Command * last_cmd = get_last_command(command);
 		if (last_cmd->output !=
 		    STDOUT_FILENO) {
 			close(last_cmd->output);
@@ -180,7 +180,7 @@ int set_file_cmd(struct command *command,int file_type, char *file) {
 		break;
   case ERROR_WRITE:
     // GO TO LAST CMD IN PIPE
-    struct command * last_err_cmd = get_last_command(command);
+    Command * last_err_cmd = get_last_command(command);
 		if (last_err_cmd->err_output !=
 		    STDERR_FILENO) {
 			close(last_err_cmd->err_output);
@@ -190,7 +190,7 @@ int set_file_cmd(struct command *command,int file_type, char *file) {
     break;
   case ERROR_AND_OUTPUT_WRITE:
     // GO TO LAST CMD IN PIPE
-    struct command * last_err_out_cmd = get_last_command(command);
+    Command * last_err_out_cmd = get_last_command(command);
     if (last_err_out_cmd->output !=
 		    STDOUT_FILENO) {
 			close(last_err_out_cmd->output);
@@ -203,12 +203,12 @@ int set_file_cmd(struct command *command,int file_type, char *file) {
 	return -1;
 }
 
-int set_buffer_cmd(struct command *command, char *buffer) {
+int set_buffer_cmd(Command *command, char *buffer) {
   get_last_command(command)->output_buffer = buffer;
   return 1;
 }
 
-int set_to_background_cmd(struct command *command) {
+int set_to_background_cmd(Command *command) {
   command->do_wait = DO_NOT_WAIT_TO_FINISH;
   if (command->input == STDIN_FILENO) {
     set_file_cmd(command, INPUT_READ, "/dev/null");
@@ -216,8 +216,8 @@ int set_to_background_cmd(struct command *command) {
   return 0;
 }
 
-struct command * get_last_command(struct command *command) {
-  struct command * current_command = command;
+Command * get_last_command(Command *command) {
+  Command * current_command = command;
 
   while (current_command->pipe_next != NULL) {
     current_command = current_command->pipe_next;
@@ -225,7 +225,7 @@ struct command * get_last_command(struct command *command) {
   return current_command;
 }
 
-int pipe_command(struct command *in_command, struct command * out_command) {
+int pipe_command(Command *in_command, Command * out_command) {
   int fd[2];
   if (pipe(fd) < 0) {
     err(EXIT_FAILURE, "Failed to pipe");

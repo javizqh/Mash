@@ -14,6 +14,8 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
 #include <err.h>
@@ -42,17 +44,18 @@ static int usage() {
 int bg(int argc, char *argv[]) {
   argc--;argv++;
   char relevance;
-  struct job * job;
+  Job * job;
 
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));
   } else if (argc == 1) {
     job = get_job(substitute_jobspec(argv[0]));
-    if (job == NULL) {
-      return usage(); 
-    }
   } else {
     return usage();
+  }
+
+  if (job == NULL) {
+    return no_job("bg"); 
   }
 
 	switch (job->relevance) {
@@ -68,11 +71,21 @@ int bg(int argc, char *argv[]) {
 	}
   printf("[%d]%c\t%s\n",job->pos,relevance,job->command);
 
-  if (job->execution == FOREGROUND) {
-    // FIX: only stop if reading from stdin
-  }
-  job->execution = BACKGROUND;
   job->state = RUNNING;
+  kill(job->pid, SIGTTOU);
   kill(job->pid, SIGCONT);
+
+  int wstatus;
+	pid_t wait_pid;
+
+  wait_pid = waitpid(job->pid,&wstatus,WNOHANG|WUNTRACED);
+  if (wait_pid == -1) {
+    perror("waitpid failed 2");
+  }
+  
+  if (WIFSTOPPED(wstatus) || WIFSIGNALED(wstatus)) {
+    stop_job(job->pid);
+    waitpid(job->pid,&wstatus,WUNTRACED);
+  }
   return EXIT_SUCCESS;
 }

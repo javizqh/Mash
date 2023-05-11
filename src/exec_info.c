@@ -24,17 +24,16 @@
 #include "parse.h"
 #include "exec_info.h"
 
-struct sub_info *
+SubInfo *
 new_sub_info()
 {
-	struct sub_info *sub_info =
-	    (struct sub_info *)malloc(sizeof(struct sub_info));
+	SubInfo *sub_info = (SubInfo *) malloc(sizeof(SubInfo));
 
 	// Check if malloc failed
 	if (sub_info == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-	memset(sub_info, 0, sizeof(struct sub_info));
+	memset(sub_info, 0, sizeof(SubInfo));
 	sub_info->old_ptr = NULL;
 	sub_info->old_lexer = NULL;
 
@@ -42,7 +41,7 @@ new_sub_info()
 }
 
 void
-restore_sub_info(struct sub_info *sub_info)
+restore_sub_info(SubInfo * sub_info)
 {
 	//memset(sub_info->last_alias, 0, MAX_ARGUMENT_SIZE);
 	memset(sub_info->buffer, 0, MAX_ENV_SIZE);
@@ -50,17 +49,16 @@ restore_sub_info(struct sub_info *sub_info)
 	sub_info->old_lexer = NULL;
 }
 
-struct file_info *
+FileInfo *
 new_file_info()
 {
-	struct file_info *file_info =
-	    (struct file_info *)malloc(sizeof(struct file_info));
+	FileInfo *file_info = (FileInfo *) malloc(sizeof(FileInfo));
 
 	// Check if malloc failed
 	if (file_info == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-	memset(file_info, 0, sizeof(struct file_info));
+	memset(file_info, 0, sizeof(FileInfo));
 	file_info->mode = NO_FILE_READ;
 	file_info->ptr = file_info->buffer;
 
@@ -68,22 +66,22 @@ new_file_info()
 }
 
 void
-restore_file_info(struct file_info *file_info)
+restore_file_info(FileInfo * file_info)
 {
 	file_info->mode = NO_FILE_READ;
 	memset(file_info->buffer, 0, MAX_ARGUMENT_SIZE);
 	file_info->ptr = file_info->buffer;
 }
 
-struct exec_info *
+ExecInfo *
 new_exec_info(char *line)
 {
-	struct exec_info *exec_info = malloc(sizeof(struct exec_info));
+	ExecInfo *exec_info = malloc(sizeof(ExecInfo));
 
 	if (exec_info == NULL) {
 		err(EXECUTE_IN_FAILURE, "malloc failed");
 	}
-	memset(exec_info, 0, sizeof(struct exec_info));
+	memset(exec_info, 0, sizeof(ExecInfo));
 	exec_info->command = new_command();
 	exec_info->last_command = exec_info->command;
 	exec_info->parse_info = new_parse_info();
@@ -95,7 +93,7 @@ new_exec_info(char *line)
 }
 
 void
-reset_exec_info(struct exec_info *exec_info)
+reset_exec_info(ExecInfo * exec_info)
 {
 	reset_command(exec_info->command);
 	restore_parse_info(exec_info->parse_info);
@@ -104,7 +102,7 @@ reset_exec_info(struct exec_info *exec_info)
 }
 
 void
-free_exec_info(struct exec_info *exec_info)
+free_exec_info(ExecInfo * exec_info)
 {
 	free(exec_info->parse_info);
 	free(exec_info->file_info);

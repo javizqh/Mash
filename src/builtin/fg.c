@@ -41,21 +41,21 @@ static int usage() {
 
 int fg(int argc, char *argv[]) {
   argc--;argv++;
-  struct job * job;
+  Job * job;
   int exit_code = EXIT_SUCCESS;
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));
   } else if (argc == 1) {
     job = get_job(substitute_jobspec(argv[0]));
-    if (job == NULL) {
-      return usage(); 
-    }
   } else {
     return usage();
   }
-  job->execution = FOREGROUND;
+  if (job == NULL) {
+    return no_job("fg"); 
+  }
   job->state = RUNNING;
   printf("%s\n", job->command);
+  kill(job->pid, SIGTTIN);
   kill(job->pid, SIGCONT);
   signal(SIGTTOU, SIG_IGN);
   signal(SIGTTIN, SIG_IGN);

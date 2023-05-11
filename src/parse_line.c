@@ -37,14 +37,14 @@ int use_jobs = 1;
 
 int
 find_command(char *line, char *buffer, FILE * src_file,
-	     struct exec_info *prev_exec_info, char *to_free_excess)
+	     ExecInfo * prev_exec_info, char *to_free_excess)
 {
 	int status = 0;
 	int status_for_next_cmd = DO_NOT_MATTER_TO_EXEC;
 	char *orig_line_ptr = line;
 	char cwd[MAX_ENV_SIZE];
 	char result[4];
-	struct exec_info *exec_info = new_exec_info(orig_line_ptr);
+	ExecInfo *exec_info = new_exec_info(orig_line_ptr);
 
 	if (prev_exec_info != NULL) {
 		exec_info->prev_exec_info = prev_exec_info;

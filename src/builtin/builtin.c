@@ -35,10 +35,13 @@
 #include "builtin/jobs.h"
 #include "builtin/fg.h"
 #include "builtin/bg.h"
+#include "builtin/wait.h"
+#include "builtin/kill.h"
+#include "builtin/disown.h"
 #include "builtin/builtin.h"
 
 char *builtins_modify_cmd[4] = {"ifnot","ifok","builtin","command"};
-char *builtins_in_shell[8] = {"bg","fg","cd","export","alias","exit","source","."};
+char *builtins_in_shell[11] = {"disown","kill","wait","bg","fg","cd","export","alias","exit","source","."};
 char *builtins_fork[2] = {"echo","jobs"};
 
 // Builtin command
@@ -51,7 +54,7 @@ static int usage() {
 	return CMD_EXIT_FAILURE;
 }
 
-int builtin(struct command * command) {
+int builtin(Command * command) {
   int i;
 
   if (command->argc < 2) {
@@ -75,7 +78,7 @@ int builtin(struct command * command) {
 }
 // ---------------
 
-int has_builtin_modify_cmd(struct command *command){
+int has_builtin_modify_cmd(Command *command){
   int i;
 	for (i = 0; i < 4; i++)
   {
@@ -86,7 +89,7 @@ int has_builtin_modify_cmd(struct command *command){
 	return 0;
 }
 
-int modify_cmd_builtin(struct command *modify_command){
+int modify_cmd_builtin(Command *modify_command){
 	if (strcmp(modify_command->argv[0], "command") == 0) {
 		return command(modify_command);
 	} else if (strcmp(modify_command->argv[0], "builtin") == 0) {
@@ -101,7 +104,7 @@ int modify_cmd_builtin(struct command *modify_command){
 
 
 int
-has_builtin_exec_in_shell(struct command *command)
+has_builtin_exec_in_shell(Command *command)
 { 
   int i;
 
@@ -113,7 +116,7 @@ has_builtin_exec_in_shell(struct command *command)
 		return 1;
 	}
 
-  for (i = 0; i < 8; i++)
+  for (i = 0; i < 11; i++)
   {
     if (strcmp(command->argv[0], builtins_in_shell[i]) == 0) {
       return 1;
@@ -124,7 +127,7 @@ has_builtin_exec_in_shell(struct command *command)
 }
 
 int
-exec_builtin_in_shell(struct command *command)
+exec_builtin_in_shell(Command *command)
 {
 	int i;
 	char *args[command->argc];
@@ -170,12 +173,18 @@ exec_builtin_in_shell(struct command *command)
 		return fg(i,args);
 	} else if (strcmp(command->argv[0], "bg") == 0) {
 		return bg(i,args);
+	} else if (strcmp(args[0], "wait") == 0) {
+		return wait_for_job(i,args);
+	} else if (strcmp(args[0], "kill") == 0) {
+		return kill_job(i,args);
+	} else if (strcmp(args[0], "disown") == 0) {
+		return disown(i,args);
 	}
 	return 1;
 }
 
 int
-find_builtin(struct command *command)
+find_builtin(Command *command)
 {
   int i;
   for (i = 0; i < 2; i++)
@@ -189,7 +198,7 @@ find_builtin(struct command *command)
 }
 
 void
-exec_builtin(struct command *start_scommand, struct command *command)
+exec_builtin(Command *start_scommand, Command *command)
 {
 	int i;
 	int return_value = EXIT_FAILURE;
@@ -207,6 +216,8 @@ exec_builtin(struct command *start_scommand, struct command *command)
 		return_value = echo(i,args);
 	} else if (strcmp(args[0], "jobs") == 0) {
 		return_value = jobs(i,args);
+	} else if (strcmp(args[0], "wait") == 0) {
+		return_value = wait_for_job(i,args);
 	} else if (strcmp(args[0], "exit") != 0){
     if (has_builtin_exec_in_shell(command)) {
 			exec_builtin_in_shell(command);
