@@ -506,12 +506,13 @@ int remove_job(Job * job) {
 	return -1;
 }
 
-int remove_done_jobs() {
+int remove_all_status_jobs(int status) {
 	Job * current;
 	Job * previous = NULL;
 	int add_relevance = 0;
+
 	for (current = jobs_list.head; current; current = current->next_job) {
-		if (current->state == DONE) {
+		if (status == ALL || current->state == status) {
 			if (remove_job(current) < 0) {
 				fprintf(stderr, "Mash: jobs failed to remove job\n");
 				return 0;
@@ -601,7 +602,7 @@ void wait_all_jobs() {
 	while (jobs_list.n_jobs > 0) {
 		wait_pid = waitpid(-1,&wstatus,WUNTRACED);
 		if (wait_pid == -1) {
-			perror("waitpid failed");
+			// perror("waitpid failed");
 			return;
 		}
 		jobs_list.n_jobs--;
@@ -618,5 +619,5 @@ void update_jobs() {
 			print_job(current,0);
 		}
 	}
-	remove_done_jobs();
+	remove_all_status_jobs(DONE);
 }

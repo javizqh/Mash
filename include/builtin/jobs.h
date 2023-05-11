@@ -16,6 +16,7 @@ enum exec_state {
   RUNNING = -2,
   STOPPED = -1,
   DONE = 0,
+  ALL,
   FOREGROUND,
   BACKGROUND,
   SUB_EXECUTION
@@ -54,7 +55,7 @@ void free_jobs_list();
 int add_job(Job * job);
 Job * get_job(pid_t job_pid);
 int remove_job(Job * job);
-int remove_done_jobs();
+int remove_all_status_jobs(int status);
 pid_t get_pos_job_pid(int pos);
 pid_t get_relevance_job_pid(int relevance);
 int are_jobs_stopped();

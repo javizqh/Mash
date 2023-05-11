@@ -11,3 +11,62 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "open_files.h"
+#include "builtin/command.h"
+#include "builtin/builtin.h"
+#include "builtin/export.h"
+#include "builtin/source.h"
+#include "builtin/alias.h"
+#include "parse.h"
+#include "exec_info.h"
+#include "builtin/jobs.h"
+#include "builtin/disown.h"
+
+static int usage() {
+  fprintf(stderr,"Usage: disown [-ar] [jobspec … | pid … ]\n");
+	return EXIT_FAILURE;
+}
+
+int disown(int argc, char *argv[]) {
+  argc--;argv++;
+  Job * job;
+
+  if (argc == 0) {
+    job = get_job(get_relevance_job_pid(0));
+  } else if (argc == 1) {
+    if (strcmp(argv[0], "-a") == 0) {
+      // Remove all
+      if (remove_all_status_jobs(ALL)) {
+        return EXIT_SUCCESS;
+      } else {
+        return EXIT_FAILURE;
+      }
+    } else if (strcmp(argv[0],"-r") == 0) {
+      // Remove only running
+      if (remove_all_status_jobs(RUNNING)) {
+        return EXIT_SUCCESS;
+      } else {
+        return EXIT_FAILURE;
+      }
+    } else if (*argv[0] == '%') {
+      job = get_job(substitute_jobspec(argv[0]));
+    } else {
+      // Pid
+      job = get_job(atoi(argv[0]));
+    }
+  } else {
+    return usage();
+  }
+
+  if (job == NULL) {
+    return no_job("disown"); 
+  }
+
+  remove_job(job);
+  
+  return EXIT_SUCCESS;
+}
