@@ -265,6 +265,7 @@ exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 		job->end_pid = exec_info->last_command->pid;
 		close_all_fd_io(exec_info->command, current_command);
 		if (job->execution == BACKGROUND) {
+			//kill(job->pid, SIGTTOU);
 			if (exec_info->command->output_buffer != NULL) {
 				write_to_buffer(current_command);
 			}
