@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/types.h>
+#include <pwd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "builtin/echo.h"
+#include "builtin/mash_pwd.h"
 
-// DECLARE STATIC FUNCTIONS
 static int usage() {
-	fprintf(stderr,"Usage: echo [-n] [arg ...]\n");
+	fprintf(stderr,"Usage: pwd\n");
 	return EXIT_FAILURE;
 }
 
-int echo(int argc, char* argv[]) {
-  int i;
-  int print_newline = 1;
+int pwd(int argc, char* argv[]) {
   argc--; argv++;
+  char *pwd;
 
   if (argc == 1) {
     if (strcmp(argv[0],"--help") == 0) {
@@ -36,22 +36,15 @@ int echo(int argc, char* argv[]) {
   }
 
   if (argc > 0) {
-    if (strcmp(argv[0],"-n") == 0) {
-      print_newline = 0;
-      argc--; argv++;
-    }
+    return usage();
+  }
+
+  if ((pwd = getenv("PWD")) == NULL) {
+    fprintf(stderr,"mash: pwd: failed to get current working directory\n");
+    return EXIT_FAILURE;
   }
   
-  if (argc) {
-    for (i = 0; i < argc - 1; i++) {
-      printf("%s ",argv[i]);
-    }
-    printf("%s",argv[i]);
-  }
+  printf("%s\n",getenv("PWD"));
 
-
-  if (print_newline) {
-    printf("\n");
-  }
   return EXIT_SUCCESS;
 }

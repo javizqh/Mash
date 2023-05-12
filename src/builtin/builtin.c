@@ -23,6 +23,7 @@
 #include "builtin/source.h"
 #include "builtin/alias.h"
 #include "builtin/exit.h"
+#include "builtin/mash_pwd.h"
 #include "builtin/echo.h"
 #include "builtin/ifok.h"
 #include "builtin/ifnot.h"
@@ -42,13 +43,11 @@
 
 char *builtins_modify_cmd[4] = {"ifnot","ifok","builtin","command"};
 char *builtins_in_shell[11] = {"disown","kill","wait","bg","fg","cd","export","alias","exit","source","."};
-char *builtins_fork[2] = {"echo","jobs"};
+char *builtins_fork[3] = {"pwd","echo","jobs"};
 
 // Builtin command
 
 // DECLARE STATIC FUNCTION
-static int usage();
-
 static int usage() {
 	fprintf(stderr,"Usage: builtin shell-builtin [arg ..]\n");
 	return CMD_EXIT_FAILURE;
@@ -187,7 +186,7 @@ int
 find_builtin(Command *command)
 {
   int i;
-  for (i = 0; i < 2; i++)
+  for (i = 0; i < 3; i++)
   {
     if (strcmp(command->argv[0], builtins_fork[i]) == 0) {
       return 1;
@@ -216,8 +215,8 @@ exec_builtin(Command *start_scommand, Command *command)
 		return_value = echo(i,args);
 	} else if (strcmp(args[0], "jobs") == 0) {
 		return_value = jobs(i,args);
-	} else if (strcmp(args[0], "wait") == 0) {
-		return_value = wait_for_job(i,args);
+	} else if (strcmp(args[0], "pwd") == 0) {
+		return_value = pwd(i,args);
 	} else if (strcmp(args[0], "exit") != 0){
     if (has_builtin_exec_in_shell(command)) {
 			exec_builtin_in_shell(command);
