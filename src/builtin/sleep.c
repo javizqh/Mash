@@ -19,6 +19,20 @@
 #include "builtin/sleep.h"
 
 char * sleep_use = "sleep NUMBER[SUFFIX]...";
+char * sleep_description = "Pause for NUMBER seconds.";
+char * sleep_help = 
+"    Pause for NUMBER seconds.  SUFFIX may be 's' for seconds (default),\n"
+"    'm' for minutes, 'h' for hours or 'd' for days.  NUMBER need to be an\n"
+"    integer.  Given two or more arguments, pause for the amount of time\n"
+"    specified by the sum of their values.\n\n"
+"    Exit Status:\n"
+"    Returns success unless an invalid option or time is given.\n";
+
+static int help() {
+	printf("sleep: %s\n", sleep_use);
+	printf("    %s\n\n%s", sleep_description, sleep_help);
+	return EXIT_SUCCESS;
+}
 
 static int usage() {
 	fprintf(stderr,"Usage: %s\n",sleep_use);
@@ -46,6 +60,9 @@ static int get_time(char *time) {
     } else if (*ptr == 'h' && !has_time_unit) {
       has_time_unit = 1;
       total_time *= 60 * 60;
+    } else if (*ptr == 'd' && !has_time_unit) {
+      has_time_unit = 1;
+      total_time *= 60 * 60 * 24;
     } else {
       return invalid_time(time);
     }
@@ -67,8 +84,7 @@ int mash_sleep(int argc, char* argv[]) {
     return usage();
   } else if (argc == 1) {
     if (strcmp(argv[0],"--help") == 0) {
-      usage();
-      return EXIT_SUCCESS;
+      return help();
     }
   }
 

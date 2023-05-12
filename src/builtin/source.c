@@ -31,7 +31,20 @@
 
 // DECLARE GLOBAL VARIABLE
 char * source_use = "source filename";
+char * source_description = "Execute commands from a file in the current shell.";
+char * source_help = 
+"    Read and execute commands from FILENAME in the current shell.  The\n"
+"    entries in $PATH are used to find the directory containing FILENAME.\n\n"
+"    Exit Status:\n"
+"    Returns success unless FILENAME cannot be read.\n";
+
 struct source_file *sources[MAX_SOURCE_FILES];
+
+static int help() {
+	printf("source: %s\n", source_use);
+	printf("    %s\n\n%s", source_description, source_help);
+	return EXIT_SUCCESS;
+}
 
 static int usage() {
 	fprintf(stderr,"Usage: %s\n",source_use);
@@ -45,8 +58,7 @@ int source(int argc, char *argv[]) {
 		return usage();
 	}
 	if (strcmp(argv[0], "--help") == 0) {
-		usage();
-		return EXIT_SUCCESS;
+		return help();
 	}
 	// Check if file exists
 	if (stat(argv[0], &buffer) < 0) {

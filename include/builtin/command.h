@@ -57,6 +57,8 @@ typedef struct Command {
 
 // Builtin command
 extern char * command_use;
+extern char * command_description;
+extern char * command_help;
 extern int search_in_builtin;
 
 int command(Command * command);

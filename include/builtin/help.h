@@ -13,5 +13,7 @@
 // limitations under the License.
 
 extern char * help_use;
+extern char * help_description;
+extern char * help_help;
 
 int help(int argc, char *argv[]);

@@ -41,6 +41,25 @@
 #include "builtin/help.h"
 
 char * help_use = "help [-dms] [pattern ...]";
+char * help_description = "Display information about builtin commands.";
+char * help_help = 
+"    Displays brief summaries of builtin commands.  If PATTERN is\n"
+"    specified, gives detailed help on all commands matching PATTERN,\n"
+"    otherwise the list of help topics is printed.\n\n"
+"    Options:\n"
+"      -d       output short description for each topic\n"
+"      -m       display usage in pseudo-manpage format\n"
+"      -s       output only a short usage synopsis for each topic matching PATTERN\n\n"
+"    Arguments:\n"
+"      PATTERN	Pattern specifying a help topic\n\n"
+"    Exit Status:\n"
+"    Returns success unless PATTERN is not found or an invalid option is given.\n";
+
+static int print_help() {
+	printf("help: %s\n", help_use);
+	printf("    %s\n\n%s", help_description, help_help);
+	return EXIT_SUCCESS;
+}
 
 static int usage() {
 	fprintf(stderr,"Usage: %s\n",help_use);
@@ -105,7 +124,6 @@ static void print_usage(char *name) {
   if (name == NULL || strcmp(name, "wait") == 0) {
     printf("%s\n", wait_use);
   }
-
 }
 
 int help(int argc, char* argv[]) {
@@ -118,8 +136,7 @@ int help(int argc, char* argv[]) {
     return EXIT_SUCCESS; 
   } else if (argc == 1) {
     if (strcmp(argv[0],"--help") == 0) {
-      usage();
-      return EXIT_SUCCESS;
+      return print_help();
     }
   }
 

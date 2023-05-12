@@ -22,6 +22,8 @@ struct source_file {
 };
 
 extern char * source_use;
+extern char * source_description;
+extern char * source_help;
 
 int source(int argc, char *argv[]);
 

@@ -20,6 +20,16 @@
 #include "builtin/mash_pwd.h"
 
 char * pwd_use = "pwd";
+char * pwd_description = "Print the name of the current working directory.";
+char * pwd_help = 
+"    Exit Status:\n"
+"    Returns 0 unless an invalid option is given or the current directory cannot be read.\n";
+
+static int help() {
+	printf("pwd: %s\n", pwd_use);
+	printf("    %s\n\n%s", pwd_description, pwd_help);
+	return EXIT_SUCCESS;
+}
 
 static int usage() {
 	fprintf(stderr,"Usage: %s\n",pwd_use);
@@ -32,8 +42,7 @@ int pwd(int argc, char* argv[]) {
 
   if (argc == 1) {
     if (strcmp(argv[0],"--help") == 0) {
-      usage();
-      return EXIT_SUCCESS;
+      return help();
     }
   }
 

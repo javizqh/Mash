@@ -28,8 +28,24 @@
 // Builtin command
 
 // DECLARE GLOBAL VARIABLE
-char * command_use = "command command [arg ..]";
+char * command_use = "command [-Vv] command [arg ..]";
+char * command_description = "Execute a simple command or display information about commands.";
+char * command_help = 
+"    Runs COMMAND with ARGS suppressing  shell function lookup, or display\n"
+"    information about the specified COMMANDs.\n\n"
+"    Options:\n"
+"      -v    print a description of COMMAND similar to the `type' builtin\n"
+"      -V    print a more verbose description of each COMMAND\n\n"
+"    Exit Status:\n"
+"    Returns exit status of COMMAND, or failure if COMMAND is not found.\n";
+
 int search_in_builtin = 1;
+
+static int help() {
+	printf("command: %s\n", command_use);
+	printf("    %s\n\n%s", command_description, command_help);
+	return CMD_EXIT_NOT_EXECUTE;
+}
 
 static int usage() {
 	fprintf(stderr,"Usage: %s\n",command_use);
@@ -37,11 +53,18 @@ static int usage() {
 }
 
 int command(Command * command) {
+  // TODO: add -v / -V
   int i;
 
   if (command->argc < 2) {
     return usage();
   }
+
+	if (command->argc == 2) {
+    if (strcmp(command->argv[1],"--help") == 0) {
+			return help();
+		}
+	}
 
   for (i = 1; i < command->argc; i++)
   {

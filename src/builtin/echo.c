@@ -18,23 +18,19 @@
 #include "builtin/echo.h"
 
 char * echo_use = "echo [-n] [arg ...]";
-
-static int usage() {
-	fprintf(stderr,"Usage: %s\n",echo_use);
-	return EXIT_FAILURE;
-}
+char * echo_description = "Write arguments to the standard output.";
+char * echo_help = 
+"    Display the ARGs, separated by a single space character and followed by a\n"
+"    newline, on the standard output.\n\n"
+"    Options:\n"
+"      -n    do not append a newline\n"
+"    Exit Status:\n"
+"    Returns success unless a write error occurs.\n";
 
 int echo(int argc, char* argv[]) {
   int i;
   int print_newline = 1;
   argc--; argv++;
-
-  if (argc == 1) {
-    if (strcmp(argv[0],"--help") == 0) {
-      usage();
-      return EXIT_SUCCESS;
-    }
-  }
 
   if (argc > 0) {
     if (strcmp(argv[0],"-n") == 0) {

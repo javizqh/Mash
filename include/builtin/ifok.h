@@ -13,5 +13,7 @@
 // limitations under the License.
 
 extern char * ifok_use;
+extern char * ifok_description;
+extern char * disown_help;
 
 int ifok(Command *command);

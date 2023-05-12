@@ -35,6 +35,19 @@
 #include "builtin/fg.h"
 
 char * fg_use = "fg [jobspec]";
+char * fg_description = "Move job to the foreground.";
+char * fg_help = 
+"    Place the job identified by JOB_SPEC in the foreground, making it the\n"
+"    current job.  If JOB_SPEC is not present, the shell's notion of the\n"
+"    current job is used.\n\n"
+"    Exit Status:\n"
+"    Status of command placed in foreground, or failure if an error occurs or job control is not enabled\n";
+
+static int help() {
+	printf("fg: %s\n", fg_use);
+	printf("    %s\n\n%s", fg_description, fg_help);
+	return EXIT_SUCCESS;
+}
 
 static int usage() {
   fprintf(stderr,"Usage: %s\n",fg_use);
@@ -48,6 +61,9 @@ int fg(int argc, char *argv[]) {
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));
   } else if (argc == 1) {
+    if (strcmp(argv[0],"--help") == 0) {
+			return help();
+		}
     job = get_job(substitute_jobspec(argv[0]));
   } else {
     return usage();

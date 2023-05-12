@@ -28,10 +28,31 @@
 #include "builtin/jobs.h"
 #include "builtin/kill.h"
 
-char * kill_use = "kill [-s sigspec] [-n signum] [-sigspec] jobspec or pid";
+char * kill_use = "kill [-s sigspec] | [-n signum] | [-sigspec] jobspec or pid";
+char * kill_description = "Send a signal to a job.";
+char * kill_help = 
+"    Send the processes identified by PID or JOBSPEC the signal named by\n"
+"    SIGSPEC or SIGNUM.  If neither SIGSPEC nor SIGNUM is present, then\n"
+"    SIGTERM is assumed.\n\n"
+"    Options:\n"
+"      -s sig    SIG is a signal name\n"
+"      -n sig    SIG is a signal number\n"
+"    Exit Status:\n"
+"    Returns success unless an invalid option is given or an error occurs or job control is not enabled.\n";
+
+static int help() {
+	printf("kill: %s\n", kill_use);
+	printf("    %s\n\n%s", kill_description, kill_help);
+	return EXIT_SUCCESS;
+}
 
 static int usage() {
   fprintf(stderr,"Usage: %s\n",kill_use);
+	return EXIT_FAILURE;
+}
+
+static int invalid_signal(char *signal) {
+  fprintf(stderr, "mash: kill: %s: invalid signal specification\n", signal);
 	return EXIT_FAILURE;
 }
 
@@ -178,27 +199,33 @@ static Job * getJob(char * jobspec) {
 }
 
 int kill_job(int argc, char *argv[]) {
+  //TODO: could add -l / -L
   argc--;argv++;
   int signal = SIGTERM;  // Default signal
   Job * job;
 
   if (argc == 1) {
     // Use default signal
-    job = get_job(get_relevance_job_pid(0));
+    if (strcmp(argv[0],"--help") == 0) {
+			return help();
+		}
+    job = getJob(argv[0]);
   } else if (argc == 2) {
     if (*argv[0] != '-') {
       return usage();
     }
-    signal = getSignal(argv[0]);
+    if (!(signal = getSignal(argv[0]))) {
+      return invalid_signal(argv[0]);
+    }
     job = getJob(argv[1]);
   } else if (argc == 3) {
     if (strcmp(argv[0],"-s") == 0) {
       if (!(signal = getSignal(argv[1]))) {
-        return usage();
+        return invalid_signal(argv[1]);
       }
     } else if (strcmp(argv[0],"-n") == 0) {
-      if (!(signal = atoi(argv[1]))) {
-        return usage();
+      if ((signal = atoi(argv[1])) <= 0) {
+        return invalid_signal(argv[1]);
       }
     } else {
       return usage();

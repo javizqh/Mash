@@ -37,6 +37,19 @@
 #include "builtin/bg.h"
 
 char * bg_use = "bg [jobspec]";
+char * bg_description = "Move jobs to the background.";
+char * bg_help = 
+"    Place the jobs identified by the JOB_SPEC in the background, as if they\n"
+"    had been started with `&'. If JOB_SPEC is not present, the shell's notion\n"
+"    of the current job is used.\n\n"
+"    Exit Status:\n"
+"    Returns success unless job control is not enabled or an error occurs.\n";
+
+static int help() {
+	printf("bg: %s\n", bg_use);
+	printf("    %s\n\n%s", bg_description, bg_help);
+	return EXIT_SUCCESS;
+}
 
 static int usage() {
   fprintf(stderr,"Usage: %s\n",bg_use);
@@ -51,6 +64,9 @@ int bg(int argc, char *argv[]) {
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));
   } else if (argc == 1) {
+    if (strcmp(argv[0],"--help") == 0) {
+			return help();
+		}
     job = get_job(substitute_jobspec(argv[0]));
   } else {
     return usage();

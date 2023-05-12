@@ -20,6 +20,19 @@
 #include "builtin/ifok.h"
 
 char * ifok_use = "ifok command [arg ..]";
+char * ifok_description = "Execute the command if previous command ended successfully.";
+char * ifok_help = 
+"    Runs COMMAND with ARGS if the last executed command finished with\n"
+"    success.\n\n"
+"    Exit Status:\n"
+"    Returns exit status of COMMAND, or success if last command ended with failure.\n"
+"    If enviroment variable 'result' does not exist returns failure.\n";
+
+static int help() {
+	printf("ifok: %s\n", ifok_use);
+	printf("    %s\n\n%s", ifok_description, ifok_help);
+	return CMD_EXIT_NOT_EXECUTE;
+}
 
 static int usage() {
 	fprintf(stderr,"Usage: %s\n",ifok_use);
@@ -37,6 +50,12 @@ int ifok(Command * command) {
   if (command->argc < 2) {
     return usage();
   }
+
+	if (command->argc == 2) {
+    if (strcmp(command->argv[1],"--help") == 0) {
+			return help();
+		}
+	}
 
   if (atoi(result) == 0) {
     for (i = 1; i < command->argc; i++)

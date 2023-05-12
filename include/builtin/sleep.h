@@ -13,5 +13,7 @@
 // limitations under the License.
 
 extern char * sleep_use;
+extern char * sleep_description;
+extern char * sleep_help;
 
 int mash_sleep(int argc, char *argv[]);

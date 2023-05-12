@@ -13,5 +13,7 @@
 // limitations under the License.
 
 extern char * ifnot_use;
+extern char * ifnot_description;
+extern char * disown_help;
 
 int ifnot(Command *command);

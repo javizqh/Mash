@@ -18,6 +18,8 @@ enum {
 };
 
 extern char * export_use;
+extern char * export_description;
+extern char * export_help;
 
 int export(int argc, char* argv[]);
 

@@ -13,5 +13,7 @@
 // limitations under the License.
 
 extern char * pwd_use;
+extern char * pwd_description;
+extern char * pwd_help;
 
 int pwd(int argc, char *argv[]);

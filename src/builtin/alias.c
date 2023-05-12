@@ -25,6 +25,19 @@ static int usage();
 // DECLARE GLOBAL VARIABLE
 struct alias *aliases[ALIAS_MAX];
 char * alias_use = "alias [name=value]";
+char * alias_description = "Define or display aliases.";
+char * alias_help = 
+"    Without arguments, `alias' prints the list of aliases in the reusable\n"
+"    form `alias NAME=VALUE' on standard output.\n\n"
+"    Otherwise, an alias is defined for each NAME whose VALUE is given.\n\n"
+"    Exit Status:\n"
+"    alias returns 0 unless a VALUE is missing or the is out of memory.\n";
+
+static int help() {
+	printf("alias: %s\n", alias_use);
+	printf("    %s\n\n%s", alias_description, alias_help);
+	return EXIT_SUCCESS;
+}
 
 static int usage() {
 	fprintf(stderr,"Usage: %s\n", alias_use);
@@ -33,10 +46,13 @@ static int usage() {
 
 int alias(int argc, char *argv[]) {
 	argc--;argv++;
-	int exit_value = 0;
+	int exit_value = EXIT_SUCCESS;
 	if (argc == 0) {
 		print_aliases();
 	} else if (argc == 1) {
+		if (strcmp(argv[0],"--help") == 0) {
+			return help();
+		}
 		exit_value = add_alias(argv[0]);
 		if (exit_value < 0) {
 			return usage();
@@ -74,6 +90,11 @@ add_alias(char *command)
 		if (eol != NULL) {
 			*eol = '\0';
 		}
+
+    if (strlen(p) <= 0) {
+      return -1;
+    }
+
 		struct alias *alias = new_alias(command, p);
 
 		for (index = 0; index < ALIAS_MAX; index++) {

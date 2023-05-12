@@ -36,11 +36,28 @@
 #include "builtin/jobs.h"
 
 char * jobs_use = "jobs [-lprs] [jobspec]";
+char * jobs_description = "Display status of jobs.";
+char * jobs_help = 
+"    Lists the active jobs.  JOBSPEC restricts output to that job.\n"
+"    Without options, the status of all active jobs is displayed.\n\n"
+"    Options:\n"
+"      -l    lists process IDs in addition to the normal information\n"
+"      -p    lists process IDs only\n"
+"      -r    restrict output to running jobs\n"
+"      -s    restrict output to stopped jobs\n\n"
+"    Exit Status:\n"
+"    Returns success unless an invalid option is given, an error occurs or job control is not enabled.\n";
+
+JobList jobs_list;
 
 // DECLARE STATIC FUNCTIONS
 static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id);
 
-JobList jobs_list;
+static int help() {
+	printf("jobs: %s\n", jobs_use);
+	printf("    %s\n\n%s", jobs_description, jobs_help);
+	return EXIT_SUCCESS;
+}
 
 static int usage() {
 	fprintf(stderr,"Usage: %s\n",jobs_use);
@@ -64,6 +81,13 @@ int jobs(int argc, char *argv[]) {
 	if (argc > 2) {
 		return usage();
 	}
+
+	if (argc == 1) {
+		if (strcmp(argv[0],"--help") == 0) {
+			return help();
+		}
+	}
+
 	for (i = 0; i < argc; i++)
 	{
 		arg_ptr = argv[i];

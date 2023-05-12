@@ -13,5 +13,7 @@
 // limitations under the License.
 
 extern char * kill_use;
+extern char * kill_description;
+extern char * kill_help;
 
 int kill_job(int argc, char *argv[]);

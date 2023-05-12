@@ -13,5 +13,7 @@
 // limitations under the License.
 
 extern char * bg_use;
+extern char * bg_description;
+extern char * bg_help;
 
 int bg(int argc, char *argv[]);

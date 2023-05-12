@@ -13,5 +13,7 @@
 // limitations under the License.
 
 extern char * cd_use;
+extern char * cd_description;
+extern char * cd_help;
 
 int cd(int argc, char* argv[]);

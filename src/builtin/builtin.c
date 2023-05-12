@@ -43,15 +43,26 @@
 #include "builtin/disown.h"
 #include "builtin/builtin.h"
 
-char * builtin_use = "builtin shell-builtin [arg ..]";
-
 char *builtins_modify_cmd[4] = {"ifnot","ifok","builtin","command"};
 char *builtins_in_shell[11] = {"disown","kill","wait","bg","fg","cd","export","alias","exit","source","."};
 char *builtins_fork[5] = {"help","sleep","pwd","echo","jobs"};
 
 // Builtin command
-
+char * builtin_use = "builtin shell-builtin [arg ..]";
+char * builtin_description = "Execute shell builtins.";
+char * builtin_help = 
+"    Execute SHELL-BUILTIN with arguments ARGs without performing command\n"
+"    lookup.\n\n"
+"    Exit Status:\n"
+"    Returns the exit status of SHELL-BUILTIN, or 1 if SHELL-BUILTIN is\n"
+"    not a shell builtin.\n";
 // DECLARE STATIC FUNCTION
+static int help_builtin() {
+	printf("builtin: %s\n", builtin_use);
+	printf("    %s\n\n%s", builtin_description, builtin_help);
+	return CMD_EXIT_NOT_EXECUTE;
+}
+
 static int usage() {
 	fprintf(stderr,"Usage: %s\n", builtin_use);
 	return CMD_EXIT_FAILURE;
@@ -63,6 +74,12 @@ int builtin(Command * command) {
   if (command->argc < 2) {
     return usage();
   }
+
+	if (command->argc == 2) {
+    if (strcmp(command->argv[1],"--help") == 0) {
+			return help_builtin();
+		}
+	}
 
   for (i = 1; i < command->argc; i++)
   {
