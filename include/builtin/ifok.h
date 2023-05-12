@@ -14,6 +14,6 @@
 
 extern char * ifok_use;
 extern char * ifok_description;
-extern char * disown_help;
+extern char * ifok_help;
 
 int ifok(Command *command);

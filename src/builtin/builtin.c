@@ -47,6 +47,8 @@ char *builtins_modify_cmd[4] = {"ifnot","ifok","builtin","command"};
 char *builtins_in_shell[11] = {"disown","kill","wait","bg","fg","cd","export","alias","exit","source","."};
 char *builtins_fork[5] = {"help","sleep","pwd","echo","jobs"};
 
+int N_BUILTINS = 4+11+5;
+
 // Builtin command
 char * builtin_use = "builtin shell-builtin [arg ..]";
 char * builtin_description = "Execute shell builtins.";

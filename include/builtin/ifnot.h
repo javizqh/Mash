@@ -14,6 +14,6 @@
 
 extern char * ifnot_use;
 extern char * ifnot_description;
-extern char * disown_help;
+extern char * ifnot_help;
 
 int ifnot(Command *command);

@@ -16,4 +16,10 @@ extern char * help_use;
 extern char * help_description;
 extern char * help_help;
 
+enum help_mode {
+  HELP_DESCRIPTION = 1,
+  HELP_MANPAGE,
+  HELP_USE
+};
+
 int help(int argc, char *argv[]);

@@ -16,6 +16,8 @@ extern char * builtin_use;
 extern char * builtin_description;
 extern char * builtin_help;
 
+extern int N_BUILTINS;
+
 // Builtin command
 int builtin(Command * command);
 // ---------------

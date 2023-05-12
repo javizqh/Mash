@@ -12,32 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <builtin/alias.h>
-#include <builtin/bg.h>
-#include <builtin/cd.h>
-#include <builtin/color.h>
-#include <builtin/command.h>
-#include <builtin/disown.h>
-#include <builtin/echo.h>
-#include <builtin/exit.h>
-#include <builtin/export.h>
-#include <builtin/fg.h>
-#include <builtin/ifnot.h>
-#include <builtin/ifok.h>
-#include <builtin/kill.h>
-#include <builtin/mash_pwd.h>
-#include <builtin/math.h>
-#include <builtin/sleep.h>
-#include <builtin/source.h>
-#include <builtin/test.h>
-#include <builtin/wait.h>
+#include "stdlib.h"
+#include "stdio.h"
+#include "string.h"
+#include "builtin/alias.h"
+#include "builtin/bg.h"
+#include "builtin/cd.h"
+#include "builtin/color.h"
+#include "builtin/command.h"
+#include "builtin/disown.h"
+#include "builtin/echo.h"
+#include "builtin/exit.h"
+#include "builtin/export.h"
+#include "builtin/fg.h"
+#include "builtin/ifnot.h"
+#include "builtin/ifok.h"
+#include "builtin/kill.h"
+#include "builtin/mash_pwd.h"
+#include "builtin/math.h"
+#include "builtin/sleep.h"
+#include "builtin/source.h"
+#include "builtin/test.h"
+#include "builtin/wait.h"
 #include "parse.h"
 #include "exec_info.h"
-#include <builtin/jobs.h>
-#include <builtin/builtin.h>
+#include "builtin/jobs.h"
+#include "builtin/builtin.h"
 #include "builtin/help.h"
 
 char * help_use = "help [-dms] [pattern ...]";
@@ -66,72 +66,518 @@ static int usage() {
 	return EXIT_FAILURE;
 }
 
-static void print_usage(char *name) {
-  if (name == NULL || strcmp(name, "alias") == 0) {
-    printf("%s\n", alias_use);
+static void print_help_header() {
+  printf("mash, version %s\n"
+    "These shell commands are defined internally.  Type `help' to see this list.\n"
+    "Type `help name' to find out more about the function `name'.\n"
+    "Use `info mash' to find out more about the shell in general.\n"
+    "Use `man -k' or `info' to find out more about commands not in this list.\n\n", "1.0.1");
+}
+
+static int print_usage(char *name) {
+  int matched = 0;
+  if (name == NULL || strncmp("alias", name, strlen(name)) == 0) {
+    printf("alias: %s\n", alias_use);
+    matched++;
   } 
-  if (name == NULL || strcmp(name, "bg") == 0) {
-    printf("%s\n", bg_use);
+  if (name == NULL || strncmp("bg", name, strlen(name)) == 0) {
+    printf("bg: %s\n", bg_use);
+    matched++;
   } 
-  if (name == NULL || strcmp(name, "builtin") == 0) {
-    printf("%s\n", builtin_use);
+  if (name == NULL || strncmp("builtin", name, strlen(name)) == 0) {
+    printf("builtin: %s\n", builtin_use);
+    matched++;
   }  
-  if (name == NULL || strcmp(name, "cd") == 0) {
-    printf("%s\n", cd_use);
+  if (name == NULL || strncmp("cd", name, strlen(name)) == 0) {
+    printf("cd: %s\n", cd_use);
+    matched++;
   } 
-  if (name == NULL || strcmp(name, "command") == 0) {
-    printf("%s\n", command_use);
+  if (name == NULL || strncmp("command", name, strlen(name)) == 0) {
+    printf("command: %s\n", command_use);
+    matched++;
   }   
-  if (name == NULL || strcmp(name, "disown") == 0) {
-    printf("%s\n", disown_use);
+  if (name == NULL || strncmp("disown", name, strlen(name)) == 0) {
+    printf("disown: %s\n", disown_use);
+    matched++;
   } 
-  if (name == NULL || strcmp(name, "echo") == 0) {
-    printf("%s\n", echo_use);
+  if (name == NULL || strncmp("echo", name, strlen(name)) == 0) {
+    printf("echo: %s\n", echo_use);
+    matched++;
   } 
-  if (name == NULL || strcmp(name, "exit") == 0) {
-    printf("%s\n", exit_use);
+  if (name == NULL || strncmp("exit", name, strlen(name)) == 0) {
+    printf("exit: %s\n", exit_use);
+    matched++;
   } 
-  if (name == NULL || strcmp(name, "export") == 0) {
-    printf("%s\n", export_use);
+  if (name == NULL || strncmp("export", name, strlen(name)) == 0) {
+    printf("export: %s\n", export_use);
+    matched++;
   } 
-  if (name == NULL || strcmp(name, "fg") == 0) {
-    printf("%s\n", fg_use);
+  if (name == NULL || strncmp("fg", name, strlen(name)) == 0) {
+    printf("fg: %s\n", fg_use);
+    matched++;
   } 
-  if (name == NULL || strcmp(name, "help") == 0) {
-    printf("%s\n", help_use);
+  if (name == NULL || strncmp("help", name, strlen(name)) == 0) {
+    printf("help: %s\n", help_use);
+    matched++;
   } 
-  if (name == NULL || strcmp(name, "ifnot") == 0) {
-    printf("%s\n", ifnot_use);
+  if (name == NULL || strncmp("ifnot", name, strlen(name)) == 0) {
+    printf("ifnot: %s\n", ifnot_use);
+    matched++;
   }
-  if (name == NULL || strcmp(name, "ifok") == 0) {
-    printf("%s\n", ifok_use);
+  if (name == NULL || strncmp("ifok", name, strlen(name)) == 0) {
+    printf("ifok: %s\n", ifok_use);
+    matched++;
   }
-  if (name == NULL || strcmp(name, "jobs") == 0) {
-    printf("%s\n", jobs_use);
+  if (name == NULL || strncmp("jobs", name, strlen(name)) == 0) {
+    printf("jobs: %s\n", jobs_use);
+    matched++;
   }
-  if (name == NULL || strcmp(name, "kill") == 0) {
-    printf("%s\n", kill_use);
+  if (name == NULL || strncmp("kill", name, strlen(name)) == 0) {
+    printf("kill: %s\n", kill_use);
+    matched++;
   }
-  if (name == NULL || strcmp(name, "pwd") == 0) {
-    printf("%s\n", pwd_use);
+  if (name == NULL || strncmp("pwd", name, strlen(name)) == 0) {
+    printf("pwd: %s\n", pwd_use);
+    matched++;
   }
-  if (name == NULL || strcmp(name, "sleep") == 0) {
-    printf("%s\n", sleep_use);
+  if (name == NULL || strncmp("sleep", name, strlen(name)) == 0) {
+    printf("sleep: %s\n", sleep_use);
+    matched++;
   }
-  if (name == NULL || strcmp(name, "source") == 0) {
-    printf("%s\n", source_use);
+  if (name == NULL || strncmp("source", name, strlen(name)) == 0) {
+    printf("source: %s\n", source_use);
+    matched++;
   }
-  if (name == NULL || strcmp(name, "wait") == 0) {
-    printf("%s\n", wait_use);
+  if (name == NULL || strncmp("wait", name, strlen(name)) == 0) {
+    printf("wait: %s\n", wait_use);
+    matched++;
   }
+
+  if (matched == 0) {
+    fprintf(stderr, "mash: help: no help topics match `%s'.  Try `help help' or `man -k %s' or `info %s'.\n", name, name, name);
+  }
+
+  return matched;
+}
+
+static int print_description(char *name) {
+  int matched = 0;
+  if (strncmp("alias", name, strlen(name)) == 0) {
+    printf("alias - %s\n", alias_description);
+    matched++;
+  } 
+  if (strncmp("bg", name, strlen(name)) == 0) {
+    printf("bg - %s\n", bg_description);
+    matched++;
+  } 
+  if (strncmp("builtin", name, strlen(name)) == 0) {
+    printf("builtin - %s\n", builtin_description);
+    matched++;
+  }  
+  if (strncmp("cd", name, strlen(name)) == 0) {
+    printf("cd - %s\n", cd_description);
+    matched++;
+  } 
+  if (strncmp("command", name, strlen(name)) == 0) {
+    printf("command - %s\n", command_description);
+    matched++;
+  }   
+  if (strncmp("disown", name, strlen(name)) == 0) {
+    printf("disown - %s\n", disown_description);
+    matched++;
+  } 
+  if (strncmp("echo", name, strlen(name)) == 0) {
+    printf("echo - %s\n", echo_description);
+    matched++;
+  } 
+  if (strncmp("exit", name, strlen(name)) == 0) {
+    printf("exit - %s\n", exit_description);
+    matched++;
+  } 
+  if (strncmp("export", name, strlen(name)) == 0) {
+    printf("export - %s\n", export_description);
+    matched++;
+  } 
+  if (strncmp("fg", name, strlen(name)) == 0) {
+    printf("fg - %s\n", fg_description);
+    matched++;
+  } 
+  if (strncmp("help", name, strlen(name)) == 0) {
+    printf("help - %s\n", help_description);
+    matched++;
+  } 
+  if (strncmp("ifnot", name, strlen(name)) == 0) {
+    printf("ifnot - %s\n", ifnot_description);
+    matched++;
+  }
+  if (strncmp("ifok", name, strlen(name)) == 0) {
+    printf("ifok - %s\n", ifok_description);
+    matched++;
+  }
+  if (strncmp("jobs", name, strlen(name)) == 0) {
+    printf("jobs - %s\n", jobs_description);
+    matched++;
+  }
+  if (strncmp("kill", name, strlen(name)) == 0) {
+    printf("kill - %s\n", kill_description);
+    matched++;
+  }
+  if (strncmp("pwd", name, strlen(name)) == 0) {
+    printf("pwd - %s\n", pwd_description);
+    matched++;
+  }
+  if (strncmp("sleep", name, strlen(name)) == 0) {
+    printf("sleep - %s\n", sleep_description);
+    matched++;
+  }
+  if (strncmp("source", name, strlen(name)) == 0) {
+    printf("source - %s\n", source_description);
+    matched++;
+  }
+  if (strncmp("wait", name, strlen(name)) == 0) {
+    printf("wait - %s\n", wait_description);
+    matched++;
+  }
+
+  if (matched == 0) {
+    fprintf(stderr, "mash: help: no help topics match `%s'.  Try `help help' or `man -k %s' or `info %s'.\n", name, name, name);
+  }
+
+  return matched;
+}
+
+static int print_default_help(char *name) {
+  int i;
+  int n_matches = 0;
+  char *builtin[N_BUILTINS];
+  char *use[N_BUILTINS];
+  char *description[N_BUILTINS];
+  char *help_str[N_BUILTINS];
+
+  if (strncmp("alias", name, strlen(name)) == 0) {
+    builtin[n_matches] = "alias";
+    use[n_matches] = alias_use;
+    description[n_matches] = alias_description;
+    help_str[n_matches] = alias_help;
+    n_matches++;
+  } 
+  if (strncmp("bg", name, strlen(name)) == 0) {
+    builtin[n_matches] = "bg";
+    use[n_matches] = bg_use;
+    description[n_matches] = bg_description;
+    help_str[n_matches] = bg_help;
+    n_matches++;
+  } 
+  if (strncmp("builtin", name, strlen(name)) == 0) {
+    builtin[n_matches] = "builtin";
+    use[n_matches] = builtin_use;
+    description[n_matches] = builtin_description;
+    help_str[n_matches] = builtin_help;
+    n_matches++;
+  }  
+  if (strncmp("cd", name, strlen(name)) == 0) {
+    builtin[n_matches] = "cd";
+    use[n_matches] = cd_use;
+    description[n_matches] = cd_description;
+    help_str[n_matches] = cd_help;
+    n_matches++;
+  } 
+  if (strncmp("command", name, strlen(name)) == 0) {
+    builtin[n_matches] = "command";
+    use[n_matches] = command_use;
+    description[n_matches] = command_description;
+    help_str[n_matches] = command_help;
+    n_matches++;
+  }   
+  if (strncmp("disown", name, strlen(name)) == 0) {
+    builtin[n_matches] = "disown";
+    use[n_matches] = disown_use;
+    description[n_matches] = disown_description;
+    help_str[n_matches] = disown_help;
+    n_matches++;
+  } 
+  if (strncmp("echo", name, strlen(name)) == 0) {
+    builtin[n_matches] = "echo";
+    use[n_matches] = echo_use;
+    description[n_matches] = echo_description;
+    help_str[n_matches] = echo_help;
+    n_matches++;
+  } 
+  if (strncmp("exit", name, strlen(name)) == 0) {
+    builtin[n_matches] = "exit";
+    use[n_matches] = exit_use;
+    description[n_matches] = exit_description;
+    help_str[n_matches] = exit_help;
+    n_matches++;
+  } 
+  if (strncmp("export", name, strlen(name)) == 0) {
+    builtin[n_matches] = "export";
+    use[n_matches] = export_use;
+    description[n_matches] = export_description;
+    help_str[n_matches] = export_help;
+    n_matches++;
+  } 
+  if (strncmp("fg", name, strlen(name)) == 0) {
+    builtin[n_matches] = "fg";
+    use[n_matches] = fg_use;
+    description[n_matches] = fg_description;
+    help_str[n_matches] = fg_help;
+    n_matches++;
+  } 
+  if (strncmp("help", name, strlen(name)) == 0) {
+    builtin[n_matches] = "help";
+    use[n_matches] = help_use;
+    description[n_matches] = help_description;
+    help_str[n_matches] = help_help;
+    n_matches++;
+  } 
+  if (strncmp("ifnot", name, strlen(name)) == 0) {
+    builtin[n_matches] = "ifnot";
+    use[n_matches] = ifnot_use;
+    description[n_matches] = ifnot_description;
+    help_str[n_matches] = ifnot_help;
+    n_matches++;
+  }
+  if (strncmp("ifok", name, strlen(name)) == 0) {
+    builtin[n_matches] = "ifok";
+    use[n_matches] = ifok_use;
+    description[n_matches] = ifok_description;
+    help_str[n_matches] = ifok_help;
+    n_matches++;
+  }
+  if (strncmp("jobs", name, strlen(name)) == 0) {
+    builtin[n_matches] = "jobs";
+    use[n_matches] = jobs_use;
+    description[n_matches] = jobs_description;
+    help_str[n_matches] = jobs_help;
+    n_matches++;
+  }
+  if (strncmp("kill", name, strlen(name)) == 0) {
+    builtin[n_matches] = "kill";
+    use[n_matches] = kill_use;
+    description[n_matches] = kill_description;
+    help_str[n_matches] = kill_help;
+    n_matches++;
+  }
+  if (strncmp("pwd", name, strlen(name)) == 0) {
+    builtin[n_matches] = "pwd";
+    use[n_matches] = pwd_use;
+    description[n_matches] = pwd_description;
+    help_str[n_matches] = pwd_help;
+    n_matches++;
+  }
+  if (strncmp("sleep", name, strlen(name)) == 0) {
+    builtin[n_matches] = "sleep";
+    use[n_matches] = sleep_use;
+    description[n_matches] = sleep_description;
+    help_str[n_matches] = sleep_help;
+    n_matches++;
+  }
+  if (strncmp("source", name, strlen(name)) == 0) {
+    builtin[n_matches] = "source";
+    use[n_matches] = source_use;
+    description[n_matches] = source_description;
+    help_str[n_matches] = source_help;
+    n_matches++;
+  }
+  if (strncmp("wait", name, strlen(name)) == 0) {
+    builtin[n_matches] = "wait";
+    use[n_matches] = wait_use;
+    description[n_matches] = wait_description;
+    help_str[n_matches] = wait_help;
+    n_matches++;
+  }
+
+  if (n_matches == 0) {
+    fprintf(stderr, "mash: help: no help topics match `%s'.  Try `help help' or `man -k %s' or `info %s'.\n", name, name, name);
+  }
+
+  for (i = 0; i < n_matches; i++) {
+    printf("%s: %s\n", builtin[i], use[i]);
+    printf("    %s\n\n%s", description[i], help_str[i]);
+  }
+  return n_matches;
+}
+
+static int print_help_man(char *name) {
+  int i;
+  int n_matches = 0;
+  char *builtin[N_BUILTINS];
+  char *use[N_BUILTINS];
+  char *description[N_BUILTINS];
+  char *help_str[N_BUILTINS];
+
+    if (strncmp("alias", name, strlen(name)) == 0) {
+    builtin[n_matches] = "alias";
+    use[n_matches] = alias_use;
+    description[n_matches] = alias_description;
+    help_str[n_matches] = alias_help;
+    n_matches++;
+  } 
+  if (strncmp("bg", name, strlen(name)) == 0) {
+    builtin[n_matches] = "bg";
+    use[n_matches] = bg_use;
+    description[n_matches] = bg_description;
+    help_str[n_matches] = bg_help;
+    n_matches++;
+  } 
+  if (strncmp("builtin", name, strlen(name)) == 0) {
+    builtin[n_matches] = "builtin";
+    use[n_matches] = builtin_use;
+    description[n_matches] = builtin_description;
+    help_str[n_matches] = builtin_help;
+    n_matches++;
+  }  
+  if (strncmp("cd", name, strlen(name)) == 0) {
+    builtin[n_matches] = "cd";
+    use[n_matches] = cd_use;
+    description[n_matches] = cd_description;
+    help_str[n_matches] = cd_help;
+    n_matches++;
+  } 
+  if (strncmp("command", name, strlen(name)) == 0) {
+    builtin[n_matches] = "command";
+    use[n_matches] = command_use;
+    description[n_matches] = command_description;
+    help_str[n_matches] = command_help;
+    n_matches++;
+  }   
+  if (strncmp("disown", name, strlen(name)) == 0) {
+    builtin[n_matches] = "disown";
+    use[n_matches] = disown_use;
+    description[n_matches] = disown_description;
+    help_str[n_matches] = disown_help;
+    n_matches++;
+  } 
+  if (strncmp("echo", name, strlen(name)) == 0) {
+    builtin[n_matches] = "echo";
+    use[n_matches] = echo_use;
+    description[n_matches] = echo_description;
+    help_str[n_matches] = echo_help;
+    n_matches++;
+  } 
+  if (strncmp("exit", name, strlen(name)) == 0) {
+    builtin[n_matches] = "exit";
+    use[n_matches] = exit_use;
+    description[n_matches] = exit_description;
+    help_str[n_matches] = exit_help;
+    n_matches++;
+  } 
+  if (strncmp("export", name, strlen(name)) == 0) {
+    builtin[n_matches] = "export";
+    use[n_matches] = export_use;
+    description[n_matches] = export_description;
+    help_str[n_matches] = export_help;
+    n_matches++;
+  } 
+  if (strncmp("fg", name, strlen(name)) == 0) {
+    builtin[n_matches] = "fg";
+    use[n_matches] = fg_use;
+    description[n_matches] = fg_description;
+    help_str[n_matches] = fg_help;
+    n_matches++;
+  } 
+  if (strncmp("help", name, strlen(name)) == 0) {
+    builtin[n_matches] = "help";
+    use[n_matches] = help_use;
+    description[n_matches] = help_description;
+    help_str[n_matches] = help_help;
+    n_matches++;
+  } 
+  if (strncmp("ifnot", name, strlen(name)) == 0) {
+    builtin[n_matches] = "ifnot";
+    use[n_matches] = ifnot_use;
+    description[n_matches] = ifnot_description;
+    help_str[n_matches] = ifnot_help;
+    n_matches++;
+  }
+  if (strncmp("ifok", name, strlen(name)) == 0) {
+    builtin[n_matches] = "ifok";
+    use[n_matches] = ifok_use;
+    description[n_matches] = ifok_description;
+    help_str[n_matches] = ifok_help;
+    n_matches++;
+  }
+  if (strncmp("jobs", name, strlen(name)) == 0) {
+    builtin[n_matches] = "jobs";
+    use[n_matches] = jobs_use;
+    description[n_matches] = jobs_description;
+    help_str[n_matches] = jobs_help;
+    n_matches++;
+  }
+  if (strncmp("kill", name, strlen(name)) == 0) {
+    builtin[n_matches] = "kill";
+    use[n_matches] = kill_use;
+    description[n_matches] = kill_description;
+    help_str[n_matches] = kill_help;
+    n_matches++;
+  }
+  if (strncmp("pwd", name, strlen(name)) == 0) {
+    builtin[n_matches] = "pwd";
+    use[n_matches] = pwd_use;
+    description[n_matches] = pwd_description;
+    help_str[n_matches] = pwd_help;
+    n_matches++;
+  }
+  if (strncmp("sleep", name, strlen(name)) == 0) {
+    builtin[n_matches] = "sleep";
+    use[n_matches] = sleep_use;
+    description[n_matches] = sleep_description;
+    help_str[n_matches] = sleep_help;
+    n_matches++;
+  }
+  if (strncmp("source", name, strlen(name)) == 0) {
+    builtin[n_matches] = "source";
+    use[n_matches] = source_use;
+    description[n_matches] = source_description;
+    help_str[n_matches] = source_help;
+    n_matches++;
+  }
+  if (strncmp("wait", name, strlen(name)) == 0) {
+    builtin[n_matches] = "wait";
+    use[n_matches] = wait_use;
+    description[n_matches] = wait_description;
+    help_str[n_matches] = wait_help;
+    n_matches++;
+  }
+
+  if (n_matches == 0) {
+    fprintf(stderr, "mash: help: no help topics match `%s'.  Try `help help' or `man -k %s' or `info %s'.\n", name, name, name);
+  }
+
+  for (i = 0; i < n_matches; i++) {
+    printf(
+    "NAME\n"
+    "    %s - %s\n\n"
+    "SYNOPSIS\n"
+    "    %s\n\n"
+    "DESCRIPTION\n"
+    "    %s\n\n%s\n\n"
+    "SEE ALSO\n"
+    "    mash(1)\n\n"
+    "IMPLEMENTATION\n"
+    "    mash, version %s\n"
+    "    Copyright 2023 Javier Izquierdo Hernández.\n"
+    "    License Apache: Apache License version 2.0 or later <http://www.apache.org/licenses/LICENSE-2.0>\n\n",
+    builtin[i],
+    description[i],
+    use[i],
+    description[i],
+    help_str[i],
+    "1.0.1");
+  }
+  return n_matches;
 }
 
 int help(int argc, char* argv[]) {
-  int i;
+  int mode = 0;
+  int has_pattern = 0;
+	char *arg_ptr;
   argc--; argv++;
 
   if (argc == 0) {
   // Print short info about all builtins
+    print_help_header();
     print_usage(NULL);
     return EXIT_SUCCESS; 
   } else if (argc == 1) {
@@ -142,9 +588,61 @@ int help(int argc, char* argv[]) {
 
   // Check for option or pattern
 
-  for (i = 0; i < argc - 1; i++) {
-    printf("%s ",argv[i]);
+	for (; *argv != NULL; argv++) {
+		if (*argv[0] == '-') {
+			arg_ptr = argv[0];
+			arg_ptr++;
+			for (; *arg_ptr != '\0'; arg_ptr++) {
+				switch (*arg_ptr) {
+				case 'd':
+          if (!mode)
+					  mode = HELP_DESCRIPTION;
+					break;
+				case 'm':
+          if (!mode)
+            mode = HELP_MANPAGE;
+					break;
+				case 's':
+          if (!mode)
+            mode = HELP_USE;
+					break;
+				default:
+					usage();
+					break;
+				}
+			}
+		} else {
+      // Check pattern
+      has_pattern = 1;
+      switch (mode)
+      {
+      case HELP_DESCRIPTION:
+        if (!print_description(argv[0])) {
+          return EXIT_FAILURE;
+        }
+        break;
+      case HELP_MANPAGE:
+        if (!print_help_man(argv[0])) {
+          return EXIT_FAILURE;
+        }
+        break;
+      case HELP_USE:
+        if (!print_usage(argv[0])) {
+          return EXIT_FAILURE;
+        }
+        break;
+      default:
+        if (!print_default_help(argv[0])) {
+          return EXIT_FAILURE;
+        }
+        break;
+      }
+			//usage();
+		}
+	}
+  if (!has_pattern) {
+    print_help_header();
+    print_usage(NULL);
   }
-
   return EXIT_SUCCESS;
 }
