@@ -21,6 +21,10 @@ struct source_file {
 	char file[MAX_FILE_LENGTH];
 };
 
+extern char * source_use;
+extern char * source_description;
+extern char * source_help;
+
 int source(int argc, char *argv[]);
 
 struct source_file *new_source_file(char *source_file_name);

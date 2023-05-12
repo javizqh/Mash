@@ -12,4 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+extern char * echo_use;
+extern char * echo_description;
+extern char * echo_help;
+
 int echo(int argc, char* argv[]);

@@ -79,6 +79,7 @@ static char *error_token(char token, char *line);
 static int seek(char *line);
 static int seekcmd(char *line);
 static int seekfile(char *line, char filetype);
+static int seeksubexec(char *line);
 
 static int load_std_table();
 static int load_basic_std_table();
@@ -544,6 +545,7 @@ subexec(char *line, ExecInfo * exec_info)
 	ParseInfo *parse_info = exec_info->parse_info;
 	Command *cmd = exec_info->last_command;
 	int n_parenthesis = 1;
+	int in_math = 0;
 
 	exec_depth++;
 
@@ -568,12 +570,13 @@ subexec(char *line, ExecInfo * exec_info)
 
 	parse_info->copy = line_buf;
 
-	//if (strstr(line, "((") == line) {
-	//      strcpy(line_buf, "math ");
-	//      parse_info->copy += strlen(line_buf);
-	//      line++;
-	//}
-	//FIX: resolve parenthesis
+	if (strstr(line, "((") == line) {
+		strcpy(line_buf, "math ");
+		parse_info->copy += strlen(line_buf);
+		line++;
+		in_math = 1;
+	}
+
 	line++;
 	for (ptr = line; ptr != NULL; ptr++) {
 		switch (*ptr) {
@@ -587,9 +590,12 @@ subexec(char *line, ExecInfo * exec_info)
 
 			break;
 		case ')':
-			n_parenthesis--;
-			ptr = copy(ptr, exec_info);
-
+			if (!in_math || n_parenthesis > 1) {
+				n_parenthesis--;
+				ptr = copy(ptr, exec_info);
+			} else {
+				in_math = 0;
+			}
 			break;
 		default:
 			ptr = copy(ptr, exec_info);
@@ -613,8 +619,10 @@ subexec(char *line, ExecInfo * exec_info)
 	exec_depth--;
 	parse_info->copy = old_ptr;
 
-	if (parse_info->curr_lexer != &std) {
-		strtok(buffer, "\n");
+	if (parse_info->curr_lexer != &std || seeksubexec(++ptr)) {
+		if (buffer[strlen(buffer) - 1] == '\n') {
+			buffer[strlen(buffer) - 1] = '\0';
+		}
 		strcpy(parse_info->copy, buffer);
 		cmd->current_arg += strlen(cmd->current_arg);
 		parse_info->copy = cmd->current_arg;
@@ -622,10 +630,11 @@ subexec(char *line, ExecInfo * exec_info)
 		parse(buffer, exec_info);
 		parse_info->has_arg_started = 0;
 	}
+	ptr--;
 
 	free(line_buf);
 	free(buffer);
-	return ptr++;
+	return ptr;
 }
 
 void
@@ -1234,10 +1243,14 @@ int
 seekcmd(char *line)
 {
 	char *ptr;
+	int index;
 	spec_char fun;
 
 	for (ptr = line; *ptr != '\0'; ptr++) {
-		fun = std[(int)*ptr];
+		index = *ptr % ASCII_CHARS;
+		if (index < 0)
+			index += ASCII_CHARS;
+		fun = std[index];
 		if (fun == NULL)
 			return 1;
 	}
@@ -1252,6 +1265,24 @@ seekfile(char *line, char filetype)
 	for (ptr = line; *ptr != '\0'; ptr++) {
 		if (*ptr != ' ' && *ptr != '\n' && *ptr != '\t') {
 			if (*ptr == filetype || *ptr == '&') {
+				return 0;
+			} else {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int
+seeksubexec(char *line)
+{
+	char *ptr;
+
+	for (ptr = line; *ptr != '\0'; ptr++) {
+		if (*ptr != ' ' && *ptr != '\n' && *ptr != '\t') {
+			if (*ptr == '|' || *ptr == ';' || *ptr == '&'
+			    || *ptr == '>' || *ptr == '<' || *ptr == '#') {
 				return 0;
 			} else {
 				return 1;

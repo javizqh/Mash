@@ -27,23 +27,42 @@
 
 // Builtin command
 
-// DECLARE STATIC FUNCTION
-static int usage();
-
 // DECLARE GLOBAL VARIABLE
-int search_in_builtin = 1;
+char * command_use = "command [-Vv] command [arg ..]";
+char * command_description = "Execute a simple command or display information about commands.";
+char * command_help = 
+"    Runs COMMAND with ARGS suppressing  shell function lookup, or display\n"
+"    information about the specified COMMANDs.\n\n"
+"    Options:\n"
+"      -v    print a description of COMMAND similar to the `type' builtin\n"
+"      -V    print a more verbose description of each COMMAND\n\n"
+"    Exit Status:\n"
+"    Returns exit status of COMMAND, or failure if COMMAND is not found.\n";
+
+static int help() {
+	printf("command: %s\n", command_use);
+	printf("    %s\n\n%s", command_description, command_help);
+	return CMD_EXIT_NOT_EXECUTE;
+}
 
 static int usage() {
-	fprintf(stderr,"Usage: command command [arg ..]\n");
+	fprintf(stderr,"Usage: %s\n",command_use);
 	return CMD_EXIT_FAILURE;
 }
 
 int command(Command * command) {
+  // TODO: add -v / -V
   int i;
 
   if (command->argc < 2) {
     return usage();
   }
+
+	if (command->argc == 2) {
+    if (strcmp(command->argv[1],"--help") == 0) {
+			return help();
+		}
+	}
 
   for (i = 1; i < command->argc; i++)
   {
@@ -52,7 +71,8 @@ int command(Command * command) {
   strcpy(command->argv[command->argc - 1], command->argv[command->argc]);
   command->argc--;
 
-  search_in_builtin = 0;
+	command->search_location = SEARCH_CMD_ONLY_COMMAND;
+
   return CMD_EXIT_SUCCESS;
 }
 // ---------------
@@ -70,6 +90,7 @@ new_command()
 	command->argc = 0;
 	command->current_arg = command->argv[0];
   command->pid = 0;
+  command->search_location = SEARCH_CMD_EVERYWHERE;
   command->next_status_needed_to_exec = DO_NOT_MATTER_TO_EXEC;
   command->do_wait = WAIT_TO_FINISH;
 	command->input = STDIN_FILENO;
@@ -91,6 +112,7 @@ void reset_command(Command *command) {
   command->argc = 0;
 	command->current_arg = command->argv[0];
   command->pid = 0;
+  command->search_location = SEARCH_CMD_EVERYWHERE;
   command->next_status_needed_to_exec = DO_NOT_MATTER_TO_EXEC;
   command->do_wait = WAIT_TO_FINISH;
 	command->input = STDIN_FILENO;

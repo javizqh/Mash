@@ -12,4 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+extern char * ifok_use;
+extern char * ifok_description;
+extern char * ifok_help;
+
 int ifok(Command *command);

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "open_files.h"
@@ -26,14 +27,22 @@
 #include "builtin/jobs.h"
 #include "builtin/exit.h"
 
-// DECLARE STATIC FUNCTIONS
-static int usage();
-
 // DECLARE GLOBAL VARIABLE
+char * exit_use = "exit [n]";
+char * exit_description = "Exit the shell.";
+char * exit_help = 
+"    Exits the shell with a status of N.  If N is omitted, the exit status\n"
+"    is that of the last command executed.\n";
 int has_to_exit = 0;
 
+static int help() {
+	printf("exit: %s\n", exit_use);
+	printf("    %s\n\n%s", exit_description, exit_help);
+	return EXIT_SUCCESS;
+}
+
 static int usage() {
-	fprintf(stderr,"Usage: exit [n]\n");
+	fprintf(stderr,"Usage: %s\n",exit_use);
 	return EXIT_FAILURE;
 }
 
@@ -41,11 +50,14 @@ int
 exit_mash(int argc, char* argv[])
 {
 	int i;
-	int exit_status = EXIT_SUCCESS;
+	int exit_status = atoi(getenv("result"));
 
 	argc--;argv++;
 	
 	if (argc == 1) {
+		if (strcmp(argv[0],"--help") == 0) {
+			return help();
+		}
 		exit_status = atoi(argv[0]);
 		if ( exit_status < 0) {
 			exit_status = 0;

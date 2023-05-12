@@ -20,11 +20,23 @@
 #include <string.h>
 #include "builtin/cd.h"
 
-// DECLARE STATIC FUNCTION
-static int usage();
+char * cd_use = "cd [directory]";
+char * cd_description = "Change the shell working directory.";
+char * cd_help = 
+"    Change the current directory to DIR.  The default DIR is the value of the\n"
+"    HOME shell variable.\n"
+"    of the current job is used.\n\n"
+"    Exit Status:\n"
+"    Returns 0 if the directory is changed, and non-zero otherwise.\n";
+
+static int help() {
+	printf("cd: %s\n", cd_use);
+	printf("    %s\n\n%s", cd_description, cd_help);
+	return EXIT_SUCCESS;
+}
 
 static int usage() {
-  fprintf(stderr, "Usage: cd [directory]\n");
+  fprintf(stderr, "Usage: %s\n",cd_use);
   return EXIT_FAILURE;
 }
 
@@ -45,8 +57,8 @@ int cd(int argc, char* argv[]) {
       return EXIT_FAILURE;
     }
   } else {
-    if (strcmp(argv[0],"--help") == 0 || strcmp(argv[0],"-h") == 0) {
-      return usage();
+    if (strcmp(argv[0],"--help") == 0) {
+      return help();
     }
 
     if (chdir(argv[0]) < 0) {

@@ -23,10 +23,14 @@
 #include "builtin/source.h"
 #include "builtin/alias.h"
 #include "builtin/exit.h"
+#include "builtin/mash_pwd.h"
 #include "builtin/echo.h"
+#include "builtin/math.h"
+#include "builtin/sleep.h"
 #include "builtin/ifok.h"
 #include "builtin/ifnot.h"
 #include "builtin/cd.h"
+#include "builtin/help.h"
 #include "parse.h"
 #include "exec_info.h"
 #include "parse_line.h"
@@ -42,15 +46,28 @@
 
 char *builtins_modify_cmd[4] = {"ifnot","ifok","builtin","command"};
 char *builtins_in_shell[11] = {"disown","kill","wait","bg","fg","cd","export","alias","exit","source","."};
-char *builtins_fork[2] = {"echo","jobs"};
+char *builtins_fork[6] = {"math","help","sleep","pwd","echo","jobs"};
+
+int N_BUILTINS = 4+11+6;
 
 // Builtin command
-
+char * builtin_use = "builtin shell-builtin [arg ..]";
+char * builtin_description = "Execute shell builtins.";
+char * builtin_help = 
+"    Execute SHELL-BUILTIN with arguments ARGs without performing command\n"
+"    lookup.\n\n"
+"    Exit Status:\n"
+"    Returns the exit status of SHELL-BUILTIN, or 1 if SHELL-BUILTIN is\n"
+"    not a shell builtin.\n";
 // DECLARE STATIC FUNCTION
-static int usage();
+static int help_builtin() {
+	printf("builtin: %s\n", builtin_use);
+	printf("    %s\n\n%s", builtin_description, builtin_help);
+	return CMD_EXIT_NOT_EXECUTE;
+}
 
 static int usage() {
-	fprintf(stderr,"Usage: builtin shell-builtin [arg ..]\n");
+	fprintf(stderr,"Usage: %s\n", builtin_use);
 	return CMD_EXIT_FAILURE;
 }
 
@@ -61,6 +78,12 @@ int builtin(Command * command) {
     return usage();
   }
 
+	if (command->argc == 2) {
+    if (strcmp(command->argv[1],"--help") == 0) {
+			return help_builtin();
+		}
+	}
+
   for (i = 1; i < command->argc; i++)
   {
     strcpy(command->argv[i - 1], command->argv[i]);
@@ -68,7 +91,7 @@ int builtin(Command * command) {
   strcpy(command->argv[command->argc - 1], command->argv[command->argc]);
   command->argc--;
 
-	search_in_builtin = 1;
+	command->search_location = SEARCH_CMD_ONLY_BUILTIN;
 
 	if (!find_builtin(command)) {
 		return usage();
@@ -141,14 +164,7 @@ exec_builtin_in_shell(Command *command)
 	}
 	args[i] = NULL;
 
-	if (command->err_output != STDERR_FILENO) {
-		if (dup2(command->err_output, STDERR_FILENO) == -1) {
-			err(EXIT_FAILURE, "Failed to dup stderr %i",
-			    command->err_output);
-		}
-		close_fd(command->err_output);
-	}
-
+	//TODO: redirect output correctly
 
 	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
 		return add_env(command->argv[0]);
@@ -187,7 +203,7 @@ int
 find_builtin(Command *command)
 {
   int i;
-  for (i = 0; i < 2; i++)
+  for (i = 0; i < 6; i++)
   {
     if (strcmp(command->argv[0], builtins_fork[i]) == 0) {
       return 1;
@@ -216,8 +232,14 @@ exec_builtin(Command *start_scommand, Command *command)
 		return_value = echo(i,args);
 	} else if (strcmp(args[0], "jobs") == 0) {
 		return_value = jobs(i,args);
-	} else if (strcmp(args[0], "wait") == 0) {
-		return_value = wait_for_job(i,args);
+	} else if (strcmp(args[0], "pwd") == 0) {
+		return_value = pwd(i,args);
+	} else if (strcmp(args[0], "sleep") == 0) {
+		return_value = mash_sleep(i,args);
+	} else if (strcmp(args[0], "help") == 0) {
+		return_value = help(i,args);
+	} else if (strcmp(args[0], "math") == 0) {
+		return_value = math(i,args);
 	} else if (strcmp(args[0], "exit") != 0){
     if (has_builtin_exec_in_shell(command)) {
 			exec_builtin_in_shell(command);

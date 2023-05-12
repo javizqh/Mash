@@ -12,35 +12,50 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/types.h>
+#include <pwd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "builtin/math.h"
+#include "builtin/mash_pwd.h"
 
-char * math_use = "math [-n] [arg ...]";
-char * math_description = "Write arguments to the standard output.";
-char * math_help = 
-"    Display the ARGs, separated by a single space character and followed by a\n"
-"    newline, on the standard output.\n\n"
-"    Options:\n"
-"      -n    do not append a newline\n"
+char * pwd_use = "pwd";
+char * pwd_description = "Print the name of the current working directory.";
+char * pwd_help = 
 "    Exit Status:\n"
-"    Returns success unless a write error occurs.\n";
+"    Returns 0 unless an invalid option is given or the current directory cannot be read.\n";
 
 static int help() {
-	printf("math: %s\n", math_use);
-	printf("    %s\n\n%s", math_description, math_help);
+	printf("pwd: %s\n", pwd_use);
+	printf("    %s\n\n%s", pwd_description, pwd_help);
 	return EXIT_SUCCESS;
 }
 
 static int usage() {
-  fprintf(stderr,"Usage: %s\n",math_use);
+	fprintf(stderr,"Usage: %s\n",pwd_use);
 	return EXIT_FAILURE;
 }
 
-int math(int argc, char* argv[]) {
+int pwd(int argc, char* argv[]) {
   argc--; argv++;
+  char *pwd;
 
-  printf("math: %s\n",argv[0]);
+  if (argc == 1) {
+    if (strcmp(argv[0],"--help") == 0) {
+      return help();
+    }
+  }
+
+  if (argc > 0) {
+    return usage();
+  }
+
+  if ((pwd = getenv("PWD")) == NULL) {
+    fprintf(stderr,"mash: pwd: failed to get current working directory\n");
+    return EXIT_FAILURE;
+  }
+  
+  printf("%s\n",pwd);
+
   return EXIT_SUCCESS;
 }

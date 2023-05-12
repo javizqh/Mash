@@ -35,14 +35,32 @@
 #include "exec_cmd.h"
 #include "builtin/jobs.h"
 
-// DECLARE STATIC FUNCTIONS
-static int usage();
-static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id);
+char * jobs_use = "jobs [-lprs] [jobspec]";
+char * jobs_description = "Display status of jobs.";
+char * jobs_help = 
+"    Lists the active jobs.  JOBSPEC restricts output to that job.\n"
+"    Without options, the status of all active jobs is displayed.\n\n"
+"    Options:\n"
+"      -l    lists process IDs in addition to the normal information\n"
+"      -p    lists process IDs only\n"
+"      -r    restrict output to running jobs\n"
+"      -s    restrict output to stopped jobs\n\n"
+"    Exit Status:\n"
+"    Returns success unless an invalid option is given, an error occurs or job control is not enabled.\n";
 
 JobList jobs_list;
 
+// DECLARE STATIC FUNCTIONS
+static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id);
+
+static int help() {
+	printf("jobs: %s\n", jobs_use);
+	printf("    %s\n\n%s", jobs_description, jobs_help);
+	return EXIT_SUCCESS;
+}
+
 static int usage() {
-	fprintf(stderr,"Usage: jobs [-lprs] [jobspec]\n");
+	fprintf(stderr,"Usage: %s\n",jobs_use);
 	return EXIT_FAILURE;
 }
 
@@ -63,6 +81,13 @@ int jobs(int argc, char *argv[]) {
 	if (argc > 2) {
 		return usage();
 	}
+
+	if (argc == 1) {
+		if (strcmp(argv[0],"--help") == 0) {
+			return help();
+		}
+	}
+
 	for (i = 0; i < argc; i++)
 	{
 		arg_ptr = argv[i];
@@ -183,7 +208,10 @@ launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess){
 
 	Job * job = new_job(exec_info->line);
 
-	if (search_in_builtin && has_builtin_exec_in_shell(cmd)) {
+	if (
+		cmd->search_location != SEARCH_CMD_ONLY_COMMAND &&
+		has_builtin_exec_in_shell(cmd)) 
+	{
 		if (cmd->do_wait == DO_NOT_WAIT_TO_FINISH) {
 			job->execution = BACKGROUND;
 			job->pid = getpid();
@@ -212,9 +240,6 @@ launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess){
 
 	int a = exec_job(src_file, exec_info, job, to_free_excess);
 
-	// FIX: solve searching pipe
-	search_in_builtin = 1;
-
 	return a;
 }
 
@@ -225,7 +250,8 @@ exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 	Command *current_command;
 
 	if (set_input_shell_pipe(exec_info->command) || set_output_shell_pipe(exec_info->command)
-	    || set_err_output_shell_pipe(exec_info->command)) {
+		 || set_err_output_shell_pipe(exec_info->command)) 
+	{
 		return 1;
 	}
 	// Make a loop fork each command
@@ -290,7 +316,7 @@ exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 		}
 		// Pass foreground to
 		if (!isatty(0)) {
-			// FIX: error
+			err(EXIT_FAILURE,"fd is not a terminal");
 		}
 		tcsetpgrp(0, job->pid);
 		if (exec_info->command->output_buffer != NULL) {

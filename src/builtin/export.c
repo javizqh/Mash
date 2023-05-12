@@ -18,13 +18,23 @@
 #include <stdlib.h>
 #include "builtin/export.h"
 
-// DECLARE STATIC FUNCTION
-static int usage();
-
 extern char **environ;
+char * export_use = "export [name=value]";
+char * export_description = "Set export attribute for shell variables.";
+char * export_help = 
+"    Marks each NAME for automatic export to the environment of subsequently\n"
+"    executed commands.  If VALUE is supplied, assign VALUE before exporting.\n\n"
+"    Exit Status:\n"
+"    Returns success unless an invalid option is given or NAME is invalid.\n";
+
+static int help() {
+	printf("export: %s\n", export_use);
+	printf("    %s\n\n%s", export_description, export_help);
+	return EXIT_SUCCESS;
+}
 
 static int usage() {
-	fprintf(stderr,"Usage: export [name=value]\n");
+	fprintf(stderr,"Usage: %s\n",export_use);
 	return EXIT_FAILURE;
 }
 
@@ -34,6 +44,9 @@ int export(int argc, char* argv[]) {
 	if (argc == 0) {
 		print_env();
 	} else if (argc == 1) {
+    if (strcmp(argv[0],"--help") == 0) {
+			return help();
+		}
 		exit_value = add_env(argv[0]);
 	} else {
 		return usage();
@@ -50,6 +63,11 @@ int add_env(const char * line) {
     if (eol != NULL) {
       *eol = '\0';
     }
+
+    if (strlen(p) <= 0) {
+      return usage();
+    }
+
     // Set environment variables
     setenv(line, p, 1);
     return 0;

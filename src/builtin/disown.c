@@ -26,8 +26,25 @@
 #include "builtin/jobs.h"
 #include "builtin/disown.h"
 
+char * disown_use = "disown [-ar] [jobspec … | pid … ]";
+char * disown_description = "Remove jobs from current shell.";
+char * disown_help = 
+"    Removes each JOBSPEC argument from the table of active jobs. Without\n"
+"    any JOBSPECs, the shell uses its notion of the current job.\n\n"
+"    Options:\n"
+"      -a    remove all jobs if JOBSPEC is not supplied\n"
+"      -r    remove only running jobs\n\n"
+"    Exit Status:\n"
+"    Returns success unless an invalid option or JOBSPEC is given, or job control is not enabled.\n";
+
+static int help() {
+	printf("disown: %s\n", disown_use);
+	printf("    %s\n\n%s", disown_description, disown_help);
+	return EXIT_SUCCESS;
+}
+
 static int usage() {
-  fprintf(stderr,"Usage: disown [-ar] [jobspec … | pid … ]\n");
+  fprintf(stderr,"Usage: %s\n",disown_use);
 	return EXIT_FAILURE;
 }
 
@@ -38,6 +55,9 @@ int disown(int argc, char *argv[]) {
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));
   } else if (argc == 1) {
+    if (strcmp(argv[0],"--help") == 0) {
+			return help();
+		}
     if (strcmp(argv[0], "-a") == 0) {
       // Remove all
       if (remove_all_status_jobs(ALL)) {

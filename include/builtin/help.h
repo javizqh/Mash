@@ -12,8 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "builtin/exec.h"
+extern char * help_use;
+extern char * help_description;
+extern char * help_help;
 
-int exec() {
-  return 1;
-}
+enum help_mode {
+  HELP_DESCRIPTION = 1,
+  HELP_MANPAGE,
+  HELP_USE
+};
+
+int help(int argc, char *argv[]);
