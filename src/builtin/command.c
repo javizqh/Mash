@@ -39,8 +39,6 @@ char * command_help =
 "    Exit Status:\n"
 "    Returns exit status of COMMAND, or failure if COMMAND is not found.\n";
 
-int search_in_builtin = 1;
-
 static int help() {
 	printf("command: %s\n", command_use);
 	printf("    %s\n\n%s", command_description, command_help);
@@ -73,7 +71,8 @@ int command(Command * command) {
   strcpy(command->argv[command->argc - 1], command->argv[command->argc]);
   command->argc--;
 
-  search_in_builtin = 0;
+	command->search_location = SEARCH_CMD_ONLY_COMMAND;
+
   return CMD_EXIT_SUCCESS;
 }
 // ---------------
@@ -91,6 +90,7 @@ new_command()
 	command->argc = 0;
 	command->current_arg = command->argv[0];
   command->pid = 0;
+  command->search_location = SEARCH_CMD_EVERYWHERE;
   command->next_status_needed_to_exec = DO_NOT_MATTER_TO_EXEC;
   command->do_wait = WAIT_TO_FINISH;
 	command->input = STDIN_FILENO;
@@ -112,6 +112,7 @@ void reset_command(Command *command) {
   command->argc = 0;
 	command->current_arg = command->argv[0];
   command->pid = 0;
+  command->search_location = SEARCH_CMD_EVERYWHERE;
   command->next_status_needed_to_exec = DO_NOT_MATTER_TO_EXEC;
   command->do_wait = WAIT_TO_FINISH;
 	command->input = STDIN_FILENO;

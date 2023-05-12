@@ -34,14 +34,21 @@ enum exit_code {
 	CMD_EXIT_NOT_EXECUTE
 };
 
+enum search_cmd {
+	SEARCH_CMD_EVERYWHERE,
+	SEARCH_CMD_ONLY_COMMAND,
+	SEARCH_CMD_ONLY_BUILTIN
+};
+
 typedef struct Command {
 	char argv[MAX_ARGUMENTS][MAX_ARGUMENT_SIZE];
 	int argc;
 	char *current_arg;
 	pid_t pid;
-	// Only used for the first command
+	int search_location;
+	// Only used for the first command in pipe
 	int next_status_needed_to_exec;
-	// Execute in background Only in first command
+	// Execute in background Only in first command in pipe
 	int do_wait;
 	// Pipes
 	int input;
@@ -59,7 +66,6 @@ typedef struct Command {
 extern char * command_use;
 extern char * command_description;
 extern char * command_help;
-extern int search_in_builtin;
 
 int command(Command * command);
 // ---------------

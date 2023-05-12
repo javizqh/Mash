@@ -208,7 +208,10 @@ launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess){
 
 	Job * job = new_job(exec_info->line);
 
-	if (search_in_builtin && has_builtin_exec_in_shell(cmd)) {
+	if (
+		cmd->search_location != SEARCH_CMD_ONLY_COMMAND &&
+		has_builtin_exec_in_shell(cmd)) 
+	{
 		if (cmd->do_wait == DO_NOT_WAIT_TO_FINISH) {
 			job->execution = BACKGROUND;
 			job->pid = getpid();
@@ -237,9 +240,6 @@ launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess){
 
 	int a = exec_job(src_file, exec_info, job, to_free_excess);
 
-	// FIX: solve searching pipe
-	search_in_builtin = 1;
-
 	return a;
 }
 
@@ -249,8 +249,7 @@ exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 	int exit_code = EXIT_FAILURE;
 	Command *current_command;
 
-	if (set_input_shell_pipe(exec_info->command) || set_output_shell_pipe(exec_info->command)
-	    || set_err_output_shell_pipe(exec_info->command)) {
+	if (set_input_shell_pipe(exec_info->command) || set_output_shell_pipe(exec_info->command)) {
 		return 1;
 	}
 	// Make a loop fork each command

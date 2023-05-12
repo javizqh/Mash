@@ -90,7 +90,7 @@ int builtin(Command * command) {
   strcpy(command->argv[command->argc - 1], command->argv[command->argc]);
   command->argc--;
 
-	search_in_builtin = 1;
+	command->search_location = SEARCH_CMD_ONLY_BUILTIN;
 
 	if (!find_builtin(command)) {
 		return usage();

@@ -637,7 +637,6 @@ int help(int argc, char* argv[]) {
         }
         break;
       }
-			//usage();
 		}
 	}
   if (!has_pattern) {

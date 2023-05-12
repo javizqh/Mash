@@ -127,44 +127,44 @@ command_exists(char *path)
 }
 
 void
-exec_cmd(Command * command, Command * start_command, Command * last_command)
+exec_cmd(Command * cmd, Command * start_cmd, Command * last_cmd)
 {
 	int i;
-	char *args[command->argc + 1];
+	char *args[cmd->argc + 1];
 
-	close_all_fd_cmd(command, start_command);
-	redirect_stdin(command, start_command);
-	redirect_stdout(command, last_command);
-	redirect_stderr(command, last_command);
+	close_all_fd_cmd(cmd, start_cmd);
+	redirect_stdin(cmd, start_cmd);
+	redirect_stdout(cmd, last_cmd);
+	redirect_stderr(cmd, last_cmd);
 	// Check if builtin
-	if (search_in_builtin && find_builtin(command)) {
-		if (last_command != NULL || command->output_buffer != NULL
-		    || command->output != STDOUT_FILENO
-		    || command->err_output != STDERR_FILENO
-		    || command->output != command->err_output) {
-			close_fd(command->fd_pipe_output[1]);
+	if (cmd->search_location != SEARCH_CMD_ONLY_COMMAND
+	    && find_builtin(cmd)) {
+		if (last_cmd != NULL || cmd->output_buffer != NULL
+		    || cmd->output != STDOUT_FILENO
+		    || cmd->err_output != STDERR_FILENO
+		    || cmd->output != cmd->err_output) {
+			close_fd(cmd->fd_pipe_output[1]);
 		}
-		exec_builtin(start_command, command);
+		exec_builtin(start_cmd, cmd);
 	} else {
 		exit_mash(0, NULL);
-		if (!find_path(command)) {
-			fprintf(stderr, "%s: command not found\n",
-				command->argv[0]);
-			close_fd(command->fd_pipe_input[0]);
-			close_fd(command->fd_pipe_output[1]);
-			free_command_with_buf(start_command);
+		if (!find_path(cmd)) {
+			fprintf(stderr, "%s: cmd not found\n", cmd->argv[0]);
+			close_fd(cmd->fd_pipe_input[0]);
+			close_fd(cmd->fd_pipe_output[1]);
+			free_command_with_buf(start_cmd);
 			exit(EXIT_FAILURE);
 		}
 
-		if (last_command != NULL || command->output_buffer != NULL
-		    || command->output != STDOUT_FILENO
-		    || command->err_output != STDERR_FILENO
-		    || command->output != command->err_output) {
-			close_fd(command->fd_pipe_output[1]);
+		if (last_cmd != NULL || cmd->output_buffer != NULL
+		    || cmd->output != STDOUT_FILENO
+		    || cmd->err_output != STDERR_FILENO
+		    || cmd->output != cmd->err_output) {
+			close_fd(cmd->fd_pipe_output[1]);
 		}
-		for (i = 0; i < command->argc; i++) {
-			if (strlen(command->argv[i]) > 0) {
-				args[i] = command->argv[i];
+		for (i = 0; i < cmd->argc; i++) {
+			if (strlen(cmd->argv[i]) > 0) {
+				args[i] = cmd->argv[i];
 			} else {
 				args[i] = NULL;
 				break;
@@ -332,27 +332,6 @@ set_output_shell_pipe(Command * start_command)
 		int fd_read_shell[2] = { -1, -1 };
 		if (pipe(fd_read_shell) < 0) {
 			fprintf(stderr, "Failed to pipe to stdout");
-			free_command_with_buf(start_command);
-			return 1;
-		}
-		last_command->fd_pipe_output[0] = fd_read_shell[0];
-		last_command->fd_pipe_output[1] = fd_read_shell[1];
-	}
-	return 0;
-}
-
-int
-set_err_output_shell_pipe(Command * start_command)
-{
-	// SET OUTOUT PIPE
-	// Find last one and add it
-	Command *last_command = get_last_command(start_command);
-
-	if (last_command->err_output != STDERR_FILENO
-	    && last_command->err_output != last_command->output) {
-		int fd_read_shell[2] = { -1, -1 };
-		if (pipe(fd_read_shell) < 0) {
-			fprintf(stderr, "Failed to pipe to stderr");
 			free_command_with_buf(start_command);
 			return 1;
 		}
