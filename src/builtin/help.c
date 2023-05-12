@@ -140,6 +140,10 @@ static int print_usage(char *name) {
     printf("pwd: %s\n", pwd_use);
     matched++;
   }
+  if (name == NULL || strncmp("math", name, strlen(name)) == 0) {
+    printf("math: %s\n", math_use);
+    matched++;
+  }
   if (name == NULL || strncmp("sleep", name, strlen(name)) == 0) {
     printf("sleep: %s\n", sleep_use);
     matched++;
@@ -224,6 +228,10 @@ static int print_description(char *name) {
   }
   if (strncmp("pwd", name, strlen(name)) == 0) {
     printf("pwd - %s\n", pwd_description);
+    matched++;
+  }
+  if (strncmp("math", name, strlen(name)) == 0) {
+    printf("math - %s\n", math_description);
     matched++;
   }
   if (strncmp("sleep", name, strlen(name)) == 0) {
@@ -364,6 +372,13 @@ static int print_default_help(char *name) {
     use[n_matches] = pwd_use;
     description[n_matches] = pwd_description;
     help_str[n_matches] = pwd_help;
+    n_matches++;
+  }
+  if (strncmp("math", name, strlen(name)) == 0) {
+    builtin[n_matches] = "math";
+    use[n_matches] = math_use;
+    description[n_matches] = math_description;
+    help_str[n_matches] = math_help;
     n_matches++;
   }
   if (strncmp("sleep", name, strlen(name)) == 0) {
@@ -517,6 +532,13 @@ static int print_help_man(char *name) {
     use[n_matches] = pwd_use;
     description[n_matches] = pwd_description;
     help_str[n_matches] = pwd_help;
+    n_matches++;
+  }
+  if (strncmp("math", name, strlen(name)) == 0) {
+    builtin[n_matches] = "math";
+    use[n_matches] = math_use;
+    description[n_matches] = math_description;
+    help_str[n_matches] = math_help;
     n_matches++;
   }
   if (strncmp("sleep", name, strlen(name)) == 0) {

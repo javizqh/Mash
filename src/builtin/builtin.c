@@ -25,6 +25,7 @@
 #include "builtin/exit.h"
 #include "builtin/mash_pwd.h"
 #include "builtin/echo.h"
+#include "builtin/math.h"
 #include "builtin/sleep.h"
 #include "builtin/ifok.h"
 #include "builtin/ifnot.h"
@@ -45,9 +46,9 @@
 
 char *builtins_modify_cmd[4] = {"ifnot","ifok","builtin","command"};
 char *builtins_in_shell[11] = {"disown","kill","wait","bg","fg","cd","export","alias","exit","source","."};
-char *builtins_fork[5] = {"help","sleep","pwd","echo","jobs"};
+char *builtins_fork[6] = {"math","help","sleep","pwd","echo","jobs"};
 
-int N_BUILTINS = 4+11+5;
+int N_BUILTINS = 4+11+6;
 
 // Builtin command
 char * builtin_use = "builtin shell-builtin [arg ..]";
@@ -202,7 +203,7 @@ int
 find_builtin(Command *command)
 {
   int i;
-  for (i = 0; i < 5; i++)
+  for (i = 0; i < 6; i++)
   {
     if (strcmp(command->argv[0], builtins_fork[i]) == 0) {
       return 1;
@@ -237,6 +238,8 @@ exec_builtin(Command *start_scommand, Command *command)
 		return_value = mash_sleep(i,args);
 	} else if (strcmp(args[0], "help") == 0) {
 		return_value = help(i,args);
+	} else if (strcmp(args[0], "math") == 0) {
+		return_value = math(i,args);
 	} else if (strcmp(args[0], "exit") != 0){
     if (has_builtin_exec_in_shell(command)) {
 			exec_builtin_in_shell(command);

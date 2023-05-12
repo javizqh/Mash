@@ -544,6 +544,7 @@ subexec(char *line, ExecInfo * exec_info)
 	ParseInfo *parse_info = exec_info->parse_info;
 	Command *cmd = exec_info->last_command;
 	int n_parenthesis = 1;
+	int in_math = 0;
 
 	exec_depth++;
 
@@ -568,12 +569,13 @@ subexec(char *line, ExecInfo * exec_info)
 
 	parse_info->copy = line_buf;
 
-	//if (strstr(line, "((") == line) {
-	//      strcpy(line_buf, "math ");
-	//      parse_info->copy += strlen(line_buf);
-	//      line++;
-	//}
-	//FIX: resolve parenthesis
+	if (strstr(line, "((") == line) {
+		strcpy(line_buf, "math ");
+		parse_info->copy += strlen(line_buf);
+		line++;
+		in_math = 1;
+	}
+
 	line++;
 	for (ptr = line; ptr != NULL; ptr++) {
 		switch (*ptr) {
@@ -587,9 +589,12 @@ subexec(char *line, ExecInfo * exec_info)
 
 			break;
 		case ')':
-			n_parenthesis--;
-			ptr = copy(ptr, exec_info);
-
+			if (!in_math || n_parenthesis > 1) {
+				n_parenthesis--;
+				ptr = copy(ptr, exec_info);
+			} else {
+				in_math = 0;
+			}
 			break;
 		default:
 			ptr = copy(ptr, exec_info);
