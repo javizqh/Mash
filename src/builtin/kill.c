@@ -28,8 +28,10 @@
 #include "builtin/jobs.h"
 #include "builtin/kill.h"
 
+char * kill_use = "kill [-s sigspec] [-n signum] [-sigspec] jobspec or pid";
+
 static int usage() {
-  fprintf(stderr,"Usage: kill [-s sigspec] [-n signum] [-sigspec] jobspec or pid\n");
+  fprintf(stderr,"Usage: %s\n",kill_use);
 	return EXIT_FAILURE;
 }
 

@@ -20,11 +20,10 @@
 #include <string.h>
 #include "builtin/cd.h"
 
-// DECLARE STATIC FUNCTION
-static int usage();
+char * cd_use = "cd [directory]";
 
 static int usage() {
-  fprintf(stderr, "Usage: cd [directory]\n");
+  fprintf(stderr, "Usage: %s\n",cd_use);
   return EXIT_FAILURE;
 }
 

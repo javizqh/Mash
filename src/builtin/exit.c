@@ -26,14 +26,12 @@
 #include "builtin/jobs.h"
 #include "builtin/exit.h"
 
-// DECLARE STATIC FUNCTIONS
-static int usage();
-
 // DECLARE GLOBAL VARIABLE
+char * exit_use = "exit [n]";
 int has_to_exit = 0;
 
 static int usage() {
-	fprintf(stderr,"Usage: exit [n]\n");
+	fprintf(stderr,"Usage: %s\n",exit_use);
 	return EXIT_FAILURE;
 }
 

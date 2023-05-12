@@ -19,11 +19,10 @@
 #include "builtin/command.h"
 #include "builtin/ifnot.h"
 
-// DECLARE STATIC FUNCTIONS
-static int usage();
+char * ifnot_use = "ifnot command [arg ..]";
 
 static int usage() {
-	fprintf(stderr,"Usage: ifnot command [arg ..]\n");
+	fprintf(stderr,"Usage: %s\n",ifnot_use);
 	return CMD_EXIT_FAILURE;
 }
 

@@ -18,8 +18,10 @@
 #include <string.h>
 #include "builtin/sleep.h"
 
+char * sleep_use = "sleep NUMBER[SUFFIX]...";
+
 static int usage() {
-	fprintf(stderr,"Usage: sleep NUMBER[SUFFIX]...\n");
+	fprintf(stderr,"Usage: %s\n",sleep_use);
 	return EXIT_FAILURE;
 }
 

@@ -29,14 +29,12 @@
 #include "parse_line.h"
 #include "builtin/source.h"
 
-// DECLARE STATIC FUNCTIONS
-static int usage();
-
 // DECLARE GLOBAL VARIABLE
+char * source_use = "source filename";
 struct source_file *sources[MAX_SOURCE_FILES];
 
 static int usage() {
-	fprintf(stderr,"Usage: source filename\n");
+	fprintf(stderr,"Usage: %s\n",source_use);
 	return EXIT_FAILURE;
 }
 

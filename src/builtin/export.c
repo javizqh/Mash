@@ -18,13 +18,11 @@
 #include <stdlib.h>
 #include "builtin/export.h"
 
-// DECLARE STATIC FUNCTION
-static int usage();
-
 extern char **environ;
+char * export_use = "export [name=value]";
 
 static int usage() {
-	fprintf(stderr,"Usage: export [name=value]\n");
+	fprintf(stderr,"Usage: %s\n",export_use);
 	return EXIT_FAILURE;
 }
 

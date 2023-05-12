@@ -24,9 +24,10 @@ static int usage();
 
 // DECLARE GLOBAL VARIABLE
 struct alias *aliases[ALIAS_MAX];
+char * alias_use = "alias [name=value]";
 
 static int usage() {
-	fprintf(stderr,"Usage: alias [name=value]\n");
+	fprintf(stderr,"Usage: %s\n", alias_use);
 	return EXIT_FAILURE;
 }
 

@@ -26,8 +26,10 @@
 #include "builtin/jobs.h"
 #include "builtin/disown.h"
 
+char * disown_use = "disown [-ar] [jobspec … | pid … ]";
+
 static int usage() {
-  fprintf(stderr,"Usage: disown [-ar] [jobspec … | pid … ]\n");
+  fprintf(stderr,"Usage: %s\n",disown_use);
 	return EXIT_FAILURE;
 }
 

@@ -35,14 +35,15 @@
 #include "exec_cmd.h"
 #include "builtin/jobs.h"
 
+char * jobs_use = "jobs [-lprs] [jobspec]";
+
 // DECLARE STATIC FUNCTIONS
-static int usage();
 static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id);
 
 JobList jobs_list;
 
 static int usage() {
-	fprintf(stderr,"Usage: jobs [-lprs] [jobspec]\n");
+	fprintf(stderr,"Usage: %s\n",jobs_use);
 	return EXIT_FAILURE;
 }
 

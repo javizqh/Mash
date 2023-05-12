@@ -17,9 +17,10 @@
 #include <string.h>
 #include "builtin/echo.h"
 
-// DECLARE STATIC FUNCTIONS
+char * echo_use = "echo [-n] [arg ...]";
+
 static int usage() {
-	fprintf(stderr,"Usage: echo [-n] [arg ...]\n");
+	fprintf(stderr,"Usage: %s\n",echo_use);
 	return EXIT_FAILURE;
 }
 

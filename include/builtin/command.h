@@ -54,7 +54,9 @@ typedef struct Command {
 	char * output_buffer;
 } Command;
 
+
 // Builtin command
+extern char * command_use;
 extern int search_in_builtin;
 
 int command(Command * command);

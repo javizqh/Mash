@@ -19,11 +19,10 @@
 #include "builtin/command.h"
 #include "builtin/ifok.h"
 
-// DECLARE STATIC FUNCTIONS
-static int usage();
+char * ifok_use = "ifok command [arg ..]";
 
 static int usage() {
-	fprintf(stderr,"Usage: ifok command [arg ..]\n");
+	fprintf(stderr,"Usage: %s\n",ifok_use);
 	return CMD_EXIT_FAILURE;
 }
 

@@ -38,6 +38,8 @@ typedef struct JobList {
   int n_jobs;
 } JobList;
 
+extern char * jobs_use;
+
 int jobs(int argc, char *argv[]);
 int no_job(char * command);
 pid_t substitute_jobspec(char* jobspec);

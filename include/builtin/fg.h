@@ -12,4 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+extern char * fg_use;
+
 int fg(int argc, char *argv[]);

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+extern char * builtin_use;
+
 // Builtin command
 int builtin(Command * command);
 // ---------------

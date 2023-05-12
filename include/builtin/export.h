@@ -17,6 +17,8 @@ enum {
   MAX_PATH_SIZE = 256
 };
 
+extern char * export_use;
+
 int export(int argc, char* argv[]);
 
 int add_env(const char * line);

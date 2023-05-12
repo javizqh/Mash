@@ -26,8 +26,10 @@
 #include "builtin/jobs.h"
 #include "builtin/wait.h"
 
+char * wait_use = "wait [jobspec or pid]";
+
 static int usage() {
-  fprintf(stderr,"Usage: wait [jobspec or pid]\n");
+  fprintf(stderr,"Usage: %s\n",wait_use);
 	return EXIT_FAILURE;
 }
 

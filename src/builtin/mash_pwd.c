@@ -19,8 +19,10 @@
 #include <string.h>
 #include "builtin/mash_pwd.h"
 
+char * pwd_use = "pwd";
+
 static int usage() {
-	fprintf(stderr,"Usage: pwd\n");
+	fprintf(stderr,"Usage: %s\n",pwd_use);
 	return EXIT_FAILURE;
 }
 

@@ -20,6 +20,7 @@ enum {
 };
 
 extern struct alias *aliases[ALIAS_MAX];
+extern char * alias_use;
 
 struct alias {
 	char command[ALIAS_MAX_COMMAND];

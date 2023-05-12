@@ -36,8 +36,10 @@
 #include "builtin/jobs.h"
 #include "builtin/bg.h"
 
+char * bg_use = "bg [jobspec]";
+
 static int usage() {
-  fprintf(stderr,"Usage: bg [jobspec]\n");
+  fprintf(stderr,"Usage: %s\n",bg_use);
 	return EXIT_FAILURE;
 }
 

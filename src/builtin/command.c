@@ -27,14 +27,12 @@
 
 // Builtin command
 
-// DECLARE STATIC FUNCTION
-static int usage();
-
 // DECLARE GLOBAL VARIABLE
+char * command_use = "command command [arg ..]";
 int search_in_builtin = 1;
 
 static int usage() {
-	fprintf(stderr,"Usage: command command [arg ..]\n");
+	fprintf(stderr,"Usage: %s\n",command_use);
 	return CMD_EXIT_FAILURE;
 }
 
