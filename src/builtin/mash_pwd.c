@@ -44,7 +44,7 @@ int pwd(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
   
-  printf("%s\n",getenv("PWD"));
+  printf("%s\n",pwd);
 
   return EXIT_SUCCESS;
 }

@@ -11,3 +11,84 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "builtin/sleep.h"
+
+static int usage() {
+	fprintf(stderr,"Usage: sleep NUMBER[SUFFIX]...\n");
+	return EXIT_FAILURE;
+}
+
+static int invalid_time(char *time) {
+	fprintf(stderr,"sleep: invalid time interval '%s'\n",time);
+	return -1;
+}
+
+static int get_time(char *time) {
+  char *ptr;
+  int total_time = 0;
+  int has_time_unit = 0;
+  for ( ptr = time; *ptr != '\0' ; ptr++)
+  {
+    if (*ptr >= '0' && *ptr <= '9') {
+      total_time = total_time * 10 + (*ptr - '0');
+    } else if (*ptr == 's' && !has_time_unit) {
+      has_time_unit = 1;
+    } else if (*ptr == 'm' && !has_time_unit) {
+      has_time_unit = 1;
+      total_time *= 60;
+    } else if (*ptr == 'h' && !has_time_unit) {
+      has_time_unit = 1;
+      total_time *= 60 * 60;
+    } else {
+      return invalid_time(time);
+    }
+  }
+
+  if (total_time == 0) {
+    return invalid_time(time);
+  }
+  return total_time;
+} 
+
+int mash_sleep(int argc, char* argv[]) {
+  argc--; argv++;
+  int i;
+  int time_to_add = 0;
+  unsigned int time = 0;
+
+  if (argc == 0) {
+    return usage();
+  } else if (argc == 1) {
+    if (strcmp(argv[0],"--help") == 0) {
+      usage();
+      return EXIT_SUCCESS;
+    }
+  }
+
+  for (i = 0; i < argc; i++)
+  {
+    if ((time_to_add = get_time(argv[i])) > 0) {
+      time += time_to_add;
+    } else {
+      return EXIT_FAILURE;
+    }
+  }
+
+  fprintf(stderr, "Sleeping %d seconds",time);
+  if (time == 0) {
+    return usage();
+  }
+  
+
+  while (time > 0)
+  {
+    time = sleep(time);
+  }
+
+  return EXIT_SUCCESS;
+}

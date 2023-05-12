@@ -25,6 +25,7 @@
 #include "builtin/exit.h"
 #include "builtin/mash_pwd.h"
 #include "builtin/echo.h"
+#include "builtin/sleep.h"
 #include "builtin/ifok.h"
 #include "builtin/ifnot.h"
 #include "builtin/cd.h"
@@ -43,7 +44,7 @@
 
 char *builtins_modify_cmd[4] = {"ifnot","ifok","builtin","command"};
 char *builtins_in_shell[11] = {"disown","kill","wait","bg","fg","cd","export","alias","exit","source","."};
-char *builtins_fork[3] = {"pwd","echo","jobs"};
+char *builtins_fork[4] = {"sleep","pwd","echo","jobs"};
 
 // Builtin command
 
@@ -186,7 +187,7 @@ int
 find_builtin(Command *command)
 {
   int i;
-  for (i = 0; i < 3; i++)
+  for (i = 0; i < 4; i++)
   {
     if (strcmp(command->argv[0], builtins_fork[i]) == 0) {
       return 1;
@@ -217,6 +218,8 @@ exec_builtin(Command *start_scommand, Command *command)
 		return_value = jobs(i,args);
 	} else if (strcmp(args[0], "pwd") == 0) {
 		return_value = pwd(i,args);
+	} else if (strcmp(args[0], "sleep") == 0) {
+		return_value = mash_sleep(i,args);
 	} else if (strcmp(args[0], "exit") != 0){
     if (has_builtin_exec_in_shell(command)) {
 			exec_builtin_in_shell(command);

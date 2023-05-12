@@ -69,6 +69,7 @@ find_path(Command * command)
 	}
 	free(cwd);
 	// First get the path from env PATH
+	// BUG: Invalid write of size 1
 	char *path = malloc(MAX_ENV_SIZE);
 
 	if (path == NULL) {
