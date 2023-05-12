@@ -165,15 +165,6 @@ exec_builtin_in_shell(Command *command)
 
 	//TODO: redirect output correctly
 
-	if (command->err_output != STDERR_FILENO) {
-		if (dup2(command->err_output, STDERR_FILENO) == -1) {
-			err(EXIT_FAILURE, "Failed to dup stderr %i",
-			    command->err_output);
-		}
-		close_fd(command->err_output);
-	}
-
-
 	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
 		return add_env(command->argv[0]);
 	}
