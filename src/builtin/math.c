@@ -40,7 +40,7 @@ static int usage() {
 
 int math(int argc, char* argv[]) {
   argc--; argv++;
-
+  // TODO: add math
   printf("math: %s\n",argv[0]);
   return EXIT_SUCCESS;
 }
