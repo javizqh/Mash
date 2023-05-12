@@ -69,7 +69,8 @@ exec_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 	Command *current_command;
 
 	if (set_input_shell_pipe(exec_info->command)
-	    || set_output_shell_pipe(exec_info->command)) {
+	    || set_output_shell_pipe(exec_info->command)
+	    || set_err_output_shell_pipe(exec_info->command)) {
 		return 1;
 	}
 	// Make a loop fork each command

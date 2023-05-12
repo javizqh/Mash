@@ -249,7 +249,9 @@ exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 	int exit_code = EXIT_FAILURE;
 	Command *current_command;
 
-	if (set_input_shell_pipe(exec_info->command) || set_output_shell_pipe(exec_info->command)) {
+	if (set_input_shell_pipe(exec_info->command) || set_output_shell_pipe(exec_info->command)
+		 || set_err_output_shell_pipe(exec_info->command)) 
+	{
 		return 1;
 	}
 	// Make a loop fork each command
@@ -314,7 +316,7 @@ exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 		}
 		// Pass foreground to
 		if (!isatty(0)) {
-			// FIX: error
+			err(EXIT_FAILURE,"fd is not a terminal");
 		}
 		tcsetpgrp(0, job->pid);
 		if (exec_info->command->output_buffer != NULL) {

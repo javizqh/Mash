@@ -342,6 +342,27 @@ set_output_shell_pipe(Command * start_command)
 }
 
 int
+set_err_output_shell_pipe(Command * start_command)
+{
+	// SET OUTOUT PIPE
+	// Find last one and add it
+	Command *last_command = get_last_command(start_command);
+
+	if (last_command->err_output != STDERR_FILENO
+	    && last_command->err_output != last_command->output) {
+		int fd_read_shell[2] = { -1, -1 };
+		if (pipe(fd_read_shell) < 0) {
+			fprintf(stderr, "Failed to pipe to stderr");
+			free_command_with_buf(start_command);
+			return 1;
+		}
+		last_command->fd_pipe_output[0] = fd_read_shell[0];
+		last_command->fd_pipe_output[1] = fd_read_shell[1];
+	}
+	return 0;
+}
+
+int
 close_fd(int fd)
 {
 	if (fd >= 0) {

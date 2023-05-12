@@ -163,6 +163,8 @@ exec_builtin_in_shell(Command *command)
 	}
 	args[i] = NULL;
 
+	//TODO: redirect output correctly
+
 	if (command->err_output != STDERR_FILENO) {
 		if (dup2(command->err_output, STDERR_FILENO) == -1) {
 			err(EXIT_FAILURE, "Failed to dup stderr %i",
