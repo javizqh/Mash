@@ -15,7 +15,7 @@
 typedef struct SubInfo {
 	char last_alias[ALIAS_MAX_COMMAND];
 	char *old_ptr;
-	char buffer[MAX_ENV_SIZE];
+	char buffer[MAX_ARGUMENT_SIZE];
 	spec_char (*old_lexer)[ASCII_CHARS];
 } SubInfo;
 

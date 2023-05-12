@@ -45,7 +45,7 @@ find_path(Command * command)
 	if (*command->argv[0] == '/') {
 		return command_exists(command->argv[0]);
 	}
-	// THEN CHECK IN PWD
+	// CHECK IN PWD
 	char *cwd = malloc(MAX_ENV_SIZE);
 
 	if (cwd == NULL) {
@@ -68,14 +68,15 @@ find_path(Command * command)
 		return 1;
 	}
 	free(cwd);
+
+	// SEARCH IN PATH
 	// First get the path from env PATH
-	// BUG: Invalid write of size 1
-	char *path = malloc(MAX_ENV_SIZE);
+	char *path = malloc(MAX_ENV_SIZE * MAX_PATH_SIZE);
 
 	if (path == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-	memset(path, 0, MAX_ENV_SIZE);
+	memset(path, 0, MAX_ENV_SIZE * MAX_PATH_SIZE);
 	// Copy the path
 	strcpy(path, getenv("PATH"));
 	if (path == NULL) {
@@ -84,7 +85,6 @@ find_path(Command * command)
 	}
 	char *path_ptr = path;
 
-	//REVIEW: could change much better
 	// Then separate the path by : using strtok
 	char path_tok[MAX_ENV_SIZE][MAX_PATH_SIZE];
 
