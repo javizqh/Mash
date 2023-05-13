@@ -57,6 +57,9 @@ JobList jobs_list;
 
 // DECLARE STATIC FUNCTIONS
 static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id);
+static int wait_job_background(Job * job, Command * cmd);
+static int wait_job_subexec(Job * job, Command * cmd);
+static int wait_job_foreground(Job * job, Command * cmd);
 
 static int help() {
 	printf("jobs: %s\n", jobs_use);
@@ -251,33 +254,35 @@ launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess){
 int
 exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 {
-	int exit_code = EXIT_FAILURE;
 	int null = open("/dev/null", O_RDONLY);
 	int tty;
-	Command *current_command;
+	Command *cmd;
 
-	if (set_input_shell_pipe(exec_info->command) || set_output_shell_pipe(exec_info->command)
-		 || set_err_output_shell_pipe(exec_info->command)) 
+	if(null < 0){
+		fprintf(stderr, "mash: failed to open /dev/null\n");
+		return EXIT_FAILURE;
+	}
+
+	if (set_input_shell_pipe(exec_info->command)
+			|| set_output_shell_pipe(exec_info->command)
+		 	|| set_err_output_shell_pipe(exec_info->command)) 
 	{
 		return 1;
 	}
 	// Make a loop fork each command
-	for (current_command = exec_info->command; current_command; current_command = current_command->pipe_next)
+	for (cmd = exec_info->command; cmd; cmd = cmd->pipe_next)
 	{
-		current_command->pid = fork();
-		if (current_command->pid == 0) {
-			break;
-		}
-		if (current_command->pipe_next == NULL) {
+		cmd->pid = fork();
+		if (cmd->pid == 0 || cmd->pipe_next == NULL) {
 			break;
 		}
 	}
 
-	switch (current_command->pid) {
+	switch (cmd->pid) {
 	case -1:
 		close_all_fd(exec_info->command);
 		remove_job(job);
-		fprintf(stderr, "Mash: Failed to fork");
+		fprintf(stderr, "mash: failed to fork");
 		return EXIT_FAILURE;
 		break;
 	case 0:
@@ -301,50 +306,69 @@ exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 			}
 			close(null);
 		}
-		exec_cmd(current_command, start_command,
-			   current_command->pipe_next);
+		exec_cmd(cmd, start_command, cmd->pipe_next);
 		err(EXIT_FAILURE, "Failed to exec");
 		break;
 	default:
 		job->pid = exec_info->command->pid;
 		job->end_pid = exec_info->last_command->pid;
-		close_all_fd_io(exec_info->command, current_command);
-		if (job->execution == BACKGROUND) {
-			kill(job->pid, SIGTTOU);
-			if (exec_info->command->output_buffer != NULL) {
-				write_to_buffer(current_command);
-			}
-			printf("[%d]\t%d\n", job->pos,job->pid);
-			exit_code = EXIT_SUCCESS;
-			break;
-		} else if (job->execution == SUB_EXECUTION) {
-			signal(SIGTSTP, SIG_IGN);
-			setpgid(job->pid,0);
-			if (exec_info->command->output_buffer != NULL) {
-				write_to_buffer(current_command);
-			}
-			exit_code = wait_job(job);
-			signal(SIGTSTP, sig_handler);
-			break;
+		close_all_fd_io(exec_info->command, cmd);
+		switch (job->execution)
+		{
+		case BACKGROUND:
+			return wait_job_background(job, exec_info->command);
+		case SUB_EXECUTION:
+			return wait_job_subexec(job, exec_info->command);
+		default:
+			return wait_job_foreground(job, exec_info->command);
 		}
-		signal(SIGTTOU, SIG_IGN);
-		signal(SIGTTIN, SIG_IGN);
-		setpgid(job->pid,0);
-		if (exec_info->command->input == HERE_DOC_FILENO) {
-			read_from_here_doc(exec_info->command);
-		}
-		// Pass foreground to
-		tcsetpgrp(0, job->pid);
-		if (exec_info->command->output_buffer != NULL) {
-			write_to_buffer(current_command);
-		}
-		exit_code = wait_job(job);
-		// Retrieve foreground
-		tcsetpgrp(0, getpgrp());
-		signal(SIGTTOU, SIG_DFL);
-    signal(SIGTTIN, SIG_DFL);
-		break;
 	}
+	return EXIT_FAILURE;
+}
+
+int wait_job_background(Job * job, Command * cmd) {
+	if (cmd->input == STDIN_FILENO) {
+		kill(job->pid, SIGTTOU);
+	}
+	if (cmd->output_buffer != NULL) {
+		write_to_buffer(get_last_command(cmd));
+	}
+	printf("[%d]\t%d\n", job->pos,job->pid);
+	return EXIT_SUCCESS;
+}
+
+int wait_job_subexec(Job * job, Command * cmd) {
+	int exit_code = EXIT_FAILURE;
+
+	signal(SIGTSTP, SIG_IGN);
+	setpgid(job->pid,0);
+	if (cmd->output_buffer != NULL) {
+		write_to_buffer(get_last_command(cmd));
+	}
+	exit_code = wait_job(job);
+	signal(SIGTSTP, sig_handler);
+	return exit_code;
+}
+
+int wait_job_foreground(Job * job, Command * cmd) {
+	int exit_code = EXIT_FAILURE;
+
+	signal(SIGTTOU, SIG_IGN);
+	signal(SIGTTIN, SIG_IGN);
+	setpgid(job->pid,0);
+	if (cmd->input == HERE_DOC_FILENO) {
+		read_from_here_doc(cmd);
+	}
+	// Pass foreground to
+	tcsetpgrp(0, job->pid);
+	if (cmd->output_buffer != NULL) {
+		write_to_buffer(get_last_command(cmd));
+	}
+	exit_code = wait_job(job);
+	// Retrieve foreground
+	tcsetpgrp(0, getpgrp());
+	signal(SIGTTOU, SIG_DFL);
+	signal(SIGTTIN, SIG_DFL);
 	return exit_code;
 }
 

@@ -29,7 +29,7 @@
 #include "builtin/ifok.h"
 #include "builtin/kill.h"
 #include "builtin/mash_pwd.h"
-#include "builtin/math.h"
+#include "builtin/mash_math.h"
 #include "builtin/sleep.h"
 #include "builtin/source.h"
 #include "builtin/test.h"
@@ -76,6 +76,10 @@ static void print_help_header() {
 
 static int print_usage(char *name) {
   int matched = 0;
+  if (name == NULL) {
+    printf("$(( expression ))\n");
+    matched++;
+  } 
   if (name == NULL || strncmp("alias", name, strlen(name)) == 0) {
     printf("alias: %s\n", alias_use);
     matched++;

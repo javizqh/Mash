@@ -25,7 +25,7 @@
 #include "builtin/exit.h"
 #include "builtin/mash_pwd.h"
 #include "builtin/echo.h"
-#include "builtin/math.h"
+#include "builtin/mash_math.h"
 #include "builtin/sleep.h"
 #include "builtin/ifok.h"
 #include "builtin/ifnot.h"
