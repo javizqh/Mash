@@ -71,6 +71,11 @@ exec_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 	int null = open("/dev/null", O_RDONLY);
 	Command *current_command;
 
+	if (null < 0) {
+		fprintf(stderr, "mash: failed to open /dev/null\n");
+		return EXIT_FAILURE;
+	}
+
 	if (set_input_shell_pipe(exec_info->command)
 	    || set_output_shell_pipe(exec_info->command)
 	    || set_err_output_shell_pipe(exec_info->command)) {

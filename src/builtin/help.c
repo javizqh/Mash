@@ -29,7 +29,7 @@
 #include "builtin/ifok.h"
 #include "builtin/kill.h"
 #include "builtin/mash_pwd.h"
-#include "builtin/math.h"
+#include "builtin/mash_math.h"
 #include "builtin/sleep.h"
 #include "builtin/source.h"
 #include "builtin/test.h"
