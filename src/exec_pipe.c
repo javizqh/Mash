@@ -154,6 +154,7 @@ wait_pipe(pid_t pipe_pid)
 		} else if (WIFSTOPPED(wstatus)) {
 			return EXIT_SUCCESS;
 		} else if (WIFSIGNALED(wstatus)) {
+			// REVIEW: could change
 			return EXIT_SUCCESS;
 		}
 	}

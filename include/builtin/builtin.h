@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern char * builtin_use;
-extern char * builtin_description;
-extern char * builtin_help;
+extern char *builtin_use;
+extern char *builtin_description;
+extern char *builtin_help;
 
 extern int N_BUILTINS;
 
 // Builtin command
 int builtin(Command * command);
+
 // ---------------
 
-int has_builtin_modify_cmd(Command *command);
-int modify_cmd_builtin(Command *modify_command);
+int has_builtin_modify_cmd(Command * command);
+int modify_cmd_builtin(Command * modify_command);
 
 /**
  * @brief Executes builtins that need to be executed in the parent process
@@ -31,8 +32,8 @@ int modify_cmd_builtin(Command *modify_command);
  * @param command 
  * @return 1 = Need to execute in child | 0 = Executed in parent process
  */
-int has_builtin_exec_in_shell(Command *command);
-int exec_builtin_in_shell(Command *command);
+int has_builtin_exec_in_shell(Command * command);
+int exec_builtin_in_shell(Command * command);
 
-int find_builtin(Command *command);
-void exec_builtin(Command *start_scommand, Command *command);
+int find_builtin(Command * command);
+void exec_builtin(Command * start_scommand, Command * command);

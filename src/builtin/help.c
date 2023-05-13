@@ -18,7 +18,6 @@
 #include "builtin/alias.h"
 #include "builtin/bg.h"
 #include "builtin/cd.h"
-#include "builtin/color.h"
 #include "builtin/command.h"
 #include "builtin/disown.h"
 #include "builtin/echo.h"
@@ -28,11 +27,10 @@
 #include "builtin/ifnot.h"
 #include "builtin/ifok.h"
 #include "builtin/kill.h"
-#include "builtin/mash_pwd.h"
 #include "builtin/mash_math.h"
+#include "builtin/mash_pwd.h"
 #include "builtin/sleep.h"
 #include "builtin/source.h"
-#include "builtin/test.h"
 #include "builtin/wait.h"
 #include "parse.h"
 #include "exec_info.h"
@@ -140,12 +138,12 @@ static int print_usage(char *name) {
     printf("kill: %s\n", kill_use);
     matched++;
   }
-  if (name == NULL || strncmp("pwd", name, strlen(name)) == 0) {
-    printf("pwd: %s\n", pwd_use);
-    matched++;
-  }
   if (name == NULL || strncmp("math", name, strlen(name)) == 0) {
     printf("math: %s\n", math_use);
+    matched++;
+  }
+  if (name == NULL || strncmp("pwd", name, strlen(name)) == 0) {
+    printf("pwd: %s\n", pwd_use);
     matched++;
   }
   if (name == NULL || strncmp("sleep", name, strlen(name)) == 0) {
@@ -230,12 +228,12 @@ static int print_description(char *name) {
     printf("kill - %s\n", kill_description);
     matched++;
   }
-  if (strncmp("pwd", name, strlen(name)) == 0) {
-    printf("pwd - %s\n", pwd_description);
-    matched++;
-  }
   if (strncmp("math", name, strlen(name)) == 0) {
     printf("math - %s\n", math_description);
+    matched++;
+  }
+  if (strncmp("pwd", name, strlen(name)) == 0) {
+    printf("pwd - %s\n", pwd_description);
     matched++;
   }
   if (strncmp("sleep", name, strlen(name)) == 0) {
@@ -371,18 +369,18 @@ static int print_default_help(char *name) {
     help_str[n_matches] = kill_help;
     n_matches++;
   }
-  if (strncmp("pwd", name, strlen(name)) == 0) {
-    builtin[n_matches] = "pwd";
-    use[n_matches] = pwd_use;
-    description[n_matches] = pwd_description;
-    help_str[n_matches] = pwd_help;
-    n_matches++;
-  }
   if (strncmp("math", name, strlen(name)) == 0) {
     builtin[n_matches] = "math";
     use[n_matches] = math_use;
     description[n_matches] = math_description;
     help_str[n_matches] = math_help;
+    n_matches++;
+  }
+  if (strncmp("pwd", name, strlen(name)) == 0) {
+    builtin[n_matches] = "pwd";
+    use[n_matches] = pwd_use;
+    description[n_matches] = pwd_description;
+    help_str[n_matches] = pwd_help;
     n_matches++;
   }
   if (strncmp("sleep", name, strlen(name)) == 0) {
@@ -531,18 +529,18 @@ static int print_help_man(char *name) {
     help_str[n_matches] = kill_help;
     n_matches++;
   }
-  if (strncmp("pwd", name, strlen(name)) == 0) {
-    builtin[n_matches] = "pwd";
-    use[n_matches] = pwd_use;
-    description[n_matches] = pwd_description;
-    help_str[n_matches] = pwd_help;
-    n_matches++;
-  }
   if (strncmp("math", name, strlen(name)) == 0) {
     builtin[n_matches] = "math";
     use[n_matches] = math_use;
     description[n_matches] = math_description;
     help_str[n_matches] = math_help;
+    n_matches++;
+  }
+  if (strncmp("pwd", name, strlen(name)) == 0) {
+    builtin[n_matches] = "pwd";
+    use[n_matches] = pwd_use;
+    description[n_matches] = pwd_description;
+    help_str[n_matches] = pwd_help;
     n_matches++;
   }
   if (strncmp("sleep", name, strlen(name)) == 0) {

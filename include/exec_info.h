@@ -16,7 +16,7 @@ typedef struct SubInfo {
 	char last_alias[ALIAS_MAX_COMMAND];
 	char *old_ptr;
 	char buffer[MAX_ARGUMENT_SIZE];
-	spec_char (*old_lexer)[ASCII_CHARS];
+	 spec_char(*old_lexer)[ASCII_CHARS];
 } SubInfo;
 
 SubInfo *new_sub_info();
@@ -41,6 +41,6 @@ typedef struct ExecInfo {
 	struct ExecInfo *prev_exec_info;
 } ExecInfo;
 
-ExecInfo * new_exec_info(char *line);
-void reset_exec_info(ExecInfo * exec_info);
-void free_exec_info(ExecInfo * exec_info);
+ExecInfo *new_exec_info(char *line);
+void reset_exec_info(ExecInfo *exec_info);
+void free_exec_info(ExecInfo *exec_info);
