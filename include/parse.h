@@ -36,8 +36,8 @@ typedef struct ParseInfo {
 	int has_arg_started;
 	int finished;
 	char *copy;
-	spec_char (*curr_lexer)[ASCII_CHARS];
-	spec_char (*old_lexer)[ASCII_CHARS];
+	 spec_char(*curr_lexer)[ASCII_CHARS];
+	 spec_char(*old_lexer)[ASCII_CHARS];
 } ParseInfo;
 
 ParseInfo *new_parse_info();

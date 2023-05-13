@@ -397,6 +397,7 @@ wait_job(Job * job)
 		} else if (WIFSIGNALED(wstatus)) {
 			if (wait_pid == job->end_pid) {
 				remove_job(job);
+				// REVIEW: could change
 				return EXIT_SUCCESS;
 			}
 		}

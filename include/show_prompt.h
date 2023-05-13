@@ -15,8 +15,8 @@
 extern int shell_mode;
 
 enum prompt {
-  NON_INTERACTIVE,
-  INTERACTIVE_MODE,
+	NON_INTERACTIVE,
+	INTERACTIVE_MODE,
 };
 
 void set_prompt_mode(int mode);
@@ -25,4 +25,4 @@ int prompt(char *line);
 
 int prompt_request();
 
-int parse_prompt(char* prompt,char *line);
+int parse_prompt(char *prompt, char *line);

@@ -14,32 +14,32 @@
 
 extern pid_t active_command;
 
-int find_path(Command *command);
+int find_path(Command * command);
 int command_exists(char *path);
 
-void exec_cmd(Command *command, Command *start_command,
-		Command *last_command);
+void exec_cmd(Command * command, Command * start_command,
+	      Command * last_command);
 
 // Redirect input and output: Parent
 enum iobuffer {
 	MAX_BUFFER_IO_SIZE = 1024 * 4
 };
 
-void read_from_here_doc(Command *start_command);
-void write_to_buffer(Command *last_command);
+void read_from_here_doc(Command * start_command);
+void write_to_buffer(Command * last_command);
 
 // Redirect input and output: Child
-void redirect_stdin(Command *command, Command *start_command);
-void redirect_stdout(Command *command, Command *last_command);
-void redirect_stderr(Command *command, Command *last_command);
+void redirect_stdin(Command * command, Command * start_command);
+void redirect_stdout(Command * command, Command * last_command);
+void redirect_stderr(Command * command, Command * last_command);
 
 // File descriptor
-int set_input_shell_pipe(Command *command);
-int set_output_shell_pipe(Command *command);
-int set_err_output_shell_pipe(Command *command);
+int set_input_shell_pipe(Command * command);
+int set_output_shell_pipe(Command * command);
+int set_err_output_shell_pipe(Command * command);
 
 int close_fd(int fd);
-int close_all_fd(Command *start_command);
-int close_all_fd_no_fork(Command *start_command);
-int close_all_fd_io(Command *start_command, Command *last_command);
-int close_all_fd_cmd(Command *command, Command *start_command);
+int close_all_fd(Command * start_command);
+int close_all_fd_no_fork(Command * start_command);
+int close_all_fd_io(Command * start_command, Command * last_command);
+int close_all_fd_cmd(Command * command, Command * start_command);
