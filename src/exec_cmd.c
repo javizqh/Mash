@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <err.h>
 #include <errno.h>
 #include <string.h>
@@ -162,6 +163,7 @@ exec_cmd(Command * cmd, Command * start_cmd, Command * last_cmd)
 		    || cmd->output != cmd->err_output) {
 			close_fd(cmd->fd_pipe_output[1]);
 		}
+
 		for (i = 0; i < cmd->argc; i++) {
 			if (strlen(cmd->argv[i]) > 0) {
 				args[i] = cmd->argv[i];
@@ -170,6 +172,21 @@ exec_cmd(Command * cmd, Command * start_cmd, Command * last_cmd)
 				break;
 			}
 		}
+
+		if (fcntl(STDIN_FILENO, F_GETFD) == -1 && errno == EBADF) {
+			// BUG: temporal fix
+			//cmd->input = open("/dev/null", O_RDONLY);
+			//if (dup2(cmd->input, STDIN_FILENO) == -1) {
+			//      err(EXIT_FAILURE, "Failed to dup stdin");
+			//}
+			//close_fd(cmd->input);
+		}
+
+		if (fcntl(STDIN_FILENO, F_GETFD) == -1 && errno == EBADF) {
+			// BUG: temporal fix
+			fprintf(stderr, "Error");
+		}
+
 		args[i] = NULL;
 		execv(args[0], args);
 	}
@@ -249,13 +266,15 @@ redirect_stdin(Command * command, Command * start_command)
 	if (command->pid != start_command->pid
 	    || command->input != STDIN_FILENO) {
 		if (dup2(command->fd_pipe_input[0], STDIN_FILENO) == -1) {
-			err(EXIT_FAILURE, "Failed to dup stdin");
+			err(EXIT_FAILURE, "Failed to dup stdin %i",
+			    command->fd_pipe_input[0]);
 		}
 		close_fd(command->fd_pipe_input[0]);
 	}
 	if (command->input != STDIN_FILENO && command->input != HERE_DOC_FILENO) {
 		if (dup2(command->input, STDIN_FILENO) == -1) {
-			err(EXIT_FAILURE, "Failed to dup stdin");
+			err(EXIT_FAILURE, "Failed to dup stdin %i",
+			    command->input);
 		}
 		close_fd(command->input);
 	}
