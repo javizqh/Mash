@@ -596,6 +596,11 @@ subexec(char *line, ExecInfo * exec_info)
 			} else {
 				in_math = 0;
 				*exec_info->parse_info->copy++ = '"';
+				ptr++;
+				if (*ptr != ')') {
+					return error(line, exec_info);
+				}
+				ptr--;
 			}
 			break;
 		default:
