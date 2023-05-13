@@ -17,13 +17,3 @@ extern char * math_description;
 extern char * math_help;
 
 int math(int argc, char* argv[]);
-
-enum lexer_type {
-  MATH_SYMBOL = 1,
-  MATH_NUMBER,
-  MATH_VARIABLE
-};
-
-enum math_size {
-  MAX_OPERAND_SIZE = 32
-};

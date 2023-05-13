@@ -41,6 +41,18 @@ static int usage() {
 }
 
 // STATIC FUNCTIONS FOR BUILTIN
+static int error_in_operations = 0;
+
+enum lexer_type {
+  MATH_SYMBOL = 1,
+  MATH_NUMBER,
+  MATH_VARIABLE
+};
+
+enum math_size {
+  MAX_OPERAND_SIZE = 32
+};
+
 typedef struct token {
   char data[MAX_OPERAND_SIZE];
   double value;
@@ -58,7 +70,7 @@ Token * newToken() {
 		err(EXIT_FAILURE, "malloc failed");
 	}
 	memset(token, 0, sizeof(Token));
-  token->value = 0;
+  token->value = 1;
   token->type = 0;
   token->priority = 0;
   token->symbol_priority = 0;
@@ -72,6 +84,18 @@ Token * add_token(Token * prev_token, int priority) {
   prev_token->next = new_token;
   new_token->priority = priority;
 	return new_token;
+}
+
+void free_all_tokens(Token * first_token) {
+  Token * token = first_token;
+  Token * to_free = token;
+  while (to_free)
+  {
+    token = token->next;
+    free(to_free);
+    to_free = token;
+  }
+  return;
 }
 
 static int is_symbol(char c) {
@@ -96,6 +120,7 @@ static Token * tokenize(char * expression) {
   Token * first_token = newToken();
   Token * current_token = first_token;
   int total_priority = 0;
+  char * line = expression;
 
   for (; *expression != '\0' ; expression++)
   {
@@ -116,6 +141,14 @@ static Token * tokenize(char * expression) {
       strncat(current_token->data, expression, 1);
       current_token->type = MATH_VARIABLE;
     } else if (is_symbol(*expression)) {
+      if (!current_token->type) {
+        if (*expression != '-' && *expression != '+') {
+          fprintf(stderr,"mash: error: math: incorrect character '%c' at the beginning of expression '%s'\n", *expression, line);
+          free_all_tokens(first_token);
+          return NULL;
+        }
+        current_token->type = MATH_NUMBER;
+      }
       current_token = add_token(current_token, total_priority);
       current_token->type = MATH_SYMBOL;
       strncat(current_token->data, expression, 1);
@@ -124,45 +157,68 @@ static Token * tokenize(char * expression) {
     } else if (*expression == ')') {
       total_priority--;
     } else {
-      // TODO: handle error token
+      fprintf(stderr,"mash: error: math: incorrect character '%c' in expression '%s'\n", *expression, line);
+      free_all_tokens(first_token);
+      return NULL;
     }
   }
   if (total_priority != 0) {
-    // TODO: handle error token
+    fprintf(stderr,"mash: error: math: incorrect expression '%s'\n", line);
+    free_all_tokens(first_token);
+    return NULL;
   }
   if (current_token->type == MATH_SYMBOL) {
-    // TODO: handle error token
+    fprintf(stderr,"mash: error: math: incorrect symbol '%s' at the end of expression\n", line);
+    free_all_tokens(first_token);
+    return NULL;
   }
   return first_token;
 }
 
 static int substitute_values(Token * first_token) {
-  Token * token;
-  int prev_is_symbol = 0;
+  Token * token, * prev_token, * to_free;
+  double value;
+  int prev_is_symbol = -1;
   for (token = first_token; token; token = token->next)
   {
     switch (token->type)
     {
     case MATH_NUMBER:
       if (!prev_is_symbol) {
-        // TODO: error bad number
-      }
-      prev_is_symbol = 0;
-      if ((token->value = get_number(token->data)) < 0) {
-        // TODO: error bad number
+        fprintf(stderr,"mash: error:");
         return -1;
       }
+      prev_is_symbol = 0;
+      if ((value = get_number(token->data)) < 0) {
+        return -1;
+      }
+      token->value *= value; 
       break;
     case MATH_VARIABLE:
       if (!prev_is_symbol) {
-        // TODO: error bad number
+        return -1;
       }
       prev_is_symbol = 0;
       /* code */
       break;
     default:
-      if (prev_is_symbol) {
-        // TODO: error bad number
+      if (prev_is_symbol > 0) {
+        prev_is_symbol = 1;
+        if (*token->data == '-') {
+          to_free = token;
+          token->next->value *= -1;
+          prev_token->next = token->next;
+          token = prev_token;
+          free(to_free);
+        } else if (*token->data == '+') {
+          to_free = token;
+          prev_token->next = token->next;
+          token = prev_token;
+          free(to_free);
+        } else {
+          return -1;
+        }
+        break;
       }
       prev_is_symbol = 1;
       if (strcmp(token->data, "*") == 0 || strcmp(token->data, "/") == 0) {
@@ -172,6 +228,7 @@ static int substitute_values(Token * first_token) {
       }
       break;
     }
+    prev_token = token;
   }
   return 0;
 }
@@ -189,6 +246,10 @@ static double calculate(char symbol, double op_1, double op_2) {
     return op_1 - op_2;
     break;
   case '/':
+    if (op_2 == 0) {
+      error_in_operations = 1;
+      return 0;
+    }
     return op_1 / op_2;
     break;
   case '^':
@@ -308,16 +369,14 @@ static double operate(Token * start_token) {
       return do_operations(start_token);
     }
     prev_token = token;
-  }
-  // TODO: free memory
+  }  
   return do_operations(start_token);
 }
 
 int math(int argc, char* argv[]) {
   argc--; argv++;
-  // First divide by symbols, numbers and variables
-  // Then substitute variables with values
-  // Create order of operations
+  double result;
+
   if (argc != 1) {
     return usage();
   }
@@ -332,8 +391,19 @@ int math(int argc, char* argv[]) {
   }
 
   if (substitute_values(first_token) != 0) {
+    fprintf(stderr,"mash: error: math: incorrect expression '%s'\n", argv[0]);
+    free_all_tokens(first_token);
     return EXIT_FAILURE;
   }
-  printf("%f\n",operate(first_token));
+
+  result = operate(first_token);
+
+  if (error_in_operations) {
+    error_in_operations = 0;
+    fprintf(stderr,"mash: error: math: division by 0 in '%s'\n", argv[0]);
+    return EXIT_FAILURE;
+  }
+
+  printf("%d\n",(int)result);
   return EXIT_SUCCESS;
 }
