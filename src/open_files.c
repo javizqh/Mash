@@ -31,7 +31,7 @@ open_read_file(char *filename)
 
 	// Check if error occurred
 	if (fd == -1) {
-		fprintf(stderr, "dash: %s: No such file or directory\n",
+		fprintf(stderr, "mash: %s: No such file or directory\n",
 			filename);
 	}
 	return fd;

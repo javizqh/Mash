@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <unistd.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <signal.h>
 #include <pwd.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <err.h>
 #include <string.h>
@@ -34,6 +35,7 @@
 #include "builtin/jobs.h"
 
 int reading_from_file = 0;
+int writing_to_file = 0;
 
 static void
 usage()
@@ -123,8 +125,12 @@ init_mash()
 {
 	char cwd[MAX_ENV_SIZE];
 
-	if (ftell(stdin) >= 0) {
+	if (!isatty(0)) {
 		reading_from_file = 1;
+	}
+
+	if (!isatty(1)) {
+		writing_to_file = 1;
 	}
 
 	if (syntax_mode == BASIC_SYNTAX) {
@@ -148,6 +154,7 @@ init_mash()
 		err(EXIT_FAILURE, "error getting current working directory");
 	}
 	add_env_by_name("PWD", cwd);
+	add_env_by_name("result", "0");
 
 	return 1;
 }

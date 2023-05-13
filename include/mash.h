@@ -13,6 +13,7 @@
 // limitations under the License.
 
 extern int reading_from_file;
+extern int writing_to_file;
 
 int set_arguments(char *argv[]);
 int init_mash();

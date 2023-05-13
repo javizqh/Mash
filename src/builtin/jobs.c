@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/select.h>
+#include <termios.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
 #include <err.h>
@@ -247,6 +252,8 @@ int
 exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 {
 	int exit_code = EXIT_FAILURE;
+	int null = open("/dev/null", O_RDONLY);
+	int tty;
 	Command *current_command;
 
 	if (set_input_shell_pipe(exec_info->command) || set_output_shell_pipe(exec_info->command)
@@ -277,10 +284,22 @@ exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 		Command *start_command = exec_info->command;
 		free_exec_info(exec_info);
 		free(to_free_excess);
+		if((tty = open("/dev/tty", O_RDONLY)) >= 0){
+			// Should make reads of tty fail, writes succeed.
+			// From shell rc
+			signal(SIGTTIN, SIG_IGN);
+			signal(SIGTTOU, SIG_IGN);
+			ioctl(tty, TIOCNOTTY);
+			close(tty);
+		}
 		if (src_file != stdin)
 			fclose(src_file);
 		if (reading_from_file) {
-			fclose(stdin);
+			//FIX: temporary read from /dev/null
+			if (dup2(null, STDIN_FILENO) == -1) {
+				err(EXIT_FAILURE, "Failed to dup stdin");
+			}
+			close(null);
 		}
 		exec_cmd(current_command, start_command,
 			   current_command->pipe_next);
@@ -291,7 +310,7 @@ exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 		job->end_pid = exec_info->last_command->pid;
 		close_all_fd_io(exec_info->command, current_command);
 		if (job->execution == BACKGROUND) {
-			//kill(job->pid, SIGTTOU);
+			kill(job->pid, SIGTTOU);
 			if (exec_info->command->output_buffer != NULL) {
 				write_to_buffer(current_command);
 			}
@@ -315,9 +334,6 @@ exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 			read_from_here_doc(exec_info->command);
 		}
 		// Pass foreground to
-		if (!isatty(0)) {
-			err(EXIT_FAILURE,"fd is not a terminal");
-		}
 		tcsetpgrp(0, job->pid);
 		if (exec_info->command->output_buffer != NULL) {
 			write_to_buffer(current_command);
@@ -341,7 +357,7 @@ wait_job(Job * job)
 		wait_pid = waitpid(-1,&wstatus,WUNTRACED);
 		if (WIFEXITED(wstatus)) {
 			if (wait_pid == -1) {
-				perror("waitpid failed 2");
+				perror("waitpid failed job");
 				return EXIT_FAILURE;
 			}
 			// If last command then save return value
@@ -350,7 +366,8 @@ wait_job(Job * job)
 				return WEXITSTATUS(wstatus);
 			}
 		} else if (WIFSTOPPED(wstatus)) {
-			kill(job->pid, SIGTTOU);
+			//kill(job->pid, SIGTTOU);
+			fprintf(stderr, "Signal %d\n", WSTOPSIG(wstatus));
 			stop_job(wait_pid);
 			return EXIT_SUCCESS;
 		} else if (WIFSIGNALED(wstatus)) {

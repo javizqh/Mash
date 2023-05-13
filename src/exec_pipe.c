@@ -14,6 +14,8 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
 #include <err.h>
@@ -66,6 +68,7 @@ launch_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 int
 exec_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 {
+	int null = open("/dev/null", O_RDONLY);
 	Command *current_command;
 
 	if (set_input_shell_pipe(exec_info->command)
@@ -99,13 +102,18 @@ exec_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 		if (src_file != stdin)
 			fclose(src_file);
 		if (reading_from_file) {
-			fclose(stdin);
+			//FIX: temporary read from /dev/null
+			if (dup2(null, STDIN_FILENO) == -1) {
+				err(EXIT_FAILURE, "Failed to dup stdin");
+			}
+			close(null);
 		}
 		exec_cmd(current_command, start_command,
 			 current_command->pipe_next);
 		err(EXIT_FAILURE, "Failed to exec");
 		break;
 	default:
+		close(null);
 		close_all_fd_io(exec_info->command, current_command);
 		if (current_command->do_wait == DO_NOT_WAIT_TO_FINISH) {
 			return EXIT_SUCCESS;
