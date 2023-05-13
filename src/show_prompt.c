@@ -28,6 +28,7 @@
 #include "exec_info.h"
 #include "parse_line.h"
 #include "show_prompt.h"
+#include "mash.h"
 
 int shell_mode = NON_INTERACTIVE;
 
@@ -52,6 +53,12 @@ prompt(char *line)
 		parse_prompt(prompt, line);
 		fflush(stdout);
 	}
+
+	if (writing_to_file) {
+		printf("\n");
+		fflush(stdout);
+	}
+
 	add_env_by_name("result", result);
 	return 1;
 }
@@ -158,26 +165,30 @@ parse_prompt(char *prompt, char *line)
 			match = 1;
 		} else if (strstr(token, "gitstatuscolor") == token) {
 			fflush(stdout);
-			char *buffer = malloc(1024);
-
-			if (buffer == NULL)
-				err(EXIT_FAILURE, "malloc failed");
-			memset(buffer, 0, 1024);
-
-			strcpy(line,
-			       "git status --porcelain 2> /dev/null | wc -l");
-
 			token += strlen("gitstatuscolor");
-			find_command(line, buffer, stdin, NULL, rest_start);
-
-			strtok(buffer, "\n");
-			if (atoi(buffer) > 0) {
-				printf("\033[01;31m%s", token);
+			if (writing_to_file) {
+				printf("%s", token);
 			} else {
-				printf("\033[01;32m%s", token);
-			}
+				char *buffer = malloc(1024);
 
-			free(buffer);
+				if (buffer == NULL)
+					err(EXIT_FAILURE, "malloc failed");
+				memset(buffer, 0, 1024);
+
+				strcpy(line,
+							"git status --porcelain 2> /dev/null | wc -l");
+
+				find_command(line, buffer, stdin, NULL, rest_start);
+
+				strtok(buffer, "\n");
+				if (atoi(buffer) > 0) {
+					printf("\033[01;31m%s", token);
+				} else {
+					printf("\033[01;32m%s", token);
+				}
+
+				free(buffer);
+			}
 			match = 1;
 		} else if (strstr(token, "gitstatus") == token) {
 			fflush(stdout);
@@ -202,21 +213,77 @@ parse_prompt(char *prompt, char *line)
 
 			free(buffer);
 			match = 1;
+		} else if (strstr(token, "black") == token) {
+			token += strlen("black");
+			if (writing_to_file) {
+				printf("%s", token);
+			} else {
+				printf("\033[01;30m%s", token);
+			}
+			match = 1;
+		} else if (strstr(token, "red") == token) {
+			token += strlen("red");
+			if (writing_to_file) {
+				printf("%s", token);
+			} else {
+				printf("\033[01;31m%s", token);
+			}
+			match = 1;
 		} else if (strstr(token, "green") == token) {
 			token += strlen("green");
-			printf("\033[01;32m%s", token);
+			if (writing_to_file) {
+				printf("%s", token);
+			} else {
+				printf("\033[01;32m%s", token);
+			}
 			match = 1;
-		} else if (strstr(token, "pink") == token) {
-			token += strlen("pink");
-			printf("\033[01;35m%s", token);
+		} else if (strstr(token, "yellow") == token) {
+			token += strlen("yellow");
+			if (writing_to_file) {
+				printf("%s", token);
+			} else {
+				printf("\033[01;33m%s", token);
+			}
 			match = 1;
 		} else if (strstr(token, "blue") == token) {
 			token += strlen("blue");
-			printf("\033[01;34m%s", token);
+			if (writing_to_file) {
+				printf("%s", token);
+			} else {
+				printf("\033[01;34m%s", token);
+			}
+			match = 1;
+		} else if (strstr(token, "pink") == token) {
+			token += strlen("pink");
+			if (writing_to_file) {
+				printf("%s", token);
+			} else {
+				printf("\033[01;35m%s", token);
+			}
+			match = 1;
+		} else if (strstr(token, "cyan") == token) {
+			token += strlen("cyan");
+			if (writing_to_file) {
+				printf("%s", token);
+			} else {
+				printf("\033[01;36m%s", token);
+			}
+			match = 1;
+		} else if (strstr(token, "white") == token) {
+			token += strlen("white");
+			if (writing_to_file) {
+				printf("%s", token);
+			} else {
+				printf("\033[01;37m%s", token);
+			}
 			match = 1;
 		} else if (strstr(token, "nocolor") == token) {
 			token += strlen("nocolor");
-			printf("\033[0m%s", token);
+			if (writing_to_file) {
+				printf("%s", token);
+			} else {
+				printf("\033[0m%s", token);
+			}
 			match = 1;
 		} else if (strstr(token, "branch") == token) {
 			fflush(stdout);

@@ -135,8 +135,8 @@ exec_cmd(Command * cmd, Command * start_cmd, Command * last_cmd)
 
 	close_all_fd_cmd(cmd, start_cmd);
 	redirect_stdin(cmd, start_cmd);
-	redirect_stdout(cmd, last_cmd);
-	redirect_stderr(cmd, last_cmd);
+	redirect_stdout(cmd);
+	redirect_stderr(cmd);
 	// Check if builtin
 	if (cmd->search_location != SEARCH_CMD_ONLY_COMMAND
 	    && find_builtin(cmd)) {
@@ -264,7 +264,7 @@ redirect_stdin(Command * command, Command * start_command)
 {
 // NOT INPUT COMMAND OR INPUT COMMAND WITH FILE
 	if (command->pid != start_command->pid
-	    || command->input != STDIN_FILENO) {
+	    || start_command->input == HERE_DOC_FILENO) {
 		if (dup2(command->fd_pipe_input[0], STDIN_FILENO) == -1) {
 			err(EXIT_FAILURE, "Failed to dup stdin %i",
 			    command->fd_pipe_input[0]);
@@ -281,16 +281,16 @@ redirect_stdin(Command * command, Command * start_command)
 }
 
 void
-redirect_stdout(Command * command, Command * last_command)
+redirect_stdout(Command * command)
 {
 	// NOT LAST COMMAND OR LAST COMMAND WITH FILE OR BUFFER
-	if (last_command != NULL || command->output_buffer != NULL
-	    || command->output != STDOUT_FILENO) {
+	if (command->pipe_next || command->output_buffer) {
 		// redirect stdout
 		if (dup2(command->fd_pipe_output[1], STDOUT_FILENO) == -1) {
 			err(EXIT_FAILURE, "Failed to dup stdout");
 		}
 	}
+
 	if (command->output != STDOUT_FILENO) {
 		if (dup2(command->output, STDOUT_FILENO) == -1) {
 			err(EXIT_FAILURE, "Failed to dup stdout");
@@ -302,16 +302,8 @@ redirect_stdout(Command * command, Command * last_command)
 }
 
 void
-redirect_stderr(Command * command, Command * last_command)
+redirect_stderr(Command * command)
 {
-	// NOT LAST COMMAND OR LAST COMMAND WITH FILE OR BUFFER
-	if (last_command != NULL || command->err_output != STDERR_FILENO) {
-		// redirect stderr
-		if (dup2(command->fd_pipe_output[1], STDERR_FILENO) == -1) {
-			err(EXIT_FAILURE, "Failed to dup stderr %i",
-			    command->fd_pipe_input[1]);
-		}
-	}
 	if (command->err_output != STDERR_FILENO) {
 		if (dup2(command->err_output, STDERR_FILENO) == -1) {
 			err(EXIT_FAILURE, "Failed to dup stdout");
@@ -326,7 +318,7 @@ int
 set_input_shell_pipe(Command * start_command)
 {
 	// SET INPUT PIPE
-	if (start_command->input != STDIN_FILENO) {
+	if (start_command->input == HERE_DOC_FILENO) {
 		int fd_write_shell[2] = { -1, -1 };
 		if (pipe(fd_write_shell) < 0) {
 			fprintf(stderr, "Failed to pipe to stdin");
@@ -346,32 +338,10 @@ set_output_shell_pipe(Command * start_command)
 	// Find last one and add it
 	Command *last_command = get_last_command(start_command);
 
-	if (last_command->output != STDOUT_FILENO
-	    || last_command->output_buffer != NULL) {
+	if (last_command->output_buffer) {
 		int fd_read_shell[2] = { -1, -1 };
 		if (pipe(fd_read_shell) < 0) {
 			fprintf(stderr, "Failed to pipe to stdout");
-			free_command_with_buf(start_command);
-			return 1;
-		}
-		last_command->fd_pipe_output[0] = fd_read_shell[0];
-		last_command->fd_pipe_output[1] = fd_read_shell[1];
-	}
-	return 0;
-}
-
-int
-set_err_output_shell_pipe(Command * start_command)
-{
-	// SET OUTOUT PIPE
-	// Find last one and add it
-	Command *last_command = get_last_command(start_command);
-
-	if (last_command->err_output != STDERR_FILENO
-	    && last_command->err_output != last_command->output) {
-		int fd_read_shell[2] = { -1, -1 };
-		if (pipe(fd_read_shell) < 0) {
-			fprintf(stderr, "Failed to pipe to stderr");
 			free_command_with_buf(start_command);
 			return 1;
 		}
@@ -446,11 +416,11 @@ close_all_fd_io(Command * start_command, Command * last_command)
 	while (command != NULL) {
 		close_fd(command->fd_pipe_input[0]);
 		if (command->pid != start_command->pid
-		    || start_command->input != HERE_DOC_FILENO) {
+		    || command->input != HERE_DOC_FILENO) {
 			close_fd(command->fd_pipe_input[1]);
 		}
 		if (command->pid != last_command->pid
-		    || last_command->output_buffer == NULL) {
+		    || command->output_buffer == NULL) {
 			close_fd(command->fd_pipe_output[0]);
 		}
 		close_fd(command->fd_pipe_output[1]);

@@ -264,8 +264,7 @@ exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 	}
 
 	if (set_input_shell_pipe(exec_info->command)
-			|| set_output_shell_pipe(exec_info->command)
-		 	|| set_err_output_shell_pipe(exec_info->command)) 
+			|| set_output_shell_pipe(exec_info->command)) 
 	{
 		return 1;
 	}
@@ -312,6 +311,7 @@ exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess)
 	default:
 		job->pid = exec_info->command->pid;
 		job->end_pid = exec_info->last_command->pid;
+		close(null);
 		close_all_fd_io(exec_info->command, cmd);
 		switch (job->execution)
 		{
