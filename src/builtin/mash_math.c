@@ -20,14 +20,12 @@
 #include "builtin/mash_math.h"
 
 char * math_use = "math expression";
-char * math_description = "Write arguments to the standard output.";
+char * math_description = "Write result of the arithmetic expression.";
 char * math_help = 
-"    Display the ARGs, separated by a single space character and followed by a\n"
+"    Display the result of the arithmetic expression, followed by a\n"
 "    newline, on the standard output.\n\n"
-"    Options:\n"
-"      -n    do not append a newline\n"
 "    Exit Status:\n"
-"    Returns success unless a write error occurs.\n";
+"    Returns success unless an error in the expression is found.\n";
 
 static int help() {
 	printf("math: %s\n", math_use);
