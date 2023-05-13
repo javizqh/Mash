@@ -30,13 +30,12 @@ void write_to_buffer(Command * last_command);
 
 // Redirect input and output: Child
 void redirect_stdin(Command * command, Command * start_command);
-void redirect_stdout(Command * command, Command * last_command);
-void redirect_stderr(Command * command, Command * last_command);
+void redirect_stdout(Command * command);
+void redirect_stderr(Command * command);
 
 // File descriptor
 int set_input_shell_pipe(Command * command);
 int set_output_shell_pipe(Command * command);
-int set_err_output_shell_pipe(Command * command);
 
 int close_fd(int fd);
 int close_all_fd(Command * start_command);

@@ -97,7 +97,6 @@ int mash_sleep(int argc, char* argv[]) {
     }
   }
 
-  fprintf(stderr, "Sleeping %d seconds",time);
   if (time == 0) {
     return usage();
   }
