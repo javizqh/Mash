@@ -19,7 +19,7 @@
 #include <math.h>
 #include "builtin/mash_math.h"
 
-char * math_use = "math [-n] [arg ...]";
+char * math_use = "math expression";
 char * math_description = "Write arguments to the standard output.";
 char * math_help = 
 "    Display the ARGs, separated by a single space character and followed by a\n"
@@ -156,7 +156,7 @@ static Token * tokenize(char * expression) {
       total_priority++;
     } else if (*expression == ')') {
       total_priority--;
-    } else {
+    } else if (*expression != ' ' && *expression != '\t') {
       fprintf(stderr,"mash: error: math: incorrect character '%c' in expression '%s'\n", *expression, line);
       free_all_tokens(first_token);
       return NULL;
