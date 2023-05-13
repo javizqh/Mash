@@ -571,7 +571,7 @@ subexec(char *line, ExecInfo * exec_info)
 	parse_info->copy = line_buf;
 
 	if (strstr(line, "((") == line) {
-		strcpy(line_buf, "math ");
+		strcpy(line_buf, "math \"");
 		parse_info->copy += strlen(line_buf);
 		line++;
 		in_math = 1;
@@ -595,6 +595,7 @@ subexec(char *line, ExecInfo * exec_info)
 				ptr = copy(ptr, exec_info);
 			} else {
 				in_math = 0;
+				*exec_info->parse_info->copy++ = '"';
 			}
 			break;
 		default:
