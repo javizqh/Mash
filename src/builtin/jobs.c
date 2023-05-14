@@ -54,6 +54,7 @@ char * jobs_help =
 "    Returns success unless an invalid option is given, an error occurs or job control is not enabled.\n";
 
 JobList jobs_list;
+int use_job_control = 1;
 
 // DECLARE STATIC FUNCTIONS
 static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id);
@@ -85,6 +86,11 @@ int jobs(int argc, char *argv[]) {
 	pid_t only_job = 0;
 
 	Job * current;
+
+	if (!use_job_control) {
+		return no_job_control(STDERR_FILENO);
+	}
+
 	remove_job(get_job(get_relevance_job_pid(0)));  // Remove itself
 	if (argc > 2) {
 		return usage();
@@ -130,7 +136,7 @@ int jobs(int argc, char *argv[]) {
 	if (only_job) {
 		current = get_job(only_job);
 		if (current == NULL) {
-			return no_job("jobs");
+			return no_job("jobs", STDERR_FILENO);
 		}
 		print_job_builtin(current, only_run, only_stop, only_id, print_id);
 		return EXIT_SUCCESS;
@@ -176,8 +182,13 @@ static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, 
 	}
 }
 
-int no_job(char *command) {
-  fprintf(stderr,"mash: %s: no such a job\n",command);
+int no_job(char *command,int error_fd) {
+  dprintf(error_fd,"mash: %s: no such a job\n",command);
+	return EXIT_FAILURE;
+}
+
+int no_job_control(int error_fd) {
+  dprintf(error_fd,"mash: job control not enabled\n");
 	return EXIT_FAILURE;
 }
 
@@ -218,21 +229,14 @@ launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess){
 
 	if (
 		cmd->search_location != SEARCH_CMD_ONLY_COMMAND &&
+		!exec_info->parse_info->exec_depth &&
+		cmd->do_wait != DO_NOT_WAIT_TO_FINISH &&
 		has_builtin_exec_in_shell(cmd)) 
 	{
-		if (cmd->do_wait == DO_NOT_WAIT_TO_FINISH) {
-			job->execution = BACKGROUND;
-			job->pid = getpid();
-			add_job(job);
-			printf("[%d]\t%d\n", job->pos,job->pid);
-			print_job(job,0);
-			remove_job(job);
-			return EXIT_SUCCESS;
-		}
 		free(job->command);
 		free(job);
 		close_all_fd_no_fork(cmd);
-		return exec_builtin_in_shell(cmd);
+		return exec_builtin_in_shell(cmd, 0);
 	}
 
 
@@ -391,7 +395,6 @@ wait_job(Job * job)
 			}
 		} else if (WIFSTOPPED(wstatus)) {
 			//kill(job->pid, SIGTTOU);
-			fprintf(stderr, "Signal %d\n", WSTOPSIG(wstatus));
 			stop_job(wait_pid);
 			return EXIT_SUCCESS;
 		} else if (WIFSIGNALED(wstatus)) {
@@ -682,7 +685,7 @@ void update_jobs() {
 	// Check for finished jobs
 	Job * current;
 	for (current = jobs_list.head; current; current = current->next_job) {
-		if (kill(current->pid,0) < 0) {
+		if (waitpid(current->pid,0,WNOHANG) < 0) {
 			current->state = DONE;
 			print_job(current,0);
 		}

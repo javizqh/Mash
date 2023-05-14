@@ -27,20 +27,27 @@ char * export_help =
 "    Exit Status:\n"
 "    Returns success unless an invalid option is given or NAME is invalid.\n";
 
+static int out_fd;
+static int err_fd;
+
 static int help() {
-	printf("export: %s\n", export_use);
-	printf("    %s\n\n%s", export_description, export_help);
+	dprintf(out_fd, "export: %s\n", export_use);
+	dprintf(out_fd, "    %s\n\n%s", export_description, export_help);
 	return EXIT_SUCCESS;
 }
 
 static int usage() {
-	fprintf(stderr,"Usage: %s\n",export_use);
+	dprintf(err_fd,"Usage: %s\n",export_use);
 	return EXIT_FAILURE;
 }
 
-int export(int argc, char* argv[]) {
+int export(int argc, char* argv[], int stdout_fd, int stderr_fd) {
 	argc--;argv++;
 	int exit_value = 0;
+
+	out_fd = stdout_fd;
+	err_fd = stderr_fd;
+
 	if (argc == 0) {
 		print_env();
 	} else if (argc == 1) {
@@ -98,6 +105,6 @@ void print_env() {
   char **s = environ;
 
   for (; *s; s++) {
-    printf("%s\n", *s);
+    dprintf(out_fd, "%s\n", *s);
   }
 }

@@ -41,16 +41,15 @@ set_prompt_mode(int mode)
 int
 prompt(char *line)
 {
-	if (syntax_mode == BASIC_SYNTAX) {
-		printf("$ ");
-		return 1;
-	}
 	char *result = getenv("result");
+	char *prompt = getenv("PROMPT");
 
 	if (shell_mode == INTERACTIVE_MODE) {
-		char *prompt = getenv("PROMPT");
-
-		parse_prompt(prompt, line);
+		if (syntax_mode == BASIC_SYNTAX) {
+			printf("$ ");
+		} else {
+			parse_prompt(prompt, line);
+		}
 		fflush(stdout);
 	}
 

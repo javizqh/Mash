@@ -16,4 +16,4 @@ extern char * disown_use;
 extern char * disown_description;
 extern char * disown_help;
 
-int disown(int argc, char *argv[]);
+int disown(int argc, char *argv[], int stdout_fd, int stderr_fd);

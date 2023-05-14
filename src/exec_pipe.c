@@ -54,12 +54,11 @@ launch_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 	}
 
 	if (cmd->search_location != SEARCH_CMD_ONLY_COMMAND &&
-	    has_builtin_exec_in_shell(cmd)) {
-		if (cmd->do_wait == DO_NOT_WAIT_TO_FINISH) {
-			return EXIT_SUCCESS;
-		}
+			cmd->do_wait != DO_NOT_WAIT_TO_FINISH &&
+	    has_builtin_exec_in_shell(cmd)) 
+	{
 		close_all_fd_no_fork(cmd);
-		return exec_builtin_in_shell(cmd);
+		return exec_builtin_in_shell(cmd, 0);
 	}
 
 	return exec_pipe(src_file, exec_info, to_free_excess);;

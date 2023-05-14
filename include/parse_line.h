@@ -12,7 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern int use_jobs;
-
 int find_command(char *line, char *buffer, FILE * src_file,
 		 ExecInfo * prev_exec_info, char *to_free_excess);

@@ -148,7 +148,7 @@ exec_cmd(Command * cmd, Command * start_cmd, Command * last_cmd)
 		}
 		exec_builtin(start_cmd, cmd);
 	} else {
-		exit_mash(0, NULL);
+		exit_mash(0, NULL, STDOUT_FILENO, STDERR_FILENO);
 		if (!find_path(cmd)) {
 			fprintf(stderr, "%s: cmd not found\n", cmd->argv[0]);
 			close_fd(cmd->fd_pipe_input[0]);
@@ -173,20 +173,6 @@ exec_cmd(Command * cmd, Command * start_cmd, Command * last_cmd)
 			}
 		}
 
-		if (fcntl(STDIN_FILENO, F_GETFD) == -1 && errno == EBADF) {
-			// BUG: temporal fix
-			//cmd->input = open("/dev/null", O_RDONLY);
-			//if (dup2(cmd->input, STDIN_FILENO) == -1) {
-			//      err(EXIT_FAILURE, "Failed to dup stdin");
-			//}
-			//close_fd(cmd->input);
-		}
-
-		if (fcntl(STDIN_FILENO, F_GETFD) == -1 && errno == EBADF) {
-			// BUG: temporal fix
-			fprintf(stderr, "Error");
-		}
-
 		args[i] = NULL;
 		execv(args[0], args);
 	}
@@ -198,8 +184,8 @@ void
 read_from_here_doc(Command * start_command)
 {
 	// Create stdin buffer
-	ssize_t count = MAX_BUFFER_IO_SIZE;
-	ssize_t bytes_stdin;
+	int has_max_length = 0;
+	ssize_t len_to_write = 0;
 
 	char *buffer_stdin = malloc(MAX_BUFFER_IO_SIZE);
 
@@ -210,22 +196,29 @@ read_from_here_doc(Command * start_command)
 	char *here_doc_buffer = new_here_doc_buffer();
 
 	do {
-		bytes_stdin = read(STDIN_FILENO, buffer_stdin, count);
-		if (*buffer_stdin == '}' && strlen(buffer_stdin) == 2) {
-			break;
+		fgets(buffer_stdin, MAX_BUFFER_IO_SIZE, stdin);
+		if (strlen(buffer_stdin) >= MAX_BUFFER_IO_SIZE - 1) {
+			has_max_length = 1;
+		} else {
+			if (!has_max_length && (strcmp(buffer_stdin, "}\n") == 0 ||
+				(strlen(buffer_stdin) == 1 && *buffer_stdin == '}')))
+			{
+				break;
+			}
+			has_max_length = 0;
+			strcat(here_doc_buffer, buffer_stdin);
 		}
-		strcat(here_doc_buffer, buffer_stdin);
-		memset(buffer_stdin, 0, MAX_BUFFER_IO_SIZE);
-	} while (bytes_stdin > 0
-		 && strlen(here_doc_buffer) < MAX_HERE_DOC_BUFFER);
-
-	if (strlen(here_doc_buffer) >= MAX_HERE_DOC_BUFFER) {
+	} while (strlen(here_doc_buffer) < MAX_HERE_DOC_BUFFER);
+	len_to_write = strlen(here_doc_buffer);
+	if (len_to_write >= MAX_HERE_DOC_BUFFER) {
 		fprintf(stderr,
 			"Mash: error: exceeded max size of %d of here document\n",
 			MAX_HERE_DOC_BUFFER);
-	} else {
-		write(start_command->fd_pipe_input[1], here_doc_buffer,
-		      strlen(here_doc_buffer));
+	} else {	
+		while (len_to_write > 0) {
+			len_to_write -= write(start_command->fd_pipe_input[1], here_doc_buffer,
+		      len_to_write);
+		}
 	}
 
 	close_fd(start_command->fd_pipe_input[1]);
@@ -391,19 +384,13 @@ close_all_fd_no_fork(Command * start_command)
 {
 	Command *command = start_command;
 
-	while (command != NULL) {
-		if (command->input != STDIN_FILENO) {
-			close_fd(command->input);
-		}
-		if (command->output != STDOUT_FILENO) {
-			close_fd(command->output);
-		}
-		close_fd(command->fd_pipe_input[0]);
-		close_fd(command->fd_pipe_input[1]);
-		close_fd(command->fd_pipe_output[0]);
-		close_fd(command->fd_pipe_output[1]);
-		command = command->pipe_next;
+	if (command->input != STDIN_FILENO) {
+		close_fd(command->input);
 	}
+	close_fd(command->fd_pipe_input[0]);
+	close_fd(command->fd_pipe_input[1]);
+	close_fd(command->fd_pipe_output[0]);
+	close_fd(command->fd_pipe_output[1]);
 
 	return 1;
 }

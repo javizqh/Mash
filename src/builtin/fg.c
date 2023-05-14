@@ -43,21 +43,33 @@ char * fg_help =
 "    Exit Status:\n"
 "    Status of command placed in foreground, or failure if an error occurs or job control is not enabled\n";
 
+static int out_fd;
+static int err_fd;
+
 static int help() {
-	printf("fg: %s\n", fg_use);
-	printf("    %s\n\n%s", fg_description, fg_help);
+	dprintf(out_fd, "fg: %s\n", fg_use);
+	dprintf(out_fd, "    %s\n\n%s", fg_description, fg_help);
 	return EXIT_SUCCESS;
 }
 
 static int usage() {
-  fprintf(stderr,"Usage: %s\n",fg_use);
+  dprintf(err_fd,"Usage: %s\n",fg_use);
 	return EXIT_FAILURE;
 }
 
-int fg(int argc, char *argv[]) {
+int fg(int argc, char *argv[], int stdout_fd, int stderr_fd) {
   argc--;argv++;
   Job * job;
   int exit_code = EXIT_SUCCESS;
+
+	out_fd = stdout_fd;
+	err_fd = stderr_fd;
+
+  if (!use_job_control) {
+		return no_job_control(err_fd);
+	}
+
+
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));
   } else if (argc == 1) {
@@ -69,10 +81,10 @@ int fg(int argc, char *argv[]) {
     return usage();
   }
   if (job == NULL) {
-    return no_job("fg"); 
+    return no_job("fg", err_fd); 
   }
   job->state = RUNNING;
-  printf("%s\n", job->command);
+  dprintf(out_fd, "%s\n", job->command);
   kill(job->pid, SIGTTIN);
   kill(job->pid, SIGCONT);
   signal(SIGTTOU, SIG_IGN);

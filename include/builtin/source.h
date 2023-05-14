@@ -25,13 +25,13 @@ extern char * source_use;
 extern char * source_description;
 extern char * source_help;
 
-int source(int argc, char *argv[]);
+int source(int argc, char *argv[], int stdout_fd, int stderr_fd);
 
 struct source_file *new_source_file(char *source_file_name);
 
 void free_source_file();
 
-int add_source(char *source_file_name);
+int add_source(char *source_file_name, int error_fd);
 
 int exec_sources();
 

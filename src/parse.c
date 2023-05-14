@@ -523,7 +523,7 @@ substitute(char *to_substitute)
 		// TODO: add all of them
 	} else if (strlen(to_substitute) == 0) {
 		memset(to_substitute, 0, MAX_ENV_SIZE);
-		//strcpy(to_substitute, "$");
+		strcpy(to_substitute, "$");
 		return 2;
 	}
 
@@ -712,7 +712,7 @@ here_doc(char *line, ExecInfo * exec_info)
 			return NULL;
 		}
 
-		if (set_file_cmd(cmd, HERE_DOC_READ, "") < 0) {
+		if (set_file_cmd(exec_info->command, HERE_DOC_READ, "") < 0) {
 			fprintf(stderr,
 				"Mash: Error: failed redirection to here document\n");
 			return NULL;

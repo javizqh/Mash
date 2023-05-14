@@ -80,7 +80,7 @@ main(int argc, char *argv[])
 	}
 
 	if (!has_to_exit) {
-		exit_mash(0, NULL);
+		exit_mash(0, NULL, STDOUT_FILENO, STDERR_FILENO);
 	}
 	free(buf);
 	return status;
@@ -102,11 +102,11 @@ set_arguments(char *argv[])
 					break;
 				case 'b':
 					syntax_mode = BASIC_SYNTAX;
-					use_jobs = 0;
+					use_job_control = 0;
 					break;
 				case 'e':
 					syntax_mode = EXTENDED_SYNTAX;
-					use_jobs = 1;
+					use_job_control = 1;
 					break;
 				default:
 					usage();
@@ -139,18 +139,18 @@ init_mash()
 		signal(SIGINT, sig_handler);
 		signal(SIGTSTP, sig_handler);
 		load_lex_tables();
-		add_source("env/.mashrc");
+		add_source("env/.mashrc", STDERR_FILENO);
 		exec_sources();
 	}
 
-	if (use_jobs) {
+	if (use_job_control) {
 		init_jobs_list();
 	}
 
 	add_env_by_name("HOME", getpwuid(getuid())->pw_dir);
 
 	if (getcwd(cwd, MAX_ENV_SIZE) == NULL) {
-		exit_mash(0, NULL);
+		exit_mash(0, NULL, STDOUT_FILENO, STDERR_FILENO);
 		err(EXIT_FAILURE, "error getting current working directory");
 	}
 	add_env_by_name("PWD", cwd);

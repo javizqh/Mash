@@ -1,0 +1,22 @@
+cat | grep s HERE{
+1 linea
+2 ssss
+3 lin}
+} sss
+}
+cat | wc -l HERE{
+1
+2
+3
+4
+5
+6
+}
+cat HERE{
+hola
+}     a
+}
+cat HERE{
+hola2
+}     a2
+}

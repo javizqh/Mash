@@ -42,8 +42,11 @@ extern char * jobs_use;
 extern char * jobs_description;
 extern char * jobs_help;
 
+extern int use_job_control;
+
 int jobs(int argc, char *argv[]);
-int no_job(char * command);
+int no_job(char * command, int error_fd);
+int no_job_control(int error_fd);
 pid_t substitute_jobspec(char* jobspec);
 
 int launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess);

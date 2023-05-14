@@ -35,25 +35,37 @@ char * exit_help =
 "    is that of the last command executed.\n";
 int has_to_exit = 0;
 
+static int out_fd;
+static int err_fd;
+
 static int help() {
-	printf("exit: %s\n", exit_use);
-	printf("    %s\n\n%s", exit_description, exit_help);
+	dprintf(out_fd, "exit: %s\n", exit_use);
+	dprintf(out_fd, "    %s\n\n%s", exit_description, exit_help);
 	return EXIT_SUCCESS;
 }
 
 static int usage() {
-	fprintf(stderr,"Usage: %s\n",exit_use);
+	dprintf(err_fd,"Usage: %s\n",exit_use);
 	return EXIT_FAILURE;
 }
 
 int
-exit_mash(int argc, char* argv[])
+exit_mash(int argc, char* argv[], int stdout_fd, int stderr_fd)
 {
-	int i;
-	int exit_status = atoi(getenv("result"));
-
 	argc--;argv++;
-	
+	int i;
+	char *result = get_env_by_name("result");
+	int exit_status;
+	if (result == NULL) {
+		dprintf(err_fd, "error: var result does not exist\n");
+	}
+
+	exit_status = atoi(result);
+	free(result);
+
+	out_fd = stdout_fd;
+	err_fd = stderr_fd;
+
 	if (argc == 1) {
 		if (strcmp(argv[0],"--help") == 0) {
 			return help();

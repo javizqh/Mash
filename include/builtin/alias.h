@@ -31,7 +31,7 @@ struct alias {
 
 struct alias *new_alias(const char *command, char *reference);
 
-int alias(int argc, char *argv[]);
+int alias(int argc, char *argv[], int stdout_fd, int stderr_fd);
 
 int add_alias(char *command);
 char* get_alias(const char* name);

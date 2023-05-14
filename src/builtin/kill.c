@@ -43,19 +43,22 @@ char * kill_help =
 "    Exit Status:\n"
 "    Returns success unless an invalid option is given or an error occurs or job control is not enabled.\n";
 
+static int out_fd;
+static int err_fd;
+
 static int help() {
-	printf("kill: %s\n", kill_use);
-	printf("    %s\n\n%s", kill_description, kill_help);
+	dprintf(out_fd, "kill: %s\n", kill_use);
+	dprintf(out_fd, "    %s\n\n%s", kill_description, kill_help);
 	return EXIT_SUCCESS;
 }
 
 static int usage() {
-  fprintf(stderr,"Usage: %s\n",kill_use);
+  dprintf(err_fd,"Usage: %s\n",kill_use);
 	return EXIT_FAILURE;
 }
 
 static int invalid_signal(char *signal) {
-  fprintf(stderr, "mash: kill: %s: invalid signal specification\n", signal);
+  dprintf(err_fd, "mash: kill: %s: invalid signal specification\n", signal);
 	return EXIT_FAILURE;
 }
 
@@ -202,86 +205,93 @@ static Job * getJob(char * jobspec) {
 }
 
 static void print_all_signals(void) {
-  printf("%2d) %-12s", SIGHUP, "SIGHUP");
-  printf("%2d) %-12s", SIGINT, "SIGINT");
-  printf("%2d) %-12s", SIGQUIT, "SIGQUIT");
-  printf("%2d) %-12s", SIGILL, "SIGILL");
-  printf("%2d) %-12s\n", SIGTRAP, "SIGTRAP");
+  dprintf(out_fd, "%2d) %-12s", SIGHUP, "SIGHUP");
+  dprintf(out_fd, "%2d) %-12s", SIGINT, "SIGINT");
+  dprintf(out_fd, "%2d) %-12s", SIGQUIT, "SIGQUIT");
+  dprintf(out_fd, "%2d) %-12s", SIGILL, "SIGILL");
+  dprintf(out_fd, "%2d) %-12s\n", SIGTRAP, "SIGTRAP");
 
-  printf("%2d) %-12s", SIGABRT, "SIGABRT");
-  printf("%2d) %-12s", SIGBUS, "SIGBUS");
-  printf("%2d) %-12s", SIGFPE, "SIGFPE");
-  printf("%2d) %-12s", SIGKILL, "SIGKILL");
-  printf("%2d) %-12s\n", SIGUSR1, "SIGUSR1");
+  dprintf(out_fd, "%2d) %-12s", SIGABRT, "SIGABRT");
+  dprintf(out_fd, "%2d) %-12s", SIGBUS, "SIGBUS");
+  dprintf(out_fd, "%2d) %-12s", SIGFPE, "SIGFPE");
+  dprintf(out_fd, "%2d) %-12s", SIGKILL, "SIGKILL");
+  dprintf(out_fd, "%2d) %-12s\n", SIGUSR1, "SIGUSR1");
 
-  printf("%2d) %-12s", SIGSEGV, "SIGSEGV");
-  printf("%2d) %-12s", SIGUSR2, "SIGUSR2");
-  printf("%2d) %-12s", SIGPIPE, "SIGPIPE");
-  printf("%2d) %-12s", SIGALRM, "SIGALRM");
-  printf("%2d) %-12s\n", SIGTERM, "SIGTERM");
+  dprintf(out_fd, "%2d) %-12s", SIGSEGV, "SIGSEGV");
+  dprintf(out_fd, "%2d) %-12s", SIGUSR2, "SIGUSR2");
+  dprintf(out_fd, "%2d) %-12s", SIGPIPE, "SIGPIPE");
+  dprintf(out_fd, "%2d) %-12s", SIGALRM, "SIGALRM");
+  dprintf(out_fd, "%2d) %-12s\n", SIGTERM, "SIGTERM");
 
-  printf("%2d) %-12s", SIGSTKFLT, "SIGSTKFLT");
-  printf("%2d) %-12s", SIGCHLD, "SIGCHLD");
-  printf("%2d) %-12s", SIGCONT, "SIGCONT");
-  printf("%2d) %-12s", SIGSTOP, "SIGSTOP");
-  printf("%2d) %-12s\n", SIGTSTP, "SIGTSTP");
+  dprintf(out_fd, "%2d) %-12s", SIGSTKFLT, "SIGSTKFLT");
+  dprintf(out_fd, "%2d) %-12s", SIGCHLD, "SIGCHLD");
+  dprintf(out_fd, "%2d) %-12s", SIGCONT, "SIGCONT");
+  dprintf(out_fd, "%2d) %-12s", SIGSTOP, "SIGSTOP");
+  dprintf(out_fd, "%2d) %-12s\n", SIGTSTP, "SIGTSTP");
 
-  printf("%2d) %-12s", SIGTTIN, "SIGTTIN");
-  printf("%2d) %-12s", SIGTTOU, "SIGTTOU");
-  printf("%2d) %-12s", SIGURG, "SIGURG");
-  printf("%2d) %-12s", SIGXCPU, "SIGXCPU");
-  printf("%2d) %-12s\n", SIGXFSZ, "SIGXFSZ");
+  dprintf(out_fd, "%2d) %-12s", SIGTTIN, "SIGTTIN");
+  dprintf(out_fd, "%2d) %-12s", SIGTTOU, "SIGTTOU");
+  dprintf(out_fd, "%2d) %-12s", SIGURG, "SIGURG");
+  dprintf(out_fd, "%2d) %-12s", SIGXCPU, "SIGXCPU");
+  dprintf(out_fd, "%2d) %-12s\n", SIGXFSZ, "SIGXFSZ");
 
-  printf("%2d) %-12s", SIGVTALRM, "SIGVTALRM");
-  printf("%2d) %-12s", SIGPROF, "SIGPROF");
-  printf("%2d) %-12s", SIGWINCH, "SIGWINCH");
-  printf("%2d) %-12s", SIGIO, "SIGIO");
-  printf("%2d) %-12s\n", SIGPWR, "SIGPWR");
+  dprintf(out_fd, "%2d) %-12s", SIGVTALRM, "SIGVTALRM");
+  dprintf(out_fd, "%2d) %-12s", SIGPROF, "SIGPROF");
+  dprintf(out_fd, "%2d) %-12s", SIGWINCH, "SIGWINCH");
+  dprintf(out_fd, "%2d) %-12s", SIGIO, "SIGIO");
+  dprintf(out_fd, "%2d) %-12s\n", SIGPWR, "SIGPWR");
 
-  printf("%2d) %-12s", SIGSYS, "SIGSYS");
-  printf("%2d) %-12s", SIGRTMIN, "SIGRTMIN");
-  printf("%2d) %-12s", SIGRTMIN+1, "SIGRTMIN+1");
-  printf("%2d) %-12s", SIGRTMIN+2, "SIGRTMIN+2");
-  printf("%2d) %-12s\n", SIGRTMIN+3, "SIGRTMIN+3");
+  dprintf(out_fd, "%2d) %-12s", SIGSYS, "SIGSYS");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN, "SIGRTMIN");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN+1, "SIGRTMIN+1");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN+2, "SIGRTMIN+2");
+  dprintf(out_fd, "%2d) %-12s\n", SIGRTMIN+3, "SIGRTMIN+3");
 
-  printf("%2d) %-12s", SIGRTMIN+4, "SIGRTMIN+4");
-  printf("%2d) %-12s", SIGRTMIN+5, "SIGRTMIN+5");
-  printf("%2d) %-12s", SIGRTMIN+6, "SIGRTMIN+6");
-  printf("%2d) %-12s", SIGRTMIN+7, "SIGRTMIN+7");
-  printf("%2d) %-12s\n", SIGRTMIN+8, "SIGRTMIN+8");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN+4, "SIGRTMIN+4");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN+5, "SIGRTMIN+5");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN+6, "SIGRTMIN+6");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN+7, "SIGRTMIN+7");
+  dprintf(out_fd, "%2d) %-12s\n", SIGRTMIN+8, "SIGRTMIN+8");
 
-  printf("%2d) %-12s", SIGRTMIN+9, "SIGRTMIN+9");
-  printf("%2d) %-12s", SIGRTMIN+10, "SIGRTMIN+10");
-  printf("%2d) %-12s", SIGRTMIN+11, "SIGRTMIN+11");
-  printf("%2d) %-12s", SIGRTMIN+12, "SIGRTMIN+12");
-  printf("%2d) %-12s\n", SIGRTMIN+13, "SIGRTMIN+13");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN+9, "SIGRTMIN+9");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN+10, "SIGRTMIN+10");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN+11, "SIGRTMIN+11");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN+12, "SIGRTMIN+12");
+  dprintf(out_fd, "%2d) %-12s\n", SIGRTMIN+13, "SIGRTMIN+13");
 
-  printf("%2d) %-12s", SIGRTMIN+14, "SIGRTMIN+14");
-  printf("%2d) %-12s", SIGRTMIN+15, "SIGRTMIN+15");
-  printf("%2d) %-12s", SIGRTMAX-14, "SIGRTMAX-14");
-  printf("%2d) %-12s", SIGRTMAX-13, "SIGRTMAX-13");
-  printf("%2d) %-12s\n", SIGRTMAX-12, "SIGRTMAX-12");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN+14, "SIGRTMIN+14");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMIN+15, "SIGRTMIN+15");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMAX-14, "SIGRTMAX-14");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMAX-13, "SIGRTMAX-13");
+  dprintf(out_fd, "%2d) %-12s\n", SIGRTMAX-12, "SIGRTMAX-12");
 
-  printf("%2d) %-12s", SIGRTMAX-11, "SIGRTMAX-11");
-  printf("%2d) %-12s", SIGRTMAX-10, "SIGRTMAX-10");
-  printf("%2d) %-12s", SIGRTMAX-9, "SIGRTMAX-9");
-  printf("%2d) %-12s", SIGRTMAX-8, "SIGRTMAX-8");
-  printf("%2d) %-12s\n", SIGRTMAX-7, "SIGRTMAX-7");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMAX-11, "SIGRTMAX-11");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMAX-10, "SIGRTMAX-10");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMAX-9, "SIGRTMAX-9");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMAX-8, "SIGRTMAX-8");
+  dprintf(out_fd, "%2d) %-12s\n", SIGRTMAX-7, "SIGRTMAX-7");
 
-  printf("%2d) %-12s", SIGRTMAX-6, "SIGRTMAX-6");
-  printf("%2d) %-12s", SIGRTMAX-5, "SIGRTMAX-5");
-  printf("%2d) %-12s", SIGRTMAX-4, "SIGRTMAX-4");
-  printf("%2d) %-12s", SIGRTMAX-3, "SIGRTMAX-3");
-  printf("%2d) %-12s\n", SIGRTMAX-2, "SIGRTMAX-2");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMAX-6, "SIGRTMAX-6");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMAX-5, "SIGRTMAX-5");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMAX-4, "SIGRTMAX-4");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMAX-3, "SIGRTMAX-3");
+  dprintf(out_fd, "%2d) %-12s\n", SIGRTMAX-2, "SIGRTMAX-2");
 
-  printf("%2d) %-12s", SIGRTMAX-1, "SIGRTMAX-1");
-  printf("%2d) %-12s\n", SIGRTMAX, "SIGRTMAX");
+  dprintf(out_fd, "%2d) %-12s", SIGRTMAX-1, "SIGRTMAX-1");
+  dprintf(out_fd, "%2d) %-12s\n", SIGRTMAX, "SIGRTMAX");
 }
 
-int kill_job(int argc, char *argv[]) {
+int kill_job(int argc, char *argv[], int stdout_fd, int stderr_fd) {
   argc--;argv++;
   int signal = SIGTERM;  // Default signal
   Job * job;
+
+  out_fd = stdout_fd;
+	err_fd = stderr_fd;
+
+  if (!use_job_control) {
+		return no_job_control(err_fd);
+	}
 
   if (argc == 1) {
     // Use default signal
@@ -301,7 +311,7 @@ int kill_job(int argc, char *argv[]) {
       if (!(signal = getSignal(argv[1]))) {
         return invalid_signal(argv[1]);
       }
-      printf("%d\n",signal);
+      dprintf(out_fd, "%d\n",signal);
 			return EXIT_SUCCESS;
 		}
     if (!(signal = getSignal(argv[0]))) {
@@ -326,7 +336,7 @@ int kill_job(int argc, char *argv[]) {
   }
 
   if (job == NULL) {
-    return no_job("kill"); 
+    return no_job("kill", err_fd); 
   }
 
   kill(job->pid, signal);
@@ -335,7 +345,7 @@ int kill_job(int argc, char *argv[]) {
     stop_job(job->pid);
   } else if (signal == SIGCONT) {
     job->state = RUNNING;
-    printf("%s\n", job->command);
+    dprintf(out_fd, "%s\n", job->command);
   } else if (signal != SIGCHLD) {
     remove_job(job);
   }

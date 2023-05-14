@@ -45,21 +45,31 @@ char * bg_help =
 "    Exit Status:\n"
 "    Returns success unless job control is not enabled or an error occurs.\n";
 
+static int out_fd;
+static int err_fd;
+
 static int help() {
-	printf("bg: %s\n", bg_use);
-	printf("    %s\n\n%s", bg_description, bg_help);
+	dprintf(out_fd, "bg: %s\n", bg_use);
+	dprintf(out_fd, "    %s\n\n%s", bg_description, bg_help);
 	return EXIT_SUCCESS;
 }
 
 static int usage() {
-  fprintf(stderr,"Usage: %s\n",bg_use);
+  dprintf(err_fd,"Usage: %s\n",bg_use);
 	return EXIT_FAILURE;
 }
 
-int bg(int argc, char *argv[]) {
+int bg(int argc, char *argv[], int stdout_fd, int stderr_fd) {
   argc--;argv++;
   char relevance;
   Job * job;
+
+	out_fd = stdout_fd;
+	err_fd = stderr_fd;
+
+  if (!use_job_control) {
+		return no_job_control(err_fd);
+	}
 
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));
@@ -73,7 +83,7 @@ int bg(int argc, char *argv[]) {
   }
 
   if (job == NULL) {
-    return no_job("bg"); 
+    return no_job("bg", err_fd); 
   }
 
 	switch (job->relevance) {
@@ -87,7 +97,7 @@ int bg(int argc, char *argv[]) {
 		relevance = ' ';
 		break;
 	}
-  printf("[%d]%c\t%s\n",job->pos,relevance,job->command);
+  dprintf(out_fd, "[%d]%c\t%s\n",job->pos,relevance,job->command);
 
   job->state = RUNNING;
   kill(job->pid, SIGTTOU);

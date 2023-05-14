@@ -113,32 +113,35 @@ $(function() {
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">char</span> * jobs_description;</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">char</span> * jobs_help;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="keywordtype">int</span> jobs(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span> *argv[]);</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keywordtype">int</span> no_job(<span class="keywordtype">char</span> * command);</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;pid_t substitute_jobspec(<span class="keywordtype">char</span>* jobspec);</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keywordtype">int</span> launch_job(FILE * src_file, <a class="code" href="structExecInfo.html">ExecInfo</a> *exec_info, <span class="keywordtype">char</span> * to_free_excess);</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keywordtype">int</span> exec_job(FILE * src_file, <a class="code" href="structExecInfo.html">ExecInfo</a> *exec_info, <a class="code" href="structJob.html">Job</a> * job, <span class="keywordtype">char</span> * to_free_excess);</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keywordtype">int</span> wait_job(<a class="code" href="structJob.html">Job</a> * job);</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<a class="code" href="structJob.html">Job</a> * new_job(<span class="keywordtype">char</span> * line);</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="keywordtype">void</span> print_job(<a class="code" href="structJob.html">Job</a> * job, <span class="keywordtype">int</span> print_id);</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="keyword">extern</span> <span class="keywordtype">int</span> use_job_control;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keywordtype">int</span> jobs(<span class="keywordtype">int</span> argc, <span class="keywordtype">char</span> *argv[]);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keywordtype">int</span> no_job(<span class="keywordtype">char</span> * command, <span class="keywordtype">int</span> error_fd);</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keywordtype">int</span> no_job_control(<span class="keywordtype">int</span> error_fd);</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;pid_t substitute_jobspec(<span class="keywordtype">char</span>* jobspec);</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="keywordtype">int</span> launch_job(FILE * src_file, <a class="code" href="structExecInfo.html">ExecInfo</a> *exec_info, <span class="keywordtype">char</span> * to_free_excess);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="keywordtype">int</span> exec_job(FILE * src_file, <a class="code" href="structExecInfo.html">ExecInfo</a> *exec_info, <a class="code" href="structJob.html">Job</a> * job, <span class="keywordtype">char</span> * to_free_excess);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="keywordtype">int</span> wait_job(<a class="code" href="structJob.html">Job</a> * job);</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keywordtype">int</span> init_jobs_list();</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keywordtype">void</span> free_jobs_list();</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<a class="code" href="structJob.html">Job</a> * new_job(<span class="keywordtype">char</span> * line);</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keywordtype">void</span> print_job(<a class="code" href="structJob.html">Job</a> * job, <span class="keywordtype">int</span> print_id);</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="keywordtype">int</span> add_job(<a class="code" href="structJob.html">Job</a> * job);</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<a class="code" href="structJob.html">Job</a> * get_job(pid_t job_pid);</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="keywordtype">int</span> remove_job(<a class="code" href="structJob.html">Job</a> * job);</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="keywordtype">int</span> remove_all_status_jobs(<span class="keywordtype">int</span> status);</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;pid_t get_pos_job_pid(<span class="keywordtype">int</span> pos);</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;pid_t get_relevance_job_pid(<span class="keywordtype">int</span> relevance);</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="keywordtype">int</span> are_jobs_stopped();</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="keywordtype">void</span> stop_job(pid_t job_pid);</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keywordtype">void</span> end_current_job();</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="keywordtype">void</span> wait_all_jobs();</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keywordtype">void</span> update_jobs();</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="keywordtype">int</span> init_jobs_list();</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="keywordtype">void</span> free_jobs_list();</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="keywordtype">int</span> add_job(<a class="code" href="structJob.html">Job</a> * job);</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<a class="code" href="structJob.html">Job</a> * get_job(pid_t job_pid);</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="keywordtype">int</span> remove_job(<a class="code" href="structJob.html">Job</a> * job);</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="keywordtype">int</span> remove_all_status_jobs(<span class="keywordtype">int</span> status);</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;pid_t get_pos_job_pid(<span class="keywordtype">int</span> pos);</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;pid_t get_relevance_job_pid(<span class="keywordtype">int</span> relevance);</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keywordtype">int</span> are_jobs_stopped();</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keywordtype">void</span> stop_job(pid_t job_pid);</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="keywordtype">void</span> end_current_job();</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="keywordtype">void</span> wait_all_jobs();</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="keywordtype">void</span> update_jobs();</div>
 <div class="ttc" id="astructExecInfo_html"><div class="ttname"><a href="structExecInfo.html">ExecInfo</a></div><div class="ttdef"><b>Definition:</b> exec_info.h:34</div></div>
 <div class="ttc" id="astructJobList_html"><div class="ttname"><a href="structJobList.html">JobList</a></div><div class="ttdef"><b>Definition:</b> jobs.h:35</div></div>
 <div class="ttc" id="astructJob_html"><div class="ttname"><a href="structJob.html">Job</a></div><div class="ttdef"><b>Definition:</b> jobs.h:24</div></div>

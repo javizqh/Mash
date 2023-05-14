@@ -38,20 +38,31 @@ char * wait_help =
 "    Returns the status of the last ID; fails if ID is invalid, stopped, an invalid\n"
 "    option is given or job control is not enabled.\n";
 
+static int out_fd;
+static int err_fd;
+
 static int help() {
-	printf("wait: %s\n", wait_use);
-	printf("    %s\n\n%s", wait_description, wait_help);
+	dprintf(out_fd, "wait: %s\n", wait_use);
+	dprintf(out_fd, "    %s\n\n%s", wait_description, wait_help);
 	return EXIT_SUCCESS;
 }
 
 static int usage() {
-  fprintf(stderr,"Usage: %s\n",wait_use);
+  dprintf(err_fd,"Usage: %s\n",wait_use);
 	return EXIT_FAILURE;
 }
 
-int wait_for_job(int argc, char *argv[]) {
+int wait_for_job(int argc, char *argv[], int stdout_fd, int stderr_fd) {
   argc--;argv++;
   Job * job;
+
+	out_fd = stdout_fd;
+	err_fd = stderr_fd;
+
+  if (!use_job_control) {
+		return no_job_control(err_fd);
+	}
+
 
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));
@@ -70,11 +81,11 @@ int wait_for_job(int argc, char *argv[]) {
   }
 
   if (job == NULL) {
-    return no_job("wait"); 
+    return no_job("wait", err_fd); 
   }
 
   if (job->state == STOPPED) {
-    fprintf(stderr,"mash: warning: wait_for_job: job is stopped\n");
+    dprintf(err_fd,"mash: warning: wait_for_job: job is stopped\n");
     return EXIT_FAILURE;
   }
   

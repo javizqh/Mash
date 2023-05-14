@@ -21,7 +21,7 @@ extern char * export_use;
 extern char * export_description;
 extern char * export_help;
 
-int export(int argc, char* argv[]);
+int export(int argc, char* argv[], int stdout_fd, int stderr_fd);
 
 int add_env(const char * line);
 
