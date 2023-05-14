@@ -148,7 +148,7 @@ exec_cmd(Command * cmd, Command * start_cmd, Command * last_cmd)
 		}
 		exec_builtin(start_cmd, cmd);
 	} else {
-		exit_mash(0, NULL);
+		exit_mash(0, NULL, STDOUT_FILENO, STDERR_FILENO);
 		if (!find_path(cmd)) {
 			fprintf(stderr, "%s: cmd not found\n", cmd->argv[0]);
 			close_fd(cmd->fd_pipe_input[0]);
@@ -200,6 +200,7 @@ read_from_here_doc(Command * start_command)
 	// Create stdin buffer
 	ssize_t count = MAX_BUFFER_IO_SIZE;
 	ssize_t bytes_stdin;
+	int has_max_length = 0;
 
 	char *buffer_stdin = malloc(MAX_BUFFER_IO_SIZE);
 
@@ -211,11 +212,16 @@ read_from_here_doc(Command * start_command)
 
 	do {
 		bytes_stdin = read(STDIN_FILENO, buffer_stdin, count);
-		if (*buffer_stdin == '}' && strlen(buffer_stdin) == 2) {
-			break;
+		if (strlen(buffer_stdin) >= MAX_BUFFER_IO_SIZE - 1) {
+			has_max_length = 1;
+		} else {
+			if (!has_max_length && strcmp(buffer_stdin,"}\n") == 0) {
+				break;
+			}
+			has_max_length = 0;
+			strcat(here_doc_buffer, buffer_stdin);
+			memset(buffer_stdin, 0, MAX_BUFFER_IO_SIZE);
 		}
-		strcat(here_doc_buffer, buffer_stdin);
-		memset(buffer_stdin, 0, MAX_BUFFER_IO_SIZE);
 	} while (bytes_stdin > 0
 		 && strlen(here_doc_buffer) < MAX_HERE_DOC_BUFFER);
 
@@ -391,22 +397,13 @@ close_all_fd_no_fork(Command * start_command)
 {
 	Command *command = start_command;
 
-	while (command != NULL) {
-		if (command->input != STDIN_FILENO) {
-			close_fd(command->input);
-		}
-		if (command->output != STDOUT_FILENO) {
-			close_fd(command->output);
-		}
-		if (command->err_output != STDERR_FILENO) {
-			close_fd(command->err_output);
-		}
-		close_fd(command->fd_pipe_input[0]);
-		close_fd(command->fd_pipe_input[1]);
-		close_fd(command->fd_pipe_output[0]);
-		close_fd(command->fd_pipe_output[1]);
-		command = command->pipe_next;
+	if (command->input != STDIN_FILENO) {
+		close_fd(command->input);
 	}
+	close_fd(command->fd_pipe_input[0]);
+	close_fd(command->fd_pipe_input[1]);
+	close_fd(command->fd_pipe_output[0]);
+	close_fd(command->fd_pipe_output[1]);
 
 	return 1;
 }

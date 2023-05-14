@@ -35,25 +35,31 @@ char * exit_help =
 "    is that of the last command executed.\n";
 int has_to_exit = 0;
 
+static int out_fd;
+static int err_fd;
+
 static int help() {
-	printf("exit: %s\n", exit_use);
-	printf("    %s\n\n%s", exit_description, exit_help);
+	dprintf(out_fd, "exit: %s\n", exit_use);
+	dprintf(out_fd, "    %s\n\n%s", exit_description, exit_help);
 	return EXIT_SUCCESS;
 }
 
 static int usage() {
-	fprintf(stderr,"Usage: %s\n",exit_use);
+	dprintf(err_fd,"Usage: %s\n",exit_use);
 	return EXIT_FAILURE;
 }
 
 int
-exit_mash(int argc, char* argv[])
+exit_mash(int argc, char* argv[], int stdout_fd, int stderr_fd)
 {
+	argc--;argv++;
 	int i;
+	// FIX: add if statement
 	int exit_status = atoi(getenv("result"));
 
-	argc--;argv++;
-	
+	out_fd = stdout_fd;
+	err_fd = stderr_fd;
+
 	if (argc == 1) {
 		if (strcmp(argv[0],"--help") == 0) {
 			return help();

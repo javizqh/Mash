@@ -169,11 +169,40 @@ has_builtin_exec_in_shell(Command * command)
 	return found_builtin_exec_in_shell(command);
 }
 
+static void
+wait_for_heredoc()
+{
+	int has_max_length = 0;
+
+	// MINIMUM size of buffer = 4
+	char *buf = malloc(4);
+
+	if (buf == NULL)
+		err(EXIT_FAILURE, "malloc failed");
+	memset(buf, 0, 4);
+
+	while (fgets(buf, 4, stdin) != NULL) {
+		if (strlen(buf) >= 4 - 1) {
+			has_max_length = 1;
+		} else {
+			if (!has_max_length && strcmp(buf, "}\n") == 0) {
+				break;
+			}
+			has_max_length = 0;
+		}
+	}
+
+	free(buf);
+	return;
+}
+
 int
-exec_builtin_in_shell(Command * command)
+exec_builtin_in_shell(Command * command, int is_pipe)
 {
 	int i;
 	int exit_code = EXIT_FAILURE;
+	int cmd_out = command->output;
+	int cmd_err = command->err_output;
 	char *args[command->argc];
 
 	for (i = 0; i < command->argc; i++) {
@@ -186,36 +215,49 @@ exec_builtin_in_shell(Command * command)
 	}
 	args[i] = NULL;
 
+	if (!is_pipe && command->input == HERE_DOC_FILENO) {
+		wait_for_heredoc();
+	}
+
 	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
-		exit_code = add_env(command->argv[0]);
+		// REVIEW: WHY?
+		exit_code = export(i, args, cmd_out, cmd_err);
 	}
 
 	if (strcmp(command->argv[0], "alias") == 0) {
-		exit_code = alias(i, args);
+		exit_code = alias(i, args, cmd_out, cmd_err);
 	} else if (strcmp(command->argv[0], "export") == 0) {
-		exit_code = export(i, args);
+		exit_code = export(i, args, cmd_out, cmd_err);
 	} else if (strcmp(command->argv[0], "exit") == 0) {
 		if (are_jobs_stopped()) {
-			fprintf(stderr,
+			dprintf(cmd_err,
 				"Mash: couldn't exit because there are stopped jobs\n");
 		}
 		wait_all_jobs();
-		exit_code = exit_mash(i, args);
-	} else if (strcmp(command->argv[0], "source") == 0
-		   || strcmp(command->argv[0], ".") == 0) {
-		exit_code = source(i, args);
+		exit_code = exit_mash(i, args, cmd_out, cmd_err);
+	} else if (strcmp(command->argv[0], "source") == 0) {
+		exit_code = source(i, args, cmd_out, cmd_err);
 	} else if (strcmp(command->argv[0], "cd") == 0) {
-		exit_code = cd(i, args);
+		exit_code = cd(i, args, cmd_out, cmd_err);
 	} else if (strcmp(command->argv[0], "fg") == 0) {
-		exit_code = fg(i, args);
+		exit_code = fg(i, args, cmd_out, cmd_err);
 	} else if (strcmp(command->argv[0], "bg") == 0) {
-		exit_code = bg(i, args);
+		exit_code = bg(i, args, cmd_out, cmd_err);
 	} else if (strcmp(args[0], "wait") == 0) {
-		exit_code = wait_for_job(i, args);
+		exit_code = wait_for_job(i, args, cmd_out, cmd_err);
 	} else if (strcmp(args[0], "kill") == 0) {
-		exit_code = kill_job(i, args);
+		exit_code = kill_job(i, args, cmd_out, cmd_err);
 	} else if (strcmp(args[0], "disown") == 0) {
-		exit_code = disown(i, args);
+		exit_code = disown(i, args, cmd_out, cmd_err);
+	}
+
+	if (!is_pipe) {
+		if (cmd_out != STDOUT_FILENO) {
+			close_fd(cmd_out);
+		}
+		if (cmd_err != STDERR_FILENO) {
+			close_fd(cmd_err);
+		}
 	}
 
 	return exit_code;
@@ -266,12 +308,12 @@ exec_builtin(Command * start_scommand, Command * command)
 		return_value = math(i, args);
 	} else if (strcmp(args[0], "exit") != 0) {
 		if (found_builtin_exec_in_shell(command)) {
-			exec_builtin_in_shell(command);
+			exec_builtin_in_shell(command, 1);
 		}
 		modify_cmd_builtin(command);
 	}
 	free_command_with_buf(start_scommand);
-	exit_mash(0, NULL);
+	exit_mash(0, NULL, STDOUT_FILENO, STDERR_FILENO);
 	exit(return_value);
 	return;
 }

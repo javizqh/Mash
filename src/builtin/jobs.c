@@ -177,6 +177,7 @@ static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, 
 }
 
 int no_job(char *command) {
+	// FIX: this should be dprintf
   fprintf(stderr,"mash: %s: no such a job\n",command);
 	return EXIT_FAILURE;
 }
@@ -222,19 +223,10 @@ launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess){
 		cmd->do_wait != DO_NOT_WAIT_TO_FINISH &&
 		has_builtin_exec_in_shell(cmd)) 
 	{
-		if (cmd->do_wait == DO_NOT_WAIT_TO_FINISH) {
-			job->execution = BACKGROUND;
-			job->pid = getpid();
-			add_job(job);
-			printf("[%d]\t%d\n", job->pos,job->pid);
-			print_job(job,0);
-			remove_job(job);
-			return EXIT_SUCCESS;
-		}
 		free(job->command);
 		free(job);
 		close_all_fd_no_fork(cmd);
-		return exec_builtin_in_shell(cmd);
+		return exec_builtin_in_shell(cmd, 0);
 	}
 
 

@@ -33,7 +33,7 @@ int modify_cmd_builtin(Command * modify_command);
  * @return 1 = Need to execute in child | 0 = Executed in parent process
  */
 int has_builtin_exec_in_shell(Command * command);
-int exec_builtin_in_shell(Command * command);
+int exec_builtin_in_shell(Command * command, int is_pipe);
 
 int find_builtin(Command * command);
 void exec_builtin(Command * start_scommand, Command * command);

@@ -16,4 +16,4 @@ extern char * cd_use;
 extern char * cd_description;
 extern char * cd_help;
 
-int cd(int argc, char* argv[]);
+int cd(int argc, char* argv[], int stdout_fd, int stderr_fd);

@@ -29,21 +29,27 @@ char * cd_help =
 "    Exit Status:\n"
 "    Returns 0 if the directory is changed, and non-zero otherwise.\n";
 
+static int out_fd;
+static int err_fd;
+
 static int help() {
-	printf("cd: %s\n", cd_use);
-	printf("    %s\n\n%s", cd_description, cd_help);
+	dprintf(out_fd, "cd: %s\n", cd_use);
+	dprintf(out_fd, "    %s\n\n%s", cd_description, cd_help);
 	return EXIT_SUCCESS;
 }
 
 static int usage() {
-  fprintf(stderr, "Usage: %s\n",cd_use);
+  dprintf(err_fd, "Usage: %s\n",cd_use);
   return EXIT_FAILURE;
 }
 
-int cd(int argc, char* argv[]) {
+int cd(int argc, char* argv[], int stdout_fd, int stderr_fd) {
+  argc--; argv++;
   char *home;
 
-  argc--; argv++;
+	out_fd = stdout_fd;
+	err_fd = stderr_fd;
+
   if (argc > 1) {
     return usage();
   }
@@ -53,7 +59,7 @@ int cd(int argc, char* argv[]) {
       home = getpwuid(getuid())->pw_dir;
     }
     if (chdir(home) < 0) {
-      fprintf(stderr,"mash: cd: %s: No such directory\n", home);
+      dprintf(err_fd,"mash: cd: %s: No such directory\n", home);
       return EXIT_FAILURE;
     }
   } else {
@@ -62,7 +68,7 @@ int cd(int argc, char* argv[]) {
     }
 
     if (chdir(argv[0]) < 0) {
-      fprintf(stderr,"mash: cd: %s: No such directory\n", argv[0]);
+      dprintf(err_fd,"mash: cd: %s: No such directory\n", argv[0]);
       return EXIT_FAILURE;
     }
   }

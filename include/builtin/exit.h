@@ -17,4 +17,4 @@ extern char * exit_description;
 extern char * exit_help;
 extern int has_to_exit;
 
-int exit_mash(int argc, char* argv[]);
+int exit_mash(int argc, char* argv[], int stdout_fd, int stderr_fd);

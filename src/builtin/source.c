@@ -40,20 +40,27 @@ char * source_help =
 
 struct source_file *sources[MAX_SOURCE_FILES];
 
+static int out_fd;
+static int err_fd;
+
 static int help() {
-	printf("source: %s\n", source_use);
-	printf("    %s\n\n%s", source_description, source_help);
+	dprintf(out_fd, "source: %s\n", source_use);
+	dprintf(out_fd, "    %s\n\n%s", source_description, source_help);
 	return EXIT_SUCCESS;
 }
 
 static int usage() {
-	fprintf(stderr,"Usage: %s\n",source_use);
+	dprintf(err_fd,"Usage: %s\n",source_use);
 	return EXIT_FAILURE;
 }
 
-int source(int argc, char *argv[]) {
-	struct stat buffer;
+int source(int argc, char *argv[], int stdout_fd, int stderr_fd) {
 	argc--; argv++;
+	struct stat buffer;
+
+	out_fd = stdout_fd;
+	err_fd = stderr_fd;
+
 	if (argc != 1) {
 		return usage();
 	}
@@ -62,7 +69,7 @@ int source(int argc, char *argv[]) {
 	}
 	// Check if file exists
 	if (stat(argv[0], &buffer) < 0) {
-		fprintf(stderr,"Mash: source: %s no such file in directory\n", argv[0]);
+		dprintf(err_fd,"Mash: source: %s no such file in directory\n", argv[0]);
 		return EXIT_FAILURE;
 	}
 	return add_source(argv[0]);
@@ -103,6 +110,7 @@ add_source(char *source_file_name)
       return 0;
     }
   }
+	// FIX: where to print
 	fprintf(stderr,"Failed to add new source. Already at limit.\n");
 	return 1;
 }

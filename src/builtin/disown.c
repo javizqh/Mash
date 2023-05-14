@@ -37,20 +37,26 @@ char * disown_help =
 "    Exit Status:\n"
 "    Returns success unless an invalid option or JOBSPEC is given, or job control is not enabled.\n";
 
+static int out_fd;
+static int err_fd;
+
 static int help() {
-	printf("disown: %s\n", disown_use);
-	printf("    %s\n\n%s", disown_description, disown_help);
+	dprintf(out_fd, "disown: %s\n", disown_use);
+	dprintf(out_fd, "    %s\n\n%s", disown_description, disown_help);
 	return EXIT_SUCCESS;
 }
 
 static int usage() {
-  fprintf(stderr,"Usage: %s\n",disown_use);
+  dprintf(err_fd,"Usage: %s\n",disown_use);
 	return EXIT_FAILURE;
 }
 
-int disown(int argc, char *argv[]) {
+int disown(int argc, char *argv[], int stdout_fd, int stderr_fd) {
   argc--;argv++;
   Job * job;
+
+	out_fd = stdout_fd;
+	err_fd = stderr_fd;
 
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));

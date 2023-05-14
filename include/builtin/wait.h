@@ -16,4 +16,4 @@ extern char * wait_use;
 extern char * wait_description;
 extern char * wait_help;
 
-int wait_for_job(int argc, char *argv[]);
+int wait_for_job(int argc, char *argv[], int stdout_fd, int stderr_fd);

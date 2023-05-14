@@ -80,7 +80,7 @@ main(int argc, char *argv[])
 	}
 
 	if (!has_to_exit) {
-		exit_mash(0, NULL);
+		exit_mash(0, NULL, STDOUT_FILENO, STDERR_FILENO);
 	}
 	free(buf);
 	return status;
@@ -150,7 +150,7 @@ init_mash()
 	add_env_by_name("HOME", getpwuid(getuid())->pw_dir);
 
 	if (getcwd(cwd, MAX_ENV_SIZE) == NULL) {
-		exit_mash(0, NULL);
+		exit_mash(0, NULL, STDOUT_FILENO, STDERR_FILENO);
 		err(EXIT_FAILURE, "error getting current working directory");
 	}
 	add_env_by_name("PWD", cwd);

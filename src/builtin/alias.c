@@ -21,6 +21,8 @@
 
 // DECLARE STATIC FUNCTION
 static int usage();
+static int out_fd;
+static int err_fd;
 
 // DECLARE GLOBAL VARIABLE
 struct alias *aliases[ALIAS_MAX];
@@ -34,19 +36,21 @@ char * alias_help =
 "    alias returns 0 unless a VALUE is missing or the is out of memory.\n";
 
 static int help() {
-	printf("alias: %s\n", alias_use);
-	printf("    %s\n\n%s", alias_description, alias_help);
+	dprintf(out_fd, "alias: %s\n", alias_use);
+	dprintf(out_fd, "    %s\n\n%s", alias_description, alias_help);
 	return EXIT_SUCCESS;
 }
 
 static int usage() {
-	fprintf(stderr,"Usage: %s\n", alias_use);
+	dprintf(err_fd,"Usage: %s\n", alias_use);
 	return EXIT_FAILURE;
 }
 
-int alias(int argc, char *argv[]) {
+int alias(int argc, char *argv[], int stdout_fd, int stderr_fd) {
 	argc--;argv++;
 	int exit_value = EXIT_SUCCESS;
+	out_fd = stdout_fd;
+	err_fd = stderr_fd;
 	if (argc == 0) {
 		print_aliases();
 	} else if (argc == 1) {
@@ -103,7 +107,7 @@ add_alias(char *command)
 				return 0;
 			}
 		}
-		fprintf(stderr,"Failed to add new alias. Already at limit.\n");
+		dprintf(err_fd,"Failed to add new alias. Already at limit.\n");
 		return 1;
 	}
 	return -1;
@@ -124,6 +128,6 @@ void print_aliases() {
 	int i;
 	for (i = 0; i < ALIAS_MAX; i++) {
 		if (aliases[i] == NULL) break;
-		printf("alias %s=%s\n",aliases[i]->command,aliases[i]->reference);
+		dprintf(out_fd, "alias %s=%s\n",aliases[i]->command,aliases[i]->reference);
 	}
 }

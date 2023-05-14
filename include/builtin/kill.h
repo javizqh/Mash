@@ -16,4 +16,4 @@ extern char * kill_use;
 extern char * kill_description;
 extern char * kill_help;
 
-int kill_job(int argc, char *argv[]);
+int kill_job(int argc, char *argv[], int stdout_fd, int stderr_fd);

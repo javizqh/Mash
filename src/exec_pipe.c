@@ -60,7 +60,7 @@ launch_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 			return EXIT_SUCCESS;
 		}
 		close_all_fd_no_fork(cmd);
-		return exec_builtin_in_shell(cmd);
+		return exec_builtin_in_shell(cmd, 0);
 	}
 
 	return exec_pipe(src_file, exec_info, to_free_excess);;
