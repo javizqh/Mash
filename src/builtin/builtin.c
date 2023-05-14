@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <unistd.h>
 #include <err.h>
 #include <stdlib.h>
@@ -188,7 +189,6 @@ wait_for_heredoc()
 			if (!has_max_length && (strcmp(buf, "}\n") == 0 ||
 						(strlen(buf) == 1
 						 && *buf == '}'))) {
-				//FIX: add strlen(buf) == 1 && *buf == '}'
 				break;
 			}
 			has_max_length = 0;
@@ -290,6 +290,9 @@ exec_builtin(Command * start_scommand, Command * command)
 	int return_value = EXIT_FAILURE;
 	char *args[command->argc + 1];
 
+	// FiX: treat properly sigpipe
+	signal(SIGPIPE, SIG_IGN);
+
 	for (i = 0; i < command->argc; i++) {
 		if (strlen(command->argv[i]) > 0) {
 			args[i] = command->argv[i];
@@ -320,5 +323,6 @@ exec_builtin(Command * start_scommand, Command * command)
 	free_command_with_buf(start_scommand);
 	exit_mash(0, NULL, STDOUT_FILENO, STDERR_FILENO);
 	exit(return_value);
+	signal(SIGPIPE, SIG_DFL);
 	return;
 }

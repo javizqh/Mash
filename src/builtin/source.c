@@ -138,7 +138,6 @@ read_source_file(char *filename)
 
 	while (fgets(buf, MAX_ARGUMENT_SIZE, f) != NULL) {	/* break with ^D or ^Z */
 		if (find_command(buf, NULL, f, NULL, NULL) == -1) {
-			//exit_dash();
 			fclose(f);
 			free(buf);
 			return 0;

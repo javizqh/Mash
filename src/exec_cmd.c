@@ -185,6 +185,7 @@ read_from_here_doc(Command * start_command)
 {
 	// Create stdin buffer
 	int has_max_length = 0;
+	ssize_t len_to_write = 0;
 
 	char *buffer_stdin = malloc(MAX_BUFFER_IO_SIZE);
 
@@ -208,15 +209,16 @@ read_from_here_doc(Command * start_command)
 			strcat(here_doc_buffer, buffer_stdin);
 		}
 	} while (strlen(here_doc_buffer) < MAX_HERE_DOC_BUFFER);
-
-	if (strlen(here_doc_buffer) >= MAX_HERE_DOC_BUFFER) {
+	len_to_write = strlen(here_doc_buffer);
+	if (len_to_write >= MAX_HERE_DOC_BUFFER) {
 		fprintf(stderr,
 			"Mash: error: exceeded max size of %d of here document\n",
 			MAX_HERE_DOC_BUFFER);
 	} else {	
-		// FIX: add while loop
-		write(start_command->fd_pipe_input[1], here_doc_buffer,
-		      strlen(here_doc_buffer));
+		while (len_to_write > 0) {
+			len_to_write -= write(start_command->fd_pipe_input[1], here_doc_buffer,
+		      len_to_write);
+		}
 	}
 
 	close_fd(start_command->fd_pipe_input[1]);
