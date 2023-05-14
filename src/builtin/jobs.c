@@ -218,6 +218,8 @@ launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess){
 
 	if (
 		cmd->search_location != SEARCH_CMD_ONLY_COMMAND &&
+		!exec_info->parse_info->exec_depth &&
+		cmd->do_wait != DO_NOT_WAIT_TO_FINISH &&
 		has_builtin_exec_in_shell(cmd)) 
 	{
 		if (cmd->do_wait == DO_NOT_WAIT_TO_FINISH) {
@@ -391,7 +393,6 @@ wait_job(Job * job)
 			}
 		} else if (WIFSTOPPED(wstatus)) {
 			//kill(job->pid, SIGTTOU);
-			fprintf(stderr, "Signal %d\n", WSTOPSIG(wstatus));
 			stop_job(wait_pid);
 			return EXIT_SUCCESS;
 		} else if (WIFSIGNALED(wstatus)) {
@@ -682,7 +683,7 @@ void update_jobs() {
 	// Check for finished jobs
 	Job * current;
 	for (current = jobs_list.head; current; current = current->next_job) {
-		if (kill(current->pid,0) < 0) {
+		if (waitpid(current->pid,0,WNOHANG) < 0) {
 			current->state = DONE;
 			print_job(current,0);
 		}

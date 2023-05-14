@@ -523,7 +523,7 @@ substitute(char *to_substitute)
 		// TODO: add all of them
 	} else if (strlen(to_substitute) == 0) {
 		memset(to_substitute, 0, MAX_ENV_SIZE);
-		//strcpy(to_substitute, "$");
+		strcpy(to_substitute, "$");
 		return 2;
 	}
 

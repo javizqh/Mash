@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <err.h>
 #include <stdlib.h>
@@ -46,13 +49,13 @@
 
 char *builtins_modify_cmd[4] = { "ifnot", "ifok", "builtin", "command" };
 
-char *builtins_in_shell[11] =
+char *builtins_in_shell[10] =
     { "disown", "kill", "wait", "bg", "fg", "cd", "export", "alias", "exit",
-	"source", "."
+	"source"
 };
 char *builtins_fork[6] = { "math", "help", "sleep", "pwd", "echo", "jobs" };
 
-int N_BUILTINS = 4 + 11 + 6;
+int N_BUILTINS = 4 + 10 + 6;
 
 // Builtin command
 char *builtin_use = "builtin shell-builtin [arg ..]";
@@ -139,32 +142,38 @@ modify_cmd_builtin(Command * modify_command)
 	return 1;
 }
 
-int
-has_builtin_exec_in_shell(Command * command)
+static int
+found_builtin_exec_in_shell(Command * command)
 {
 	int i;
-
-	if (command->pipe_next != NULL) {
-		return 0;
-	}
 
 	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
 		return 1;
 	}
 
-	for (i = 0; i < 11; i++) {
+	for (i = 0; i < 10; i++) {
 		if (strcmp(command->argv[0], builtins_in_shell[i]) == 0) {
 			return 1;
 		}
 	}
-
 	return 0;
+}
+
+int
+has_builtin_exec_in_shell(Command * command)
+{
+	if (command->pipe_next != NULL) {
+		return 0;
+	}
+
+	return found_builtin_exec_in_shell(command);
 }
 
 int
 exec_builtin_in_shell(Command * command)
 {
 	int i;
+	int exit_code = EXIT_FAILURE;
 	char *args[command->argc];
 
 	for (i = 0; i < command->argc; i++) {
@@ -177,41 +186,39 @@ exec_builtin_in_shell(Command * command)
 	}
 	args[i] = NULL;
 
-	//TODO: redirect output correctly
-
 	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
-		return add_env(command->argv[0]);
+		exit_code = add_env(command->argv[0]);
 	}
 
 	if (strcmp(command->argv[0], "alias") == 0) {
-		return alias(i, args);
+		exit_code = alias(i, args);
 	} else if (strcmp(command->argv[0], "export") == 0) {
-		return export(i, args);
+		exit_code = export(i, args);
 	} else if (strcmp(command->argv[0], "exit") == 0) {
 		if (are_jobs_stopped()) {
 			fprintf(stderr,
 				"Mash: couldn't exit because there are stopped jobs\n");
-			return EXIT_FAILURE;
 		}
 		wait_all_jobs();
-		return exit_mash(i, args);
+		exit_code = exit_mash(i, args);
 	} else if (strcmp(command->argv[0], "source") == 0
 		   || strcmp(command->argv[0], ".") == 0) {
-		return source(i, args);
+		exit_code = source(i, args);
 	} else if (strcmp(command->argv[0], "cd") == 0) {
-		return cd(i, args);
+		exit_code = cd(i, args);
 	} else if (strcmp(command->argv[0], "fg") == 0) {
-		return fg(i, args);
+		exit_code = fg(i, args);
 	} else if (strcmp(command->argv[0], "bg") == 0) {
-		return bg(i, args);
+		exit_code = bg(i, args);
 	} else if (strcmp(args[0], "wait") == 0) {
-		return wait_for_job(i, args);
+		exit_code = wait_for_job(i, args);
 	} else if (strcmp(args[0], "kill") == 0) {
-		return kill_job(i, args);
+		exit_code = kill_job(i, args);
 	} else if (strcmp(args[0], "disown") == 0) {
-		return disown(i, args);
+		exit_code = disown(i, args);
 	}
-	return 1;
+
+	return exit_code;
 }
 
 int
@@ -225,7 +232,7 @@ find_builtin(Command * command)
 		}
 	}
 
-	return has_builtin_exec_in_shell(command)
+	return found_builtin_exec_in_shell(command)
 	    || has_builtin_modify_cmd(command);
 }
 
@@ -258,7 +265,7 @@ exec_builtin(Command * start_scommand, Command * command)
 	} else if (strcmp(args[0], "math") == 0) {
 		return_value = math(i, args);
 	} else if (strcmp(args[0], "exit") != 0) {
-		if (has_builtin_exec_in_shell(command)) {
+		if (found_builtin_exec_in_shell(command)) {
 			exec_builtin_in_shell(command);
 		}
 		modify_cmd_builtin(command);

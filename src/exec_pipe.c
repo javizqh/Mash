@@ -54,6 +54,7 @@ launch_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 	}
 
 	if (cmd->search_location != SEARCH_CMD_ONLY_COMMAND &&
+			cmd->do_wait != DO_NOT_WAIT_TO_FINISH &&
 	    has_builtin_exec_in_shell(cmd)) {
 		if (cmd->do_wait == DO_NOT_WAIT_TO_FINISH) {
 			return EXIT_SUCCESS;

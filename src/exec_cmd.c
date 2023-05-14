@@ -398,6 +398,9 @@ close_all_fd_no_fork(Command * start_command)
 		if (command->output != STDOUT_FILENO) {
 			close_fd(command->output);
 		}
+		if (command->err_output != STDERR_FILENO) {
+			close_fd(command->err_output);
+		}
 		close_fd(command->fd_pipe_input[0]);
 		close_fd(command->fd_pipe_input[1]);
 		close_fd(command->fd_pipe_output[0]);
