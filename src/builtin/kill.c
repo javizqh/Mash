@@ -289,6 +289,10 @@ int kill_job(int argc, char *argv[], int stdout_fd, int stderr_fd) {
   out_fd = stdout_fd;
 	err_fd = stderr_fd;
 
+  if (!use_job_control) {
+		return no_job_control(err_fd);
+	}
+
   if (argc == 1) {
     // Use default signal
     if (strcmp(argv[0],"--help") == 0) {
@@ -332,7 +336,7 @@ int kill_job(int argc, char *argv[], int stdout_fd, int stderr_fd) {
   }
 
   if (job == NULL) {
-    return no_job("kill"); 
+    return no_job("kill", err_fd); 
   }
 
   kill(job->pid, signal);

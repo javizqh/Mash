@@ -67,6 +67,10 @@ int bg(int argc, char *argv[], int stdout_fd, int stderr_fd) {
 	out_fd = stdout_fd;
 	err_fd = stderr_fd;
 
+  if (!use_job_control) {
+		return no_job_control(err_fd);
+	}
+
   if (argc == 0) {
     job = get_job(get_relevance_job_pid(0));
   } else if (argc == 1) {
@@ -79,7 +83,7 @@ int bg(int argc, char *argv[], int stdout_fd, int stderr_fd) {
   }
 
   if (job == NULL) {
-    return no_job("bg"); 
+    return no_job("bg", err_fd); 
   }
 
 	switch (job->relevance) {

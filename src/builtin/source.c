@@ -72,7 +72,7 @@ int source(int argc, char *argv[], int stdout_fd, int stderr_fd) {
 		dprintf(err_fd,"Mash: source: %s no such file in directory\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	return add_source(argv[0]);
+	return add_source(argv[0], stderr_fd);
 }
 
 struct source_file *new_source_file(char *source_file_name)
@@ -99,7 +99,7 @@ void free_source_file() {
 }
 
 int
-add_source(char *source_file_name)
+add_source(char *source_file_name, int error_fd)
 {
 	int index;
   struct source_file *source_file = new_source_file(source_file_name);
@@ -110,8 +110,7 @@ add_source(char *source_file_name)
       return 0;
     }
   }
-	// FIX: where to print
-	fprintf(stderr,"Failed to add new source. Already at limit.\n");
+	dprintf(error_fd,"Failed to add new source. Already at limit.\n");
 	return 1;
 }
 

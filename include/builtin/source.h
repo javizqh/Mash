@@ -31,7 +31,7 @@ struct source_file *new_source_file(char *source_file_name);
 
 void free_source_file();
 
-int add_source(char *source_file_name);
+int add_source(char *source_file_name, int error_fd);
 
 int exec_sources();
 

@@ -102,11 +102,11 @@ set_arguments(char *argv[])
 					break;
 				case 'b':
 					syntax_mode = BASIC_SYNTAX;
-					use_jobs = 0;
+					use_job_control = 0;
 					break;
 				case 'e':
 					syntax_mode = EXTENDED_SYNTAX;
-					use_jobs = 1;
+					use_job_control = 1;
 					break;
 				default:
 					usage();
@@ -139,11 +139,11 @@ init_mash()
 		signal(SIGINT, sig_handler);
 		signal(SIGTSTP, sig_handler);
 		load_lex_tables();
-		add_source("env/.mashrc");
+		add_source("env/.mashrc", STDERR_FILENO);
 		exec_sources();
 	}
 
-	if (use_jobs) {
+	if (use_job_control) {
 		init_jobs_list();
 	}
 

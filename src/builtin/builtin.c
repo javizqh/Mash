@@ -186,6 +186,7 @@ wait_for_heredoc()
 			has_max_length = 1;
 		} else {
 			if (!has_max_length && strcmp(buf, "}\n") == 0) {
+				//FIX: add strlen(buf) == 1 && *buf == '}'
 				break;
 			}
 			has_max_length = 0;
@@ -203,6 +204,13 @@ exec_builtin_in_shell(Command * command, int is_pipe)
 	int exit_code = EXIT_FAILURE;
 	int cmd_out = command->output;
 	int cmd_err = command->err_output;
+
+	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
+		strcpy(command->argv[1], command->argv[0]);
+		strcpy(command->argv[0], "export");
+		command->argc = 2;
+	}
+
 	char *args[command->argc];
 
 	for (i = 0; i < command->argc; i++) {
@@ -217,11 +225,6 @@ exec_builtin_in_shell(Command * command, int is_pipe)
 
 	if (!is_pipe && command->input == HERE_DOC_FILENO) {
 		wait_for_heredoc();
-	}
-
-	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
-		// REVIEW: WHY?
-		exit_code = export(i, args, cmd_out, cmd_err);
 	}
 
 	if (strcmp(command->argv[0], "alias") == 0) {

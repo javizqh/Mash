@@ -54,6 +54,7 @@ char * jobs_help =
 "    Returns success unless an invalid option is given, an error occurs or job control is not enabled.\n";
 
 JobList jobs_list;
+int use_job_control = 1;
 
 // DECLARE STATIC FUNCTIONS
 static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, int flag_only_id, int flag_print_id);
@@ -85,6 +86,11 @@ int jobs(int argc, char *argv[]) {
 	pid_t only_job = 0;
 
 	Job * current;
+
+	if (!use_job_control) {
+		return no_job_control(STDERR_FILENO);
+	}
+
 	remove_job(get_job(get_relevance_job_pid(0)));  // Remove itself
 	if (argc > 2) {
 		return usage();
@@ -130,7 +136,7 @@ int jobs(int argc, char *argv[]) {
 	if (only_job) {
 		current = get_job(only_job);
 		if (current == NULL) {
-			return no_job("jobs");
+			return no_job("jobs", STDERR_FILENO);
 		}
 		print_job_builtin(current, only_run, only_stop, only_id, print_id);
 		return EXIT_SUCCESS;
@@ -176,9 +182,13 @@ static void print_job_builtin(Job * job, int flag_only_run, int flag_only_stop, 
 	}
 }
 
-int no_job(char *command) {
-	// FIX: this should be dprintf
-  fprintf(stderr,"mash: %s: no such a job\n",command);
+int no_job(char *command,int error_fd) {
+  dprintf(error_fd,"mash: %s: no such a job\n",command);
+	return EXIT_FAILURE;
+}
+
+int no_job_control(int error_fd) {
+  dprintf(error_fd,"mash: job control not enabled\n");
 	return EXIT_FAILURE;
 }
 

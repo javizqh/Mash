@@ -173,20 +173,6 @@ exec_cmd(Command * cmd, Command * start_cmd, Command * last_cmd)
 			}
 		}
 
-		if (fcntl(STDIN_FILENO, F_GETFD) == -1 && errno == EBADF) {
-			// BUG: temporal fix
-			//cmd->input = open("/dev/null", O_RDONLY);
-			//if (dup2(cmd->input, STDIN_FILENO) == -1) {
-			//      err(EXIT_FAILURE, "Failed to dup stdin");
-			//}
-			//close_fd(cmd->input);
-		}
-
-		if (fcntl(STDIN_FILENO, F_GETFD) == -1 && errno == EBADF) {
-			// BUG: temporal fix
-			fprintf(stderr, "Error");
-		}
-
 		args[i] = NULL;
 		execv(args[0], args);
 	}
