@@ -185,7 +185,9 @@ wait_for_heredoc()
 		if (strlen(buf) >= 4 - 1) {
 			has_max_length = 1;
 		} else {
-			if (!has_max_length && strcmp(buf, "}\n") == 0) {
+			if (!has_max_length && (strcmp(buf, "}\n") == 0 ||
+						(strlen(buf) == 1
+						 && *buf == '}'))) {
 				//FIX: add strlen(buf) == 1 && *buf == '}'
 				break;
 			}
