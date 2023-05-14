@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include "builtin/export.h"
 #include "builtin/mash_math.h"
 
 char * math_use = "math expression";
@@ -175,6 +176,7 @@ static Token * tokenize(char * expression) {
 
 static int substitute_values(Token * first_token) {
   Token * token, * prev_token, * to_free;
+  char * variable;
   double value;
   int prev_is_symbol = -1;
   for (token = first_token; token; token = token->next)
@@ -197,7 +199,31 @@ static int substitute_values(Token * first_token) {
         return -1;
       }
       prev_is_symbol = 0;
-      /* code */
+      variable = get_env_by_name(token->data);
+      if (variable == NULL) {
+        fprintf(stderr, "mash: error: var %s does not exist\n", token->data);
+        return -1;
+      }
+
+      if (*variable == '-') {
+        token->value *= -1;
+        variable++;
+        strcpy(token->data,variable);
+        variable--;
+      } else if (*variable == '+') {
+        variable++;
+        strcpy(token->data,variable);
+        variable--;
+      } else {
+        strcpy(token->data,variable);
+      }
+
+      free(variable);
+      if ((value = get_number(token->data)) < 0) {
+        return -1;
+      }
+      token->value *= value;
+      token->type = MATH_NUMBER;
       break;
     default:
       if (prev_is_symbol > 0) {
