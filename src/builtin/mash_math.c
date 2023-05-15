@@ -28,13 +28,15 @@ char * math_help =
 "    Exit Status:\n"
 "    Returns success unless an error in the expression is found.\n";
 
-static int help() {
+static int 
+help() {
 	printf("math: %s\n", math_use);
 	printf("    %s\n\n%s", math_description, math_help);
 	return EXIT_SUCCESS;
 }
 
-static int usage() {
+static int 
+usage() {
   fprintf(stderr,"Usage: %s\n",math_use);
 	return EXIT_FAILURE;
 }
@@ -61,7 +63,8 @@ typedef struct token {
   struct token * next;
 } Token;
 
-Token * newToken() {
+Token * 
+newToken() {
   Token *token = (Token *) malloc(sizeof(Token));
 
 	// Check if malloc failed
@@ -78,14 +81,16 @@ Token * newToken() {
 	return token;
 }
 
-Token * add_token(Token * prev_token, int priority) {
+Token * 
+add_token(Token * prev_token, int priority) {
   Token *new_token = newToken();
   prev_token->next = new_token;
   new_token->priority = priority;
 	return new_token;
 }
 
-void free_all_tokens(Token * first_token) {
+void 
+free_all_tokens(Token * first_token) {
   Token * token = first_token;
   Token * to_free = token;
   while (to_free)
@@ -97,11 +102,13 @@ void free_all_tokens(Token * first_token) {
   return;
 }
 
-static int is_symbol(char c) {
+static int 
+is_symbol(char c) {
   return c == '+' || c == '-' || c == '*' || c == '/' || c == '^'; 
 }
 
-static double get_number(char *number) {
+static double 
+get_number(char *number) {
   double num = 0;
   for (; *number != '\0'; number++)
   {
@@ -115,7 +122,8 @@ static double get_number(char *number) {
   return num;
 }
 
-static Token * tokenize(char * expression) {
+static Token * 
+tokenize(char * expression) {
   Token * first_token = newToken();
   Token * current_token = first_token;
   int total_priority = 0;
@@ -174,7 +182,8 @@ static Token * tokenize(char * expression) {
   return first_token;
 }
 
-static int substitute_values(Token * first_token) {
+static int 
+substitute_values(Token * first_token) {
   Token * token, * prev_token, * to_free;
   char * variable;
   double value;
@@ -257,7 +266,8 @@ static int substitute_values(Token * first_token) {
   return 0;
 }
 
-static double calculate(char symbol, double op_1, double op_2) {
+static double 
+calculate(char symbol, double op_1, double op_2) {
   switch (symbol)
   {
   case '*':
@@ -283,7 +293,8 @@ static double calculate(char symbol, double op_1, double op_2) {
   return 0;
 }
 
-static double do_operations(Token * start_token) {
+static double 
+do_operations(Token * start_token) {
   // num sim1 num2 sim2 num3 sim3 num4
   // If sim2 == * and sim1 == 1 replace num2 with (num2 sim2 num3)
   // Do the operations here
@@ -369,7 +380,8 @@ static double do_operations(Token * start_token) {
   return result;
 }
 
-static double operate(Token * start_token) {
+static double 
+operate(Token * start_token) {
   // Operate on the highest priority token
   Token * high_priority_token;
   Token * sp_token;
@@ -397,7 +409,8 @@ static double operate(Token * start_token) {
   return do_operations(start_token);
 }
 
-int math(int argc, char* argv[]) {
+int 
+math(int argc, char* argv[]) {
   argc--; argv++;
   double result;
 
