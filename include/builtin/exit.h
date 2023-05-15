@@ -11,3 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+extern char *exit_use;
+extern char *exit_description;
+extern char *exit_help;
+extern int has_to_exit;
+
+int exit_mash(int argc, char *argv[], int stdout_fd, int stderr_fd);

@@ -45,3 +45,4 @@ Doxyfile
 # Residual files
 TODO
 tmp/*
+results*

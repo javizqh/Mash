@@ -12,13 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 enum {
-  MAX_ENV_SIZE = 256,
-  MAX_PATH_SIZE = 64
+	MAX_ENV_SIZE = 512,
+	MAX_PATH_SIZE = MAX_ENV_SIZE * 32,
+	MAX_PATH_LOCATIONS = 128
 };
 
-extern int add_env(const char * line);
+extern char *export_use;
+extern char *export_description;
+extern char *export_help;
+
+int export(int argc, char *argv[], int stdout_fd, int stderr_fd);
+
+int add_env(const char *line);
+
+int add_env_by_name(const char *key, const char *value);
+
+char *get_env_by_name(const char *key);
+
+void print_env();

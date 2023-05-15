@@ -1,0 +1,30 @@
+a=echo
+b=ls
+x=test/results.txt
+y=test/results2.txt
+
+$a
+$a $b
+$a|$b
+$a | $b
+$a || $b
+$a && $b ||
+echo $x
+>$x $a
+$a >$y
+echo $$x
+echo $x($y)
+echo $"x"
+echo $#x
+echo $#$x
+echo $x
+cat HERE{
+ahkshakhs
+jsajskj
+sjka
+}
+ls &
+ls -l | grep s | wc -l &
+jkshkdzgcj
+cat
+ls | cat|cat| cat| wc -w|grep 1 >$x

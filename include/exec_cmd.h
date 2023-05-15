@@ -12,60 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <err.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include "builtin/export.h"
-#include "builtin/command.h"
+extern pid_t active_command;
 
-extern int find_path(struct command *command);
-extern int command_exists(char *path);
+int find_path(Command * command);
+int command_exists(char *path);
 
-extern int exec_command(struct command *command, FILE * src_file);
-
-int execution(struct command *command);
-
-/**
- * @brief Executes builtins that need to be executed in the parent process
- * 
- * @param command 
- * @return 1 = Need to execute in child | 0 = Executed in parent process
- */
-int exec_in_shell(struct command *command, struct command *start_command,
-		  struct command *last_command);
-
-void exec_child(struct command *command, struct command *start_command,
-		struct command *last_command);
-
-int wait_childs(struct command *start_command, struct command *last_command,
-		int n_cmds);
+void exec_cmd(Command * command, Command * start_command,
+	      Command * last_command);
 
 // Redirect input and output: Parent
 enum iobuffer {
 	MAX_BUFFER_IO_SIZE = 1024 * 4
 };
 
-void read_from_file(struct command *start_command);
-void write_to_file_or_buffer(struct command *last_command);
+void read_from_here_doc(Command * start_command);
+void write_to_buffer(Command * last_command);
 
 // Redirect input and output: Child
-void redirect_stdin(struct command *command, struct command *start_command);
-void redirect_stdout(struct command *command, struct command *last_command);
-void redirect_stderr(struct command *command, struct command *last_command);
+void redirect_stdin(Command * command, Command * start_command);
+void redirect_stdout(Command * command);
+void redirect_stderr(Command * command);
 
 // File descriptor
-int set_input_shell_pipe(struct command *command);
-int set_output_shell_pipe(struct command *command);
+int set_input_shell_pipe(Command * command);
+int set_output_shell_pipe(Command * command);
 
 int close_fd(int fd);
-int close_all_fd(struct command *start_command, struct command *last_command);
-int close_all_fd_cmd(struct command *command, struct command *start_command);
-
-// BUILTIN
-int find_builtin(struct command *command);
-void exec_builtin(struct command *command);
+int close_all_fd(Command * start_command);
+int close_all_fd_no_fork(Command * start_command);
+int close_all_fd_io(Command * start_command, Command * last_command);
+int close_all_fd_cmd(Command * command, Command * start_command);

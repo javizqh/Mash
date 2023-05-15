@@ -11,3 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+extern char *ifnot_use;
+extern char *ifnot_description;
+extern char *ifnot_help;
+
+int ifnot(Command * command);

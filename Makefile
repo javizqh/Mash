@@ -12,7 +12,7 @@ CXXFLAGS	:= -Wall -Wextra -Wshadow -g
 # define library paths in addition to /usr/lib
 #   if I wanted to include libraries not in /usr/lib I'd specify
 #   their path using -Lpath, something like:
-LFLAGS =
+LFLAGS = -lm
 
 # define source directory
 SRC		:= src
@@ -66,7 +66,7 @@ all: $(OUTPUT) $(MAIN)
 
 $(MAIN): $(OBJECTS) 
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $(OUTPUTMAIN) $(OBJECTS) $(LFLAGS) $(LIBS)
-	@./indent.sh */*.[ch]
+	# @./indent.sh */builtin/*.[ch]
 
 # this is a suffix replacement rule for building .o's from .c's
 # it uses automatic variables $<: the name of the prerequisite of

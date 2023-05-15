@@ -19,12 +19,67 @@
 #include <stdlib.h>
 #include "builtin/alias.h"
 
+// DECLARE STATIC FUNCTION
+static int usage();
+static int out_fd;
+static int err_fd;
+
+// DECLARE GLOBAL VARIABLE
 struct alias *aliases[ALIAS_MAX];
+char *alias_use = "alias [name=value]";
+char *alias_description = "Define or display aliases.";
+char *alias_help =
+    "    Without arguments, `alias' prints the list of aliases in the reusable\n"
+    "    form `alias NAME=VALUE' on standard output.\n\n"
+    "    Otherwise, an alias is defined for each NAME whose VALUE is given.\n\n"
+    "    Exit Status:\n"
+    "    alias returns 0 unless a VALUE is missing or the is out of memory.\n";
+
+static int
+help()
+{
+	dprintf(out_fd, "alias: %s\n", alias_use);
+	dprintf(out_fd, "    %s\n\n%s", alias_description, alias_help);
+	return EXIT_SUCCESS;
+}
+
+static int
+usage()
+{
+	dprintf(err_fd, "Usage: %s\n", alias_use);
+	return EXIT_FAILURE;
+}
+
+int
+alias(int argc, char *argv[], int stdout_fd, int stderr_fd)
+{
+	argc--;
+	argv++;
+	int exit_value = EXIT_SUCCESS;
+
+	out_fd = stdout_fd;
+	err_fd = stderr_fd;
+	if (argc == 0) {
+		print_aliases();
+	} else if (argc == 1) {
+		if (strcmp(argv[0], "--help") == 0) {
+			return help();
+		}
+		exit_value = add_alias(argv[0]);
+		if (exit_value < 0) {
+			return usage();
+		}
+	} else {
+		return usage();
+	}
+	return exit_value;
+}
 
 struct alias *
 new_alias(const char *command, char *reference)
 {
 	struct alias *alias = (struct alias *)malloc(sizeof(struct alias));
+
 	// Check if malloc failed
 	if (alias == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
@@ -49,6 +104,11 @@ add_alias(char *command)
 		if (eol != NULL) {
 			*eol = '\0';
 		}
+
+		if (strlen(p) <= 0) {
+			return -1;
+		}
+
 		struct alias *alias = new_alias(command, p);
 
 		for (index = 0; index < ALIAS_MAX; index++) {
@@ -57,41 +117,36 @@ add_alias(char *command)
 				return 0;
 			}
 		}
-		perror("Failed to add new alias. Already at limit.\n");
-	} else {
-		perror("Failed to add new alias. Failed to found =.\n");
+		dprintf(err_fd, "Failed to add new alias. Already at limit.\n");
+		return 1;
 	}
-	return 1;
+	return -1;
 }
 
-char* get_alias(const char* name) {
+char *
+get_alias(const char *name)
+{
 	int i;
-	// TODO:
+
 	for (i = 0; i < ALIAS_MAX; i++) {
-		if (aliases[i] == NULL) break;
-		if (strcmp(aliases[i]->command,name) == 0) {
+		if (aliases[i] == NULL)
+			break;
+		if (strcmp(aliases[i]->command, name) == 0) {
 			return aliases[i]->reference;
 		}
 	}
 	return NULL;
 }
 
-struct alias **
-init_aliases()
+void
+print_aliases()
 {
-	// Open and read env file
-	//FILE *fd_env = fopen(alias_file, "r");
+	int i;
 
-	// Create Aliases array
-	struct alias **newAliases =
-	    (struct alias **)malloc(ALIAS_MAX * sizeof(struct alias *));
-
-	// Check if malloc failed
-	if (newAliases == NULL) {
-		err(EXIT_FAILURE, "malloc failed");
+	for (i = 0; i < ALIAS_MAX; i++) {
+		if (aliases[i] == NULL)
+			break;
+		dprintf(out_fd, "alias %s=%s\n", aliases[i]->command,
+			aliases[i]->reference);
 	}
-	// Initialize buffer to 0
-	memset(newAliases, 0, ALIAS_MAX);
-
-	return newAliases;
 }

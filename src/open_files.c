@@ -12,6 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <err.h>
 #include "open_files.h"
 
 int
@@ -23,7 +31,7 @@ open_read_file(char *filename)
 
 	// Check if error occurred
 	if (fd == -1) {
-		fprintf(stderr, "dash: %s: No such file or directory\n",
+		fprintf(stderr, "mash: %s: No such file or directory\n",
 			filename);
 	}
 	return fd;
@@ -44,4 +52,16 @@ open_write_file(char *filename)
 		err(EXIT_FAILURE, "open failed");
 	}
 	return fd;
+}
+
+char *
+new_here_doc_buffer()
+{
+	char *hd_buffer = malloc(MAX_HERE_DOC_BUFFER);
+
+	if (hd_buffer == NULL)
+		err(EXIT_FAILURE, "malloc failed");
+	memset(hd_buffer, 0, MAX_HERE_DOC_BUFFER);
+
+	return hd_buffer;
 }

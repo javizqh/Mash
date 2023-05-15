@@ -1,0 +1,22 @@
+# test for parser
+a='echo hola'
+b=l
+c='cat <test/test.*'
+x=test/results.txt
+y=test/results2.txt
+$a
+$a $b
+$a|$b
+$a | $b
+$a && $b || $c
+echo $x
+>$x $a || $b && $c
+$a >$y || $b && $c
+echo $$x
+echo $x($y)
+echo $"x"
+echo $#x
+echo $#$x
+echo $x
+$a;$b;$c
+# echo $STATLINE(1)^$STATLINE(3)'	'$STATLINE(2)'	'$STATLINE(4)'	'$LSLINE(6)

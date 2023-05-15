@@ -12,23 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <err.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
-#include "open_files.h"
-#include "builtin/alias.h"
-
 enum {
-	MAX_ARGUMENT_SIZE = 128,
-	MAX_ARGUMENTS = 64
+	MAX_ARGUMENT_SIZE = 1024,
+	MAX_ARGUMENTS = 128
 };
 
-enum wait{
+enum wait {
 	WAIT_TO_FINISH,
 	DO_NOT_WAIT_TO_FINISH
 };
@@ -39,44 +28,67 @@ enum status {
 	EXECUTE_IN_FAILURE
 };
 
-enum pipe{
-	READ_FROM_SHELL = 0,
-	READ_FROM_PIPE = 1,
-	WRITE_TO_SHELL = 0,
-	WRITE_TO_PIPE = 1
+enum exit_code {
+	CMD_EXIT_SUCCESS,
+	CMD_EXIT_FAILURE,
+	CMD_EXIT_NOT_EXECUTE
 };
 
-struct command {
+enum search_cmd {
+	SEARCH_CMD_EVERYWHERE,
+	SEARCH_CMD_ONLY_COMMAND,
+	SEARCH_CMD_ONLY_BUILTIN
+};
+
+typedef struct Command {
 	char argv[MAX_ARGUMENTS][MAX_ARGUMENT_SIZE];
 	int argc;
 	char *current_arg;
 	pid_t pid;
-	// Only used for the first command
-	int prev_status_needed_to_exec;
-	// Execute in background Only in first command
+	int search_location;
+	// Only used for the first command in pipe
+	int next_status_needed_to_exec;
+	// Execute in background Only in first command in pipe
 	int do_wait;
 	// Pipes
 	int input;
 	int output;
+	int err_output;
 	int fd_pipe_input[2];
 	int fd_pipe_output[2];
-	struct command *pipe_next;
+	struct Command *pipe_next;
 	// Only used when $()
-	char * output_buffer;
-};
+	char *output_buffer;
+} Command;
 
-extern struct command *new_command();
+// Builtin command
+extern char *command_use;
+extern char *command_description;
+extern char *command_help;
 
-extern void free_command(struct command *command);
+int command(Command *command);
 
-extern int check_alias_cmd(struct command *command);
+// ---------------
 
-extern int add_arg(struct command *command);
+Command *new_command();
 
-extern int set_file_cmd(struct command *command,int file_type, char *file);
+void reset_command(Command *command);
 
-extern int set_to_background_cmd(struct command *command);
+void free_command(Command *command);
+void free_command_with_buf(Command *command);
 
-struct command * get_last_command(struct command *command);
+int check_alias_cmd(Command *command);
 
-extern int pipe_command(struct command *in_command, struct command * out_command);
+int add_arg(Command *command);
+
+int reset_last_arg(Command *command);
+
+int set_file_cmd(Command *command, int file_type, char *file);
+
+int set_buffer_cmd(Command *command, char *buffer);
+
+int set_to_background_cmd(Command *command);
+
+Command *get_last_command(Command *command);
+
+int pipe_command(Command *in_command, Command *out_command);
