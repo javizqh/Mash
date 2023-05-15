@@ -175,9 +175,10 @@ parse_prompt(char *prompt, char *line)
 				memset(buffer, 0, 1024);
 
 				strcpy(line,
-							"git status --porcelain 2> /dev/null | wc -l");
+				       "git status --porcelain 2> /dev/null | wc -l");
 
-				find_command(line, buffer, stdin, NULL, rest_start);
+				find_command(line, buffer, stdin, NULL,
+					     rest_start);
 
 				strtok(buffer, "\n");
 				if (atoi(buffer) > 0) {

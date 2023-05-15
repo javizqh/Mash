@@ -47,16 +47,16 @@ usage()
 }
 
 static void
-help ()
+help()
 {
-  printf ("Mash, version %s\n", version);
-  printf ("Usage: mash [-ibe]\n\n");
-  printf ("Options:\n\t-i\tInteractive mode\n");
-  printf ("\t-b\tBasic syntax\n\t-e\tExtended syntax\n\n");
-  printf
-    ("Enter mash and type `help' for more information about shell builtin commands.\n\n");
-  printf ("Mash source code: <https://github.com/javizqh/Mash>\n");
-  exit (EXIT_SUCCESS);
+	printf("Mash, version %s\n", version);
+	printf("Usage: mash [-ibe]\n\n");
+	printf("Options:\n\t-i\tInteractive mode\n");
+	printf("\t-b\tBasic syntax\n\t-e\tExtended syntax\n\n");
+	printf
+	    ("Enter mash and type `help' for more information about shell builtin commands.\n\n");
+	printf("Mash source code: <https://github.com/javizqh/Mash>\n");
+	exit(EXIT_SUCCESS);
 }
 
 int
@@ -67,9 +67,8 @@ main(int argc, char *argv[])
 	argc--;
 	argv++;
 
-	if (argc == 1 && strcmp (argv[0], "--help") == 0)
-	{
-		help ();
+	if (argc == 1 && strcmp(argv[0], "--help") == 0) {
+		help();
 	}
 
 	set_arguments(argv);
@@ -106,7 +105,9 @@ main(int argc, char *argv[])
 	return status;
 }
 
-static void set_flag_string() {
+static void
+set_flag_string()
+{
 	if (syntax_mode == BASIC_SYNTAX) {
 		flags[0] = 'b';
 	} else {

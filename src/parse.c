@@ -1007,7 +1007,8 @@ background(char *line, ExecInfo * exec_info)
 	command->do_wait = DO_NOT_WAIT_TO_FINISH;
 
 	if (command->input == STDIN_FILENO) {
-		if (set_file_cmd(exec_info->command, INPUT_READ, "/dev/null") < 0) {
+		if (set_file_cmd(exec_info->command, INPUT_READ, "/dev/null") <
+		    0) {
 			return NULL;
 		}
 	}
@@ -1030,7 +1031,8 @@ basic_background(char *line, ExecInfo * exec_info)
 	command->do_wait = DO_NOT_WAIT_TO_FINISH;
 
 	if (command->input == STDIN_FILENO) {
-		if (set_file_cmd(exec_info->command, INPUT_READ, "/dev/null") < 0) {
+		if (set_file_cmd(exec_info->command, INPUT_READ, "/dev/null") <
+		    0) {
 			return NULL;
 		}
 	}

@@ -54,9 +54,8 @@ launch_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 	}
 
 	if (cmd->search_location != SEARCH_CMD_ONLY_COMMAND &&
-			cmd->do_wait != DO_NOT_WAIT_TO_FINISH &&
-	    has_builtin_exec_in_shell(cmd)) 
-	{
+	    cmd->do_wait != DO_NOT_WAIT_TO_FINISH &&
+	    has_builtin_exec_in_shell(cmd)) {
 		close_all_fd_no_fork(cmd);
 		return exec_builtin_in_shell(cmd, 0);
 	}
@@ -76,8 +75,7 @@ exec_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 	}
 
 	if (set_input_shell_pipe(exec_info->command)
-	    || set_output_shell_pipe(exec_info->command)) 
-	{
+	    || set_output_shell_pipe(exec_info->command)) {
 		return 1;
 	}
 	// Make a loop fork each command
