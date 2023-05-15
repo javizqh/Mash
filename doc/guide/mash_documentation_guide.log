@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2023.1.25)  3 MAY 2023 17:09
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2023.1.25)  15 MAY 2023 22:06
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -79,6 +79,18 @@ Package: iftex 2020/03/06 v1.0d TeX engine tests
 \Gm@layoutvoffset=\dimen149
 \Gm@dimlist=\toks18
 )
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amssymb.sty
+Package: amssymb 2013/01/14 v3.01 AMS font symbols
+
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty
+Package: amsfonts 2013/01/14 v3.01 Basic AMSFonts support
+\@emptytoks=\toks19
+\symAMSa=\mathgroup4
+\symAMSb=\mathgroup5
+LaTeX Font Info:    Redeclaring math symbol \hbar on input line 98.
+LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
+(Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
+))
 (/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
 Package: xcolor 2021/10/31 v2.13 LaTeX color extensions (UK)
 
@@ -95,12 +107,12 @@ Package: array 2021/10/04 v2.5f Tabular extension package (FMi)
 \col@sep=\dimen150
 \ar@mcellbox=\box51
 \extrarowheight=\dimen151
-\NC@list=\toks19
+\NC@list=\toks20
 \extratabsurround=\skip50
 \backup@length=\skip51
 \ar@cellbox=\box52
 )
-\everycr=\toks20
+\everycr=\toks21
 \minrowclearance=\skip52
 )
 \rownum=\count199
@@ -116,15 +128,15 @@ Package xcolor Info: Model `wave' substituted by `hsb' on input line 1375.
 )
 (/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty
 Package: inputenc 2021/02/14 v1.3d Input encoding file
-\inpenc@prehook=\toks21
-\inpenc@posthook=\toks22
+\inpenc@prehook=\toks22
+\inpenc@posthook=\toks23
 )
 (/usr/share/texlive/texmf-dist/tex/latex/float/float.sty
 Package: float 2001/11/08 v1.3d Float enhancements (AL)
 \c@float@type=\count266
-\float@exts=\toks23
+\float@exts=\toks24
 \float@box=\box53
-\@float@everytoks=\toks24
+\@float@everytoks=\toks25
 \@floatcapt=\box54
 )
 (/usr/share/texmf/tex/latex/lm/lmodern.sty
@@ -302,7 +314,7 @@ Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
 )
 \Hy@SectionHShift=\skip53
 )
-Package hyperref Info: Option `colorlinks' set `true' on input line 14.
+Package hyperref Info: Option `colorlinks' set `true' on input line 15.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
 Package: amsmath 2021/10/15 v2.17l AMS math features
@@ -314,7 +326,7 @@ Package: amstext 2021/08/26 v2.01 AMS text
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty
 File: amsgen.sty 1999/11/30 v2.0 generic functions
-\@emptytoks=\toks25
+\@emptytoks=\toks26
 \ex@=\dimen156
 ))
 (/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty
@@ -344,21 +356,21 @@ LaTeX Font Info:    Redeclaring font encoding OMS on input line 744.
 \dotsspace@=\muskip17
 \c@parentequation=\count284
 \dspbrk@lvl=\count285
-\tag@help=\toks26
+\tag@help=\toks27
 \row@=\count286
 \column@=\count287
 \maxfields@=\count288
-\andhelp@=\toks27
+\andhelp@=\toks28
 \eqnshift@=\dimen159
 \alignsep@=\dimen160
 \tagshift@=\dimen161
 \tagwidth@=\dimen162
 \totwidth@=\dimen163
 \lineht@=\dimen164
-\@envbody=\toks28
+\@envbody=\toks29
 \multlinegap=\skip55
 \multlinetaggap=\skip56
-\mathdisplay@stack=\toks29
+\mathdisplay@stack=\toks30
 LaTeX Info: Redefining \[ on input line 2938.
 LaTeX Info: Redefining \] on input line 2939.
 )
@@ -370,8 +382,8 @@ Package: xkeyval 2020/11/20 v2.8 package option processing (HA)
 
 (/usr/share/texlive/texmf-dist/tex/generic/xkeyval/xkeyval.tex
 (/usr/share/texlive/texmf-dist/tex/generic/xkeyval/xkvutils.tex
-\XKV@toks=\toks30
-\XKV@tempa@toks=\toks31
+\XKV@toks=\toks31
+\XKV@tempa@toks=\toks32
 )
 \XKV@depth=\count289
 File: xkeyval.tex 2014/12/03 v2.7a key=value parser (HA)
@@ -423,7 +435,7 @@ Package: titlesec 2021/07/05 v2.14 Sectioning titles
 \aftertitleunit=\skip58
 \ttl@plus=\dimen179
 \ttl@minus=\dimen180
-\ttl@toksa=\toks32
+\ttl@toksa=\toks33
 \titlewidth=\dimen181
 \titlewidthlast=\dimen182
 \titlewidthfirst=\dimen183
@@ -433,41 +445,44 @@ File: l3backend-pdftex.def 2022-01-12 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count292
 \l__pdf_internal_box=\box60
 )
-(./mash_documentation_guide.aux)
+(./mash_documentation_guide.aux
+
+LaTeX Warning: Label `Bash' multiply defined.
+
+)
 \openout1 = `mash_documentation_guide.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 25.
-LaTeX Font Info:    ... okay on input line 25.
-
-(/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 26.
+LaTeX Font Info:    ... okay on input line 26.
+ (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count293
 \scratchdimen=\dimen184
 \scratchbox=\box61
 \nofMPsegments=\count294
 \nofMParguments=\count295
-\everyMPshowfont=\toks33
+\everyMPshowfont=\toks34
 \MPscratchCnt=\count296
 \MPscratchDim=\dimen185
 \MPnumerator=\count297
 \makeMPintoPDFobject=\count298
-\everyMPtoPDFconversion=\toks34
+\everyMPtoPDFconversion=\toks35
 ) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 4
@@ -511,7 +526,7 @@ e
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-Package hyperref Info: Link coloring ON on input line 25.
+Package hyperref Info: Link coloring ON on input line 26.
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2021-04-02 v2.47 Cross-referencing by name of section
 
@@ -523,109 +538,272 @@ Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 )
 \c@section@level=\count299
 )
-LaTeX Info: Redefining \ref on input line 25.
-LaTeX Info: Redefining \pageref on input line 25.
-LaTeX Info: Redefining \nameref on input line 25.
+LaTeX Info: Redefining \ref on input line 26.
+LaTeX Info: Redefining \pageref on input line 26.
+LaTeX Info: Redefining \nameref on input line 26.
 
 (./mash_documentation_guide.out) (./mash_documentation_guide.out)
 \@outlinefile=\write3
 \openout3 = `mash_documentation_guide.out'.
 
-<media//logo.jpg, id=52, 632.3625pt x 321.2pt>
+<media//logo.jpg, id=478, 632.3625pt x 321.2pt>
 File: media//logo.jpg Graphic file (type jpg)
 <use media//logo.jpg>
-Package pdftex.def Info: media//logo.jpg  used on input line 28.
+Package pdftex.def Info: media//logo.jpg  used on input line 29.
 (pdftex.def)             Requested size: 162.18236pt x 82.37787pt.
  [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map} <./media//logo.jpg>]
 (./mash_documentation_guide.toc
-LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 6
+LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 7
 .
  (/usr/share/texmf/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OML+lmm on input line 6
+LaTeX Font Info:    Trying to load font information for OML+lmm on input line 7
 .
 
 (/usr/share/texmf/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-6.
+7.
 
 (/usr/share/texmf/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-6.
+7.
 
 (/usr/share/texmf/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 6.
+(Font)              <12> on input line 7.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 6.
+(Font)              <8> on input line 7.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 6.
+(Font)              <6> on input line 7.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 7.
+
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
+LaTeX Font Info:    Trying to load font information for U+msb on input line 7.
+
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has
+ been already used, duplicate ignored
+<to be read again> 
+                   \relax 
+l.21 ...berline {3.4}Exit Status}{18}{section.3.4}
+                                                  % [1
+
+] [2] [3])
 \tf@toc=\write4
 \openout4 = `mash_documentation_guide.toc'.
 
-pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has 
-been already used, duplicate ignored
-<to be read again> 
-                   \relax 
-l.45 	\newpage
-               [1
-
-] [2
-
-] [3] [4
+ [4] [5
 
 ]
-Chapter 1.
-[5
-
-] [6
+[6] [7
 
 ]
-Overfull \hbox (7.94438pt too wide) in paragraph at lines 57--98
+Overfull \hbox (7.94438pt too wide) in paragraph at lines 93--134
 [][] 
  []
 
-[7] [8]
+[8] [9] [10
+
+]
+Underfull \hbox (badness 10000) in paragraph at lines 138--143
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 138--143
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 144--149
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 144--149
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 150--155
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 150--155
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 156--161
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 156--161
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 162--170
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 162--170
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 162--170
+
+ []
+
+[11] [12] [13
+
+]
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 1
+76.
+ (/usr/share/texmf/tex/latex/lm/ts1lmr.fd
+File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
+) [14] [15
+
+]
+Chapter 1.
+[16
+
+]
 Chapter 2.
-[9
 
-] [10
+Underfull \hbox (badness 10000) in paragraph at lines 226--228
 
-] [11] [12
+ []
+
+[17
+
+]
+Chapter 3.
+
+Underfull \hbox (badness 10000) in paragraph at lines 239--240
+
+ []
+
+[18
+
+]
+Chapter 4.
+[19
+
+]
+Chapter 5.
+[20
+
+]
+Chapter 6.
+[21
+
+]
+Chapter 7.
+[22
+
+]
+Chapter 8.
+[23
+
+]
+Chapter 9.
+[24
+
+]
+Chapter 10.
+[25
+
+]
+Chapter 11.
+[26
+
+]
+Chapter 12.
+[27
+
+]
+Chapter 13.
+[28
+
+]
+Chapter 14.
+[29
+
+]
+Chapter 15.
+[30
+
+]
+Chapter 16.
+[31
+
+]
+Chapter 17.
+[32
+
+]
+Chapter 18.
+[33
+
+]
+Chapter 19.
+[34
+
+]
+Chapter 20.
+[35
+
+]
+Chapter 21.
+[36
+
+] [37
 
 ] (./mash_documentation_guide.aux)
+
+LaTeX Warning: There were multiply-defined labels.
+
 Package rerunfilecheck Info: File `mash_documentation_guide.out' has not change
 d.
-(rerunfilecheck)             Checksum: E909171F10B5F6438D2BA4E454C3E11E;1072.
+(rerunfilecheck)             Checksum: B4633583D828629D1261D7312628570A;12692.
  ) 
 Here is how much of TeX's memory you used:
- 12134 strings out of 478287
- 190568 string characters out of 5849289
- 530257 words of memory out of 5000000
- 30111 multiletter control sequences out of 15000+600000
- 524509 words of font info for 53 fonts, out of 8000000 for 9000
+ 12940 strings out of 478287
+ 200434 string characters out of 5849289
+ 525858 words of memory out of 5000000
+ 30762 multiletter control sequences out of 15000+600000
+ 532099 words of font info for 62 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 60i,11n,63p,292b,355s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/share/texmf/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dv
-ips/lm/lm-mathsy.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-ec.enc}</usr/share
-/texmf/fonts/type1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm
-/lmcsc10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr12.pfb></usr/share/texm
-f/fonts/type1/public/lm/lmr17.pfb></usr/share/texmf/fonts/type1/public/lm/lmri1
-2.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb>
-Output written on mash_documentation_guide.pdf (13 pages, 178831 bytes).
+ 60i,11n,63p,292b,357s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}{/usr/share/texmf/fonts/en
+c/dvips/lm/lm-ts1.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-rm.enc}{/usr/shar
+e/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/share/texmf/fonts/enc/dvips/lm/l
+m-ec.enc}</usr/share/texmf/fonts/type1/public/lm/lmbx12.pfb></usr/share/texmf/f
+onts/type1/public/lm/lmcsc10.pfb></usr/share/texmf/fonts/type1/public/lm/lmex10
+.pfb></usr/share/texmf/fonts/type1/public/lm/lmr12.pfb></usr/share/texmf/fonts/
+type1/public/lm/lmr17.pfb></usr/share/texmf/fonts/type1/public/lm/lmri12.pfb></
+usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb>
+Output written on mash_documentation_guide.pdf (38 pages, 213925 bytes).
 PDF statistics:
- 170 PDF objects out of 1000 (max. 8388607)
- 139 compressed objects within 2 object streams
- 28 named destinations out of 1000 (max. 500000)
- 102 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 850 PDF objects out of 1000 (max. 8388607)
+ 785 compressed objects within 8 object streams
+ 160 named destinations out of 1000 (max. 500000)
+ 950 words of extra memory for PDF output out of 10000 (max. 10000000)
 

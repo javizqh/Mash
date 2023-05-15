@@ -19,43 +19,51 @@
 #include <string.h>
 #include "builtin/mash_pwd.h"
 
-char * pwd_use = "pwd";
-char * pwd_description = "Print the name of the current working directory.";
-char * pwd_help = 
-"    Exit Status:\n"
-"    Returns 0 unless an invalid option is given or the current directory cannot be read.\n";
+char *pwd_use = "pwd";
+char *pwd_description = "Print the name of the current working directory.";
+char *pwd_help =
+    "    Exit Status:\n"
+    "    Returns 0 unless an invalid option is given or the current directory cannot be read.\n";
 
-static int help() {
+static int
+help()
+{
 	printf("pwd: %s\n", pwd_use);
 	printf("    %s\n\n%s", pwd_description, pwd_help);
 	return EXIT_SUCCESS;
 }
 
-static int usage() {
-	fprintf(stderr,"Usage: %s\n",pwd_use);
+static int
+usage()
+{
+	fprintf(stderr, "Usage: %s\n", pwd_use);
 	return EXIT_FAILURE;
 }
 
-int pwd(int argc, char* argv[]) {
-  argc--; argv++;
-  char *pwd;
+int
+pwd(int argc, char *argv[])
+{
+	argc--;
+	argv++;
+	char *pwd;
 
-  if (argc == 1) {
-    if (strcmp(argv[0],"--help") == 0) {
-      return help();
-    }
-  }
+	if (argc == 1) {
+		if (strcmp(argv[0], "--help") == 0) {
+			return help();
+		}
+	}
 
-  if (argc > 0) {
-    return usage();
-  }
+	if (argc > 0) {
+		return usage();
+	}
 
-  if ((pwd = getenv("PWD")) == NULL) {
-    fprintf(stderr,"mash: pwd: failed to get current working directory\n");
-    return EXIT_FAILURE;
-  }
-  
-  printf("%s\n",pwd);
+	if ((pwd = getenv("PWD")) == NULL) {
+		fprintf(stderr,
+			"mash: pwd: failed to get current working directory\n");
+		return EXIT_FAILURE;
+	}
 
-  return EXIT_SUCCESS;
+	printf("%s\n", pwd);
+
+	return EXIT_SUCCESS;
 }

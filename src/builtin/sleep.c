@@ -18,94 +18,102 @@
 #include <string.h>
 #include "builtin/sleep.h"
 
-char * sleep_use = "sleep NUMBER[SUFFIX]...";
-char * sleep_description = "Pause for NUMBER seconds.";
-char * sleep_help = 
-"    Pause for NUMBER seconds.  SUFFIX may be 's' for seconds (default),\n"
-"    'm' for minutes, 'h' for hours or 'd' for days.  NUMBER need to be an\n"
-"    integer.  Given two or more arguments, pause for the amount of time\n"
-"    specified by the sum of their values.\n\n"
-"    Exit Status:\n"
-"    Returns success unless an invalid option or time is given.\n";
+char *sleep_use = "sleep NUMBER[SUFFIX]...";
+char *sleep_description = "Pause for NUMBER seconds.";
+char *sleep_help =
+    "    Pause for NUMBER seconds.  SUFFIX may be 's' for seconds (default),\n"
+    "    'm' for minutes, 'h' for hours or 'd' for days.  NUMBER need to be an\n"
+    "    integer.  Given two or more arguments, pause for the amount of time\n"
+    "    specified by the sum of their values.\n\n"
+    "    Exit Status:\n"
+    "    Returns success unless an invalid option or time is given.\n";
 
-static int help() {
+static int
+help()
+{
 	printf("sleep: %s\n", sleep_use);
 	printf("    %s\n\n%s", sleep_description, sleep_help);
 	return EXIT_SUCCESS;
 }
 
-static int usage() {
-	fprintf(stderr,"Usage: %s\n",sleep_use);
+static int
+usage()
+{
+	fprintf(stderr, "Usage: %s\n", sleep_use);
 	return EXIT_FAILURE;
 }
 
-static int invalid_time(char *time) {
-	fprintf(stderr,"sleep: invalid time interval '%s'\n",time);
+static int
+invalid_time(char *time)
+{
+	fprintf(stderr, "sleep: invalid time interval '%s'\n", time);
 	return -1;
 }
 
-static int get_time(char *time) {
-  char *ptr;
-  int total_time = 0;
-  int has_time_unit = 0;
-  for ( ptr = time; *ptr != '\0' ; ptr++)
-  {
-    if (*ptr >= '0' && *ptr <= '9') {
-      total_time = total_time * 10 + (*ptr - '0');
-    } else if (*ptr == 's' && !has_time_unit) {
-      has_time_unit = 1;
-    } else if (*ptr == 'm' && !has_time_unit) {
-      has_time_unit = 1;
-      total_time *= 60;
-    } else if (*ptr == 'h' && !has_time_unit) {
-      has_time_unit = 1;
-      total_time *= 60 * 60;
-    } else if (*ptr == 'd' && !has_time_unit) {
-      has_time_unit = 1;
-      total_time *= 60 * 60 * 24;
-    } else {
-      return invalid_time(time);
-    }
-  }
+static int
+get_time(char *time)
+{
+	char *ptr;
+	int total_time = 0;
+	int has_time_unit = 0;
 
-  if (total_time == 0) {
-    return invalid_time(time);
-  }
-  return total_time;
-} 
+	for (ptr = time; *ptr != '\0'; ptr++) {
+		if (*ptr >= '0' && *ptr <= '9') {
+			total_time = total_time * 10 + (*ptr - '0');
+		} else if (*ptr == 's' && !has_time_unit) {
+			has_time_unit = 1;
+		} else if (*ptr == 'm' && !has_time_unit) {
+			has_time_unit = 1;
+			total_time *= 60;
+		} else if (*ptr == 'h' && !has_time_unit) {
+			has_time_unit = 1;
+			total_time *= 60 * 60;
+		} else if (*ptr == 'd' && !has_time_unit) {
+			has_time_unit = 1;
+			total_time *= 60 * 60 * 24;
+		} else {
+			return invalid_time(time);
+		}
+	}
 
-int mash_sleep(int argc, char* argv[]) {
-  argc--; argv++;
-  int i;
-  int time_to_add = 0;
-  unsigned int time = 0;
+	if (total_time == 0) {
+		return invalid_time(time);
+	}
+	return total_time;
+}
 
-  if (argc == 0) {
-    return usage();
-  } else if (argc == 1) {
-    if (strcmp(argv[0],"--help") == 0) {
-      return help();
-    }
-  }
+int
+mash_sleep(int argc, char *argv[])
+{
+	argc--;
+	argv++;
+	int i;
+	int time_to_add = 0;
+	unsigned int time = 0;
 
-  for (i = 0; i < argc; i++)
-  {
-    if ((time_to_add = get_time(argv[i])) > 0) {
-      time += time_to_add;
-    } else {
-      return EXIT_FAILURE;
-    }
-  }
+	if (argc == 0) {
+		return usage();
+	} else if (argc == 1) {
+		if (strcmp(argv[0], "--help") == 0) {
+			return help();
+		}
+	}
 
-  if (time == 0) {
-    return usage();
-  }
-  
+	for (i = 0; i < argc; i++) {
+		if ((time_to_add = get_time(argv[i])) > 0) {
+			time += time_to_add;
+		} else {
+			return EXIT_FAILURE;
+		}
+	}
 
-  while (time > 0)
-  {
-    time = sleep(time);
-  }
+	if (time == 0) {
+		return usage();
+	}
 
-  return EXIT_SUCCESS;
+	while (time > 0) {
+		time = sleep(time);
+	}
+
+	return EXIT_SUCCESS;
 }

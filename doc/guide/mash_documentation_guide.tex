@@ -2,6 +2,7 @@
 \usepackage{graphicx} %LaTeX package to import graphics
 \usepackage{enumitem}
 \usepackage{geometry}
+\usepackage{amssymb}
 \usepackage[table]{xcolor}
 \setlength{\arrayrulewidth}{0.5mm}
 \setlength{\tabcolsep}{3pt}
@@ -45,14 +46,49 @@
 	\newpage
 \part{Introduction}
 Introduction on the mash shell
-\part{Code}
-\chapter{Shell}
-Orden de busqueda de comandos: alias - builtin - script in directory - path
-\part{Syntax}
-\noindent Only for ASCII characters, if used for another type it won't work as expected.\\
+\part{Shell Grammar}
+The following two tables form the syntax in the shell, being the first one the basic and the next one the extended. Next is some important information about it:\\
+Only for ASCII characters, if used for another type it won't work as expected.\\
 ----- = Default or copy\\
 Color = Change in syntax table\\
 \textcolor[HTML]{C500FF}{Subexec} = Substitute by output of command inside
+\begin{table}[H]
+	\centering
+	\begin{tabular}{ |c|c|c|c| }
+		\hline
+		\rowcolor{lightgray} \multicolumn{4}{|c|}{Basic Syntax Table} \\
+		\hline
+		Character & Standard & File \cellcolor[HTML]{BEE9F9}& Substitution \cellcolor[HTML]{FFF49C}\\
+		\hline
+		$\backslash$0 & end\_line & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
+		$\backslash$t & blank & end\_file\_started \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
+		$\backslash$n & blank & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
+		Space & blank & end\_file\_started \cellcolor[HTML]{BEE9F9}&  end\_sub\cellcolor[HTML]{FFF49C}\\
+		" & ----- & ----- &  end\_sub\cellcolor[HTML]{FFF49C}\\
+		\# & ----- & end\_file \cellcolor[HTML]{BEE9F9}& copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
+		\$ & start\_sub \cellcolor[HTML]{FFF49C}& start\_sub \cellcolor[HTML]{FFF49C} & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
+		\& & background & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub\cellcolor[HTML]{FFF49C}\\
+		' & ----- & ----- &  end\_sub\cellcolor[HTML]{FFF49C}\\
+		$($ & error \cellcolor[HTML]{FF0044}& error \cellcolor[HTML]{FF0044} & end\_sub \cellcolor[HTML]{FFF49C}\\
+		$)$ & error \cellcolor[HTML]{FF0044}& error \cellcolor[HTML]{FF0044} & end\_sub \cellcolor[HTML]{FFF49C}\\
+		* & do\_glob & do\_glob & end\_sub\cellcolor[HTML]{FFF49C} \\
+		- & ----- & ----- &  copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
+		; & ----- & end\_file\cellcolor[HTML]{BEE9F9} &  end\_sub \cellcolor[HTML]{FFF49C}\\
+		< & start\_file\_in \cellcolor[HTML]{BEE9F9}& end\_file\cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
+		> & start\_file\_out \cellcolor[HTML]{BEE9F9}& end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
+		? & do\_glob & do\_glob & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
+		@ & ----- & ----- & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
+		$[$ & do\_glob & do\_glob &  end\_sub \cellcolor[HTML]{FFF49C}\\
+		$\backslash$ & ----- & ----- &  end\_sub \cellcolor[HTML]{FFF49C}\\
+		\_ & ----- & end\_file \cellcolor[HTML]{BEE9F9}& copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
+		\{ & here\_doc & error \cellcolor[HTML]{FF0044} &  end\_sub \cellcolor[HTML]{FFF49C}\\
+		\} & error \cellcolor[HTML]{FF0044} & error \cellcolor[HTML]{FF0044} &  end\_sub \cellcolor[HTML]{FFF49C} \\
+		$|$ & pipe\_tok & end\_file\cellcolor[HTML]{BEE9F9} &  end\_sub \cellcolor[HTML]{FFF49C}\\
+		\textasciitilde  & ----- & ----- &  end\_sub \cellcolor[HTML]{FFF49C}\\
+		Rest  & ----- & ----- &  ----- \\
+		\hline
+	\end{tabular}
+\end{table}
 \begin{table}[H]
 \begin{tabular}{ |c|c|c|c|c|c| }
 	\hline
@@ -96,63 +132,369 @@ Color = Change in syntax table\\
 	\hline
 \end{tabular}
 \end{table}
-\begin{table}[H]
-	\centering
-	\begin{tabular}{ |c|c|c|c| }
-		\hline
-		\rowcolor{lightgray} \multicolumn{4}{|c|}{Basic Syntax Table} \\
-		\hline
-		Character & Standard & File \cellcolor[HTML]{BEE9F9}& Substitution \cellcolor[HTML]{FFF49C}\\
-		\hline
-		$\backslash$0 & end\_line & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
-		$\backslash$t & blank & end\_file\_started \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
-		$\backslash$n & blank & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
-		Space & blank & end\_file\_started \cellcolor[HTML]{BEE9F9}&  end\_sub\cellcolor[HTML]{FFF49C}\\
-		" & ----- & ----- &  end\_sub\cellcolor[HTML]{FFF49C}\\
-		\# & ----- & end\_file \cellcolor[HTML]{BEE9F9}& copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
-		\$ & start\_sub \cellcolor[HTML]{FFF49C}& start\_sub \cellcolor[HTML]{FFF49C} & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
-		\& & background & end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub\cellcolor[HTML]{FFF49C}\\
-		' & ----- & ----- &  end\_sub\cellcolor[HTML]{FFF49C}\\
-		$($ & error \cellcolor[HTML]{FF0044}& error \cellcolor[HTML]{FF0044} & end\_sub \cellcolor[HTML]{FFF49C}\\
-		$)$ & error \cellcolor[HTML]{FF0044}& error \cellcolor[HTML]{FF0044} & end\_sub \cellcolor[HTML]{FFF49C}\\
-		* & do\_glob & do\_glob & end\_sub\cellcolor[HTML]{FFF49C} \\
-		- & ----- & ----- &  copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
-		; & ----- & end\_file\cellcolor[HTML]{BEE9F9} &  end\_sub \cellcolor[HTML]{FFF49C}\\
-		< & start\_file\_in \cellcolor[HTML]{BEE9F9}& end\_file\cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
-		> & start\_file\_out \cellcolor[HTML]{BEE9F9}& end\_file \cellcolor[HTML]{BEE9F9}&  end\_sub \cellcolor[HTML]{FFF49C}\\
-		? & do\_glob & do\_glob & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
-		@ & ----- & ----- & copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
-		$[$ & do\_glob & do\_glob &  end\_sub \cellcolor[HTML]{FFF49C}\\
-		$\backslash$ & ----- & ----- &  end\_sub \cellcolor[HTML]{FFF49C}\\
-		\_ & ----- & end\_file \cellcolor[HTML]{BEE9F9}& copy\_and\_end\_sub \cellcolor[HTML]{FFF49C}\\
-		\{ & here\_doc & error \cellcolor[HTML]{FF0044} &  end\_sub \cellcolor[HTML]{FFF49C}\\
-		\} & error \cellcolor[HTML]{FF0044} & error \cellcolor[HTML]{FF0044} &  end\_sub \cellcolor[HTML]{FFF49C} \\
-		$|$ & pipe\_tok & end\_file\cellcolor[HTML]{BEE9F9} &  end\_sub \cellcolor[HTML]{FFF49C}\\
-		\textasciitilde  & ----- & ----- &  end\_sub \cellcolor[HTML]{FFF49C}\\
-		Rest  & ----- & ----- &  ----- \\
-		\hline
-	\end{tabular}
-\end{table}
-\chapter{Builtin commands}
-Explicacion de los builtins
-\section{Alias}
-Alias builtin
-\section{Exit}
-Exit builtin
-\section{Cd}
-Cd builtin
-\section{Test}
-Test builtin
-\section{Ifok}
-Ifok builtin
-\section{Ifnot}
-Ifnot builtin
-\part{Dash Scripting}
-Explanation of how to mash script
+\part{Redirections}
+\setcounter{chapter}{1}
+\section*{Redirecting input}
+Redirection of input causes the file to be opened for reading on the standard input.\\
+\newline
+The general format for redirecting input is:\\
+\newline
+\hspace*{7 mm}<filename
+\section*{Redirecting Standard Output}
+Redirection of output causes the file to be opened for reading on the standard output. If the file does not exist it is created; if it does exist it is truncated to zero size.\\
+\newline
+The general format for redirecting output is:\\
+\newline
+\hspace*{7 mm}>filename
+\section*{Redirecting Standard Error}
+Redirection of error causes the file to be opened for reading on the standard error. If the file does not exist it is created; if it does exist it is truncated to zero size.\\
+\newline
+The general format for redirecting error is:\\
+\newline
+\hspace*{7 mm}2>filename
+\section*{Redirecting Standard Output and Standard Error}
+This  construct  allows both the standard output (file descriptor 1) and the standard error output (file descriptor 2) to be redirected to the file.\\
+\newline
+The general format for redirecting output and error is:\\
+\newline
+\hspace*{7 mm}\&>filename
+\section*{Here documents}
+This type of redirection instructs the shell to read input from the current source until a line containing only delimiter '\}' (with no trailing characters) is  seen.   All  of  the
+lines read up to that point are then used as the standard input for a command.\\
+\newline
+The general format for here documents is:\\
+\newline
+\hspace*{7 mm}HERE\{\\
+\hspace*{14 mm} here-document\\
+\hspace*{7 mm} \}\\
+
+\part{Prompting}
+\setcounter{chapter}{0}
+When  executing  interactively, mash displays the primary prompt PROMPT when it is ready to read a command, and '> ' when it needs more input to complete a command.\\
+Mash allows these prompt strings to be customized by inserting a number of special strings that are decoded as follows:
+\begin{itemize}
+	\item @-\hspace{7 mm}does nothing
+	\item @ifcustom\hspace{7 mm}if file named .mash\_prompt is found in directory the enter if statement
+	\item @ifgit\hspace{7 mm}if directory is a git repository then enter if statement
+	\item @else\hspace{7 mm}if not enter if statement then exec the following
+	\item @endif\hspace{7 mm}end of if statement
+	\item @user\hspace{7 mm}the username of the current user
+	\item @where\hspace{7 mm}the current working directory, with \$HOME abbreviated with a tilde
+	\item @host\hspace{7 mm}the hostname
+	\item @custom\hspace{7 mm}replace with contents of file .mash\_prompt. Use with @ifcustom.
+	\item @gitstatuscolor\hspace{7 mm}if git is up to date show color green, if not red
+	\item @gitstatus\hspace{7 mm}the number of files to add to commit
+	\item @branch\hspace{7 mm}the name of the git branch
+	\item @black\hspace{7 mm}show color black
+	\item @red\hspace{7 mm}show color red
+	\item @green\hspace{7 mm}show color green
+	\item @yellow\hspace{7 mm}show color yellow
+	\item @blue\hspace{7 mm}show color blue
+	\item @pink\hspace{7 mm}show color pink
+	\item @cyan\hspace{7 mm}show color cyan
+	\item @white\hspace{7 mm}show color white
+	\item @nocolor\hspace{7 mm}remove all colors
+\end{itemize}
+\part{Builtins}
+\setcounter{chapter}{0}
+\chapter{Arithmetic evaluation}
+\section{Description}
+Write result of the arithmetic expression to the standard output.
+\section{Usage}
+\$(( expression ))
+\section{Extended description}
+Evaluation is done in fixed-width integers with no check for overflow, though division by 0 is considered as an error.  The operators and  their  precedence,  associativity,  and values are the same as in the C language.\\
+Shell variables are allowed as operands; parameter expansion is performed before the expression is evaluated.  Within an expression, shell variables may also be referenced by name without using the \$ character.
+\section{Operands}
+\begin{itemize}
+	\item +\hspace{7 mm}addition
+	\item -\hspace{7 mm}subtraction	
+	\item *\hspace{7 mm}multiplication
+	\item /\hspace{7 mm}division
+	\item \hspace{2 mm}$\widehat{ }$\hspace{7 mm}exponentiation
+\end{itemize}
+\section{Exit Status}
+Returns success unless an error in the expression is found.
+\newpage
+
+\chapter{Alias}
+\section{Description}
+Define or display aliases.
+\section{Usage}
+alias [name=value]
+\section{Extended description}
+Without arguments, `alias' prints the list of aliases in the reusable
+form `alias NAME=VALUE' on standard output.\\
+
+\noindent Otherwise, an alias is defined for each NAME whose VALUE is given.
+\section{Exit Status}
+alias returns 0 unless a VALUE is missing or the is out of memory.
+\newpage
+\chapter{Bg}
+\section{Description}
+Move jobs to the background.
+\section{Usage}
+bg [jobspec]
+\section{Extended description}
+Place the jobs identified by the JOB$\_$SPEC in the background, as if they had been started with `\&'. \\
+
+\noindent If JOB$\_$SPEC is not present, the shell's notion of the current job is used.
+\section{Exit Status}
+Returns success unless job control is not enabled or an error occurs.
+\newpage
+
+\chapter{Builtin}
+\section{Description}
+Execute shell builtins.
+\section{Usage}
+builtin shell-builtin [arg ..]
+\section{Extended description}
+Execute SHELL-BUILTIN with arguments ARGs without performing command lookup.
+\section{Exit Status}
+Returns the exit status of SHELL-BUILTIN, or 1 if SHELL-BUILTIN not a shell builtin.
+\newpage
+
+\chapter{Cd}
+\section{Description}
+Change the shell working directory.
+\section{Usage}
+cd [directory]
+\section{Extended description}
+Change the current directory to DIR.  The default DIR is the value of the HOME shell variable.
+\section{Exit Status}
+Returns 0 if the directory is changed, and non-zero otherwise.
+\newpage
+
+\chapter{Command}
+\section{Description}
+Execute a simple command or display information about commands.
+\section{Usage}
+command [-Vv] command [arg ..]
+\section{Extended description}
+Runs COMMAND with ARGS suppressing  shell function lookup, or display information about the specified COMMANDs.
+\section{Options}
+\begin{itemize}
+	\item -v\hspace{7 mm}print a description of COMMAND similar to the `type' builtin
+	\item -V\hspace{7 mm}print a more verbose description of each COMMAND
+\end{itemize}
+\section{Exit Status}
+Returns exit status of COMMAND, or failure if COMMAND is not found.
+\newpage
+
+\chapter{Disown}
+\section{Description}
+Remove jobs from current shell.
+\section{Usage}
+disown [-ar] [jobspec … | pid … ]
+\section{Extended description}
+Removes each JOBSPEC argument from the table of active jobs. Without any JOBSPECs, the shell uses its notion of the current job.
+\section{Options}
+\begin{itemize}
+	\item -a\hspace{7 mm}remove all jobs if JOBSPEC is not supplied
+	\item -r\hspace{7 mm}remove only running jobs
+\end{itemize}
+\section{Exit Status}
+Returns success unless an invalid option or JOBSPEC is given, or job control is not enabled.
+\newpage
+
+\chapter{Echo}
+\section{Description}
+Write arguments to the standard output.
+\section{Usage}
+echo [-n] [arg ...]
+\section{Extended description}
+Display the ARGs, separated by a single space character and followed by a newline, on the standard output.
+\section{Options}
+\begin{itemize}
+	\item -n\hspace{7 mm}do not append a newline
+\end{itemize}
+\section{Exit Status}
+Returns success unless a write error occurs.
+\newpage
+
+\chapter{Exit}
+\section{Description}
+Exit the shell.
+\section{Usage}
+exit [n]
+\section{Extended description}
+Exits the shell with a status of N.  If N is omitted, the exit status is that of the last command executed.
+\newpage
+
+\chapter{Export}
+\section{Description}
+Set export attribute for shell variables.
+\section{Usage}
+export [name=value]
+\section{Extended description}
+Marks each NAME for automatic export to the environment of subsequently executed commands.  If VALUE is supplied, assign VALUE before exporting.
+\section{Exit Status}
+Returns success unless an invalid option is given or NAME is invalid.
+\newpage
+
+\chapter{Fg}
+\section{Description}
+Move job to the foreground.
+\section{Usage}
+fg [jobspec]
+\section{Extended description}
+Place the job identified by JOB$\_$SPEC in the foreground, making it the current job.  If JOB$\_$SPEC is not present, the shell's notion of the current job is used.
+\section{Exit Status}
+Status of command placed in foreground, or failure if an error occurs or job control is not enabled.
+\newpage
+
+\chapter{Help}
+\section{Description}
+Display information about builtin commands.
+\section{Usage}
+help [-dms] [pattern ...]
+\section{Extended description}
+Displays brief summaries of builtin commands.  If PATTERN is specified, gives detailed help on all commands matching PATTERN, otherwise the list of help topics is printed.
+\section{Options}
+\begin{itemize}
+	\item -d\hspace{7 mm}output short description for each topic
+	\item -m\hspace{7 mm}display usage in pseudo-manpage format
+	\item -s\hspace{7 mm}output only a short usage synopsis for each topic matching PATTERN
+\end{itemize}
+\section{Arguments}
+\begin{itemize}
+	\item PATTERN\hspace{7 mm}Pattern specifying a help topic
+\end{itemize}
+\section{Exit Status}
+Returns success unless PATTERN is not found or an invalid option is given.
+\newpage
+
+\chapter{Ifnot}
+\section{Description}
+Execute the command if previous command failed.
+\section{Usage}
+ifnot command [arg ..]
+\section{Extended description}
+Runs COMMAND with ARGS if the last executed command finished with failure.
+\section{Exit Status}
+Returns exit status of COMMAND, or success if last command ended with success.\\
+If enviroment variable 'result' does not exist returns failure.
+\newpage
+
+\chapter{Ifok}
+\section{Description}
+Execute the command if previous command ended successfully.
+\section{Usage}
+ifok command [arg ..]
+\section{Extended description}
+Runs COMMAND with ARGS if the last executed command finished with success.
+\section{Exit Status}
+Returns exit status of COMMAND, or success if last command ended with failure.\\
+If enviroment variable 'result' does not exist returns failure.
+\newpage
+
+\chapter{Jobs}
+\section{Description}
+Display status of jobs.
+\section{Usage}
+jobs [-lprs] [jobspec]
+\section{Extended description}
+Lists the active jobs.  JOBSPEC restricts output to that job.\\
+Without options, the status of all active jobs is displayed.
+\section{Options}
+\begin{itemize}
+	\item -l\hspace{7 mm}lists process IDs in addition to the normal information
+	\item -p\hspace{7 mm}lists process IDs only
+	\item -r\hspace{7 mm}restrict output to running jobs
+	\item -s\hspace{7 mm}restrict output to stopped jobs
+\end{itemize}
+\section{Exit Status}
+Returns success unless an invalid option is given, an error occurs or job control is not enabled.
+\newpage
+
+\chapter{Kill}
+\section{Description}
+Send a signal to a job.
+\section{Usage}
+kill [-s sigspec] | [-n signum] | [-sigspec] jobspec or pid or kill -l [sigspec]
+\section{Extended description}
+Send the processes identified by PID or JOBSPEC the signal named by SIGSPEC or SIGNUM.\\
+If neither SIGSPEC nor SIGNUM is present, then SIGTERM is assumed.
+\section{Options}
+\begin{itemize}
+	\item -s sig\hspace{7 mm}SIG is a signal name
+	\item -n sig\hspace{7 mm}SIG is a signal number
+	\item -l\hspace{14 mm}list the signal names; if an argument follows `-l' it is assumed to be a signal name\\
+	\hspace*{17 mm}for which number should be listed
+	\item -L\hspace{14 mm}synonym for -l
+\end{itemize}
+\section{Exit Status}
+Returns success unless an invalid option is given or an error occurs or job control is not enabled.
+\newpage
+
+\chapter{Math}
+\section{Description}
+Write result of the arithmetic expression to the standard output.
+\section{Usage}
+math expression
+\section{Extended description}
+Display the result of the arithmetic expression, followed by a newline, on the standard output.
+\section{Operands}
+\begin{itemize}
+	\item +\hspace{7 mm}addition
+	\item -\hspace{7 mm}subtraction	
+	\item *\hspace{7 mm}multiplication
+	\item /\hspace{7 mm}division
+	\item \hspace{2 mm}$\widehat{ }$\hspace{7 mm}exponentiation
+\end{itemize}
+\section{Exit Status}
+Returns success unless an error in the expression is found.
+\newpage
+
+\chapter{Pwd}
+\section{Description}
+Print the name of the current working directory.
+\section{Usage}
+pwd
+\section{Extended description}
+Print the name of the current working directory.
+\section{Exit Status}
+Returns 0 unless an invalid option is given or the current directory cannot be read.
+\newpage
+
+\chapter{Sleep}
+\section{Description}
+Pause for NUMBER seconds.
+\section{Usage}
+sleep NUMBER[SUFFIX]...
+\section{Extended description}
+Pause for NUMBER seconds.  SUFFIX may be 's' for seconds (default),'m' for minutes, 'h' for hours or 'd' for days.\\
+NUMBER need to be an integer.\\
+Given two or more arguments, pause for the amount of time specified by the sum of their values.
+\section{Exit Status}
+Returns success unless an invalid option or time is given.
+\newpage
+
+\chapter{Source}
+\section{Description}
+Execute commands from a file in the current shell.
+\section{Usage}
+source filename
+\section{Extended description}
+Read and execute commands from FILENAME in the current shell.  The entries in \$PATH are used to find the directory containing FILENAME.
+\section{Exit Status}
+Returns success unless FILENAME cannot be read.
+\newpage
+
+\chapter{Wait}
+\section{Description}
+Wait for job completion and return exit status.
+\section{Usage}
+wait [jobspec or id]
+\section{Extended description}
+Waits for each process identified by an ID, which may be a process ID or a job specification, and reports its termination status.\\
+If ID is not given, waits for the current active child processes, and the return it's status. If ID is a job specification, waits for all processes in that job's pipeline.
+\section{Exit Status}
+Returns the status of the last ID; fails if ID is invalid, stopped, an invalid option is given or job control is not enabled.
+\newpage
 \begin{thebibliography}{100} % 100 is a random guess of the total number of
 	%references
-	\bibitem{Boney96} Boney, L., Tewfik, A.H., and Hamdy, K.N., ``Digital
-	Watermarks for Audio Signals," \emph{Proceedings of the Third IEEE
-		International Conference on Multimedia}, pp. 473-480, June 1996.
+	\bibitem{Bash} Brian Fox and Chet Ramey, ``Bash man page``.
+	\bibitem{Rc} Byron Rakitzis, ``Rc shell``.
 \end{thebibliography}
 \end{document}

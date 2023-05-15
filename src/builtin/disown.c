@@ -26,77 +26,84 @@
 #include "builtin/jobs.h"
 #include "builtin/disown.h"
 
-char * disown_use = "disown [-ar] [jobspec … | pid … ]";
-char * disown_description = "Remove jobs from current shell.";
-char * disown_help = 
-"    Removes each JOBSPEC argument from the table of active jobs. Without\n"
-"    any JOBSPECs, the shell uses its notion of the current job.\n\n"
-"    Options:\n"
-"      -a    remove all jobs if JOBSPEC is not supplied\n"
-"      -r    remove only running jobs\n\n"
-"    Exit Status:\n"
-"    Returns success unless an invalid option or JOBSPEC is given, or job control is not enabled.\n";
+char *disown_use = "disown [-ar] [jobspec … | pid … ]";
+char *disown_description = "Remove jobs from current shell.";
+char *disown_help =
+    "    Removes each JOBSPEC argument from the table of active jobs. Without\n"
+    "    any JOBSPECs, the shell uses its notion of the current job.\n\n"
+    "    Options:\n"
+    "      -a    remove all jobs if JOBSPEC is not supplied\n"
+    "      -r    remove only running jobs\n\n"
+    "    Exit Status:\n"
+    "    Returns success unless an invalid option or JOBSPEC is given, or job control is not enabled.\n";
 
 static int out_fd;
 static int err_fd;
 
-static int help() {
+static int
+help()
+{
 	dprintf(out_fd, "disown: %s\n", disown_use);
 	dprintf(out_fd, "    %s\n\n%s", disown_description, disown_help);
 	return EXIT_SUCCESS;
 }
 
-static int usage() {
-  dprintf(err_fd,"Usage: %s\n",disown_use);
+static int
+usage()
+{
+	dprintf(err_fd, "Usage: %s\n", disown_use);
 	return EXIT_FAILURE;
 }
 
-int disown(int argc, char *argv[], int stdout_fd, int stderr_fd) {
-  argc--;argv++;
-  Job * job;
+int
+disown(int argc, char *argv[], int stdout_fd, int stderr_fd)
+{
+	argc--;
+	argv++;
+	Job *job;
 
 	out_fd = stdout_fd;
 	err_fd = stderr_fd;
 
-  if (!use_job_control) {
+	if (!use_job_control) {
 		return no_job_control(err_fd);
 	}
 
-  if (argc == 0) {
-    job = get_job(get_relevance_job_pid(0));
-  } else if (argc == 1) {
-    if (strcmp(argv[0],"--help") == 0) {
+	if (argc == 0) {
+		job = get_job(get_relevance_job_pid(0));
+	} else if (argc == 1) {
+		if (strcmp(argv[0], "--help") == 0) {
 			return help();
 		}
-    if (strcmp(argv[0], "-a") == 0) {
-      // Remove all
-      if (remove_all_status_jobs(ALL)) {
-        return EXIT_SUCCESS;
-      } else {
-        return EXIT_FAILURE;
-      }
-    } else if (strcmp(argv[0],"-r") == 0) {
-      // Remove only running
-      if (remove_all_status_jobs(RUNNING)) {
-        return EXIT_SUCCESS;
-      } else {
-        return EXIT_FAILURE;
-      }
-    } else if (*argv[0] == '%') {
-      job = get_job(substitute_jobspec(argv[0]));
-    } else {
-      // Pid
-      job = get_job(atoi(argv[0]));
-    }
-  } else {
-    return usage();
-  }
+		if (strcmp(argv[0], "-a") == 0) {
+			// Remove all
+			if (remove_all_status_jobs(ALL)) {
+				return EXIT_SUCCESS;
+			} else {
+				return EXIT_FAILURE;
+			}
+		} else if (strcmp(argv[0], "-r") == 0) {
+			// Remove only running
+			if (remove_all_status_jobs(RUNNING)) {
+				return EXIT_SUCCESS;
+			} else {
+				return EXIT_FAILURE;
+			}
+		} else if (*argv[0] == '%') {
+			job = get_job(substitute_jobspec(argv[0]));
+		} else {
+			// Pid
+			job = get_job(atoi(argv[0]));
+		}
+	} else {
+		return usage();
+	}
 
-  if (job == NULL) {
-    return no_job("disown", err_fd); 
-  }
+	if (job == NULL) {
+		return no_job("disown", err_fd);
+	}
 
-  remove_job(job);
-  
-  return EXIT_SUCCESS;
+	remove_job(job);
+
+	return EXIT_SUCCESS;
 }

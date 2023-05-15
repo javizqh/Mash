@@ -28,34 +28,40 @@
 #include "builtin/exit.h"
 
 // DECLARE GLOBAL VARIABLE
-char * exit_use = "exit [n]";
-char * exit_description = "Exit the shell.";
-char * exit_help = 
-"    Exits the shell with a status of N.  If N is omitted, the exit status\n"
-"    is that of the last command executed.\n";
+char *exit_use = "exit [n]";
+char *exit_description = "Exit the shell.";
+char *exit_help =
+    "    Exits the shell with a status of N.  If N is omitted, the exit status\n"
+    "    is that of the last command executed.\n";
 int has_to_exit = 0;
 
 static int out_fd;
 static int err_fd;
 
-static int help() {
+static int
+help()
+{
 	dprintf(out_fd, "exit: %s\n", exit_use);
 	dprintf(out_fd, "    %s\n\n%s", exit_description, exit_help);
 	return EXIT_SUCCESS;
 }
 
-static int usage() {
-	dprintf(err_fd,"Usage: %s\n",exit_use);
+static int
+usage()
+{
+	dprintf(err_fd, "Usage: %s\n", exit_use);
 	return EXIT_FAILURE;
 }
 
 int
-exit_mash(int argc, char* argv[], int stdout_fd, int stderr_fd)
+exit_mash(int argc, char *argv[], int stdout_fd, int stderr_fd)
 {
-	argc--;argv++;
+	argc--;
+	argv++;
 	int i;
 	char *result = get_env_by_name("result");
 	int exit_status;
+
 	if (result == NULL) {
 		dprintf(err_fd, "error: var result does not exist\n");
 	}
@@ -67,26 +73,27 @@ exit_mash(int argc, char* argv[], int stdout_fd, int stderr_fd)
 	err_fd = stderr_fd;
 
 	if (argc == 1) {
-		if (strcmp(argv[0],"--help") == 0) {
+		if (strcmp(argv[0], "--help") == 0) {
 			return help();
 		}
 		exit_status = atoi(argv[0]);
-		if ( exit_status < 0) {
+		if (exit_status < 0) {
 			exit_status = 0;
-		}	
+		}
 	} else if (argc > 1) {
 		return usage();
 	}
 
-  for (i = 0; i < ALIAS_MAX; i++) {
-		if (aliases[i] == NULL) break;
+	for (i = 0; i < ALIAS_MAX; i++) {
+		if (aliases[i] == NULL)
+			break;
 		free(aliases[i]);
 	}
 
-  free_source_file();
+	free_source_file();
 
 	free_jobs_list();
 
 	has_to_exit = 1;
-  return exit_status;
+	return exit_status;
 }

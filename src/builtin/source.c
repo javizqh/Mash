@@ -30,32 +30,39 @@
 #include "builtin/source.h"
 
 // DECLARE GLOBAL VARIABLE
-char * source_use = "source filename";
-char * source_description = "Execute commands from a file in the current shell.";
-char * source_help = 
-"    Read and execute commands from FILENAME in the current shell.  The\n"
-"    entries in $PATH are used to find the directory containing FILENAME.\n\n"
-"    Exit Status:\n"
-"    Returns success unless FILENAME cannot be read.\n";
+char *source_use = "source filename";
+char *source_description = "Execute commands from a file in the current shell.";
+char *source_help =
+    "    Read and execute commands from FILENAME in the current shell.  The\n"
+    "    entries in $PATH are used to find the directory containing FILENAME.\n\n"
+    "    Exit Status:\n"
+    "    Returns success unless FILENAME cannot be read.\n";
 
 struct source_file *sources[MAX_SOURCE_FILES];
 
 static int out_fd;
 static int err_fd;
 
-static int help() {
+static int
+help()
+{
 	dprintf(out_fd, "source: %s\n", source_use);
 	dprintf(out_fd, "    %s\n\n%s", source_description, source_help);
 	return EXIT_SUCCESS;
 }
 
-static int usage() {
-	dprintf(err_fd,"Usage: %s\n",source_use);
+static int
+usage()
+{
+	dprintf(err_fd, "Usage: %s\n", source_use);
 	return EXIT_FAILURE;
 }
 
-int source(int argc, char *argv[], int stdout_fd, int stderr_fd) {
-	argc--; argv++;
+int
+source(int argc, char *argv[], int stdout_fd, int stderr_fd)
+{
+	argc--;
+	argv++;
 	struct stat buffer;
 
 	out_fd = stdout_fd;
@@ -69,15 +76,18 @@ int source(int argc, char *argv[], int stdout_fd, int stderr_fd) {
 	}
 	// Check if file exists
 	if (stat(argv[0], &buffer) < 0) {
-		dprintf(err_fd,"Mash: source: %s no such file in directory\n", argv[0]);
+		dprintf(err_fd, "Mash: source: %s no such file in directory\n",
+			argv[0]);
 		return EXIT_FAILURE;
 	}
 	return add_source(argv[0], stderr_fd);
 }
 
-struct source_file *new_source_file(char *source_file_name)
+struct source_file *
+new_source_file(char *source_file_name)
 {
-	struct source_file *source_file = (struct source_file *)malloc(sizeof(struct source_file));
+	struct source_file *source_file =
+	    (struct source_file *)malloc(sizeof(struct source_file));
 	// Check if malloc failed
 	if (source_file == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
@@ -87,43 +97,47 @@ struct source_file *new_source_file(char *source_file_name)
 	return source_file;
 }
 
-
-void free_source_file() {
+void
+free_source_file()
+{
 	int i;
+
 	for (i = 0; i < MAX_SOURCE_FILES; i++) {
 		if (sources[i] == NULL) {
 			break;
 		}
 		free(sources[i]);
-  }
+	}
 }
 
 int
 add_source(char *source_file_name, int error_fd)
 {
 	int index;
-  struct source_file *source_file = new_source_file(source_file_name);
+	struct source_file *source_file = new_source_file(source_file_name);
 
-  for (index = 0; index < MAX_SOURCE_FILES; index++) {
-    if (sources[index] == NULL) {
-      sources[index] = source_file;
-      return 0;
-    }
-  }
-	dprintf(error_fd,"Failed to add new source. Already at limit.\n");
+	for (index = 0; index < MAX_SOURCE_FILES; index++) {
+		if (sources[index] == NULL) {
+			sources[index] = source_file;
+			return 0;
+		}
+	}
+	dprintf(error_fd, "Failed to add new source. Already at limit.\n");
 	return 1;
 }
 
-int exec_sources() {
-  int index;
+int
+exec_sources()
+{
+	int index;
 
-  for (index = 0; index < MAX_SOURCE_FILES; index++) {
-    if (sources[index] == NULL) {
-      break;
-    }
-    read_source_file(sources[index]->file);
-  }
-  return 0;
+	for (index = 0; index < MAX_SOURCE_FILES; index++) {
+		if (sources[index] == NULL) {
+			break;
+		}
+		read_source_file(sources[index]->file);
+	}
+	return 0;
 }
 
 int

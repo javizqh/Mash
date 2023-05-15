@@ -34,66 +34,72 @@
 #include "builtin/jobs.h"
 #include "builtin/fg.h"
 
-char * fg_use = "fg [jobspec]";
-char * fg_description = "Move job to the foreground.";
-char * fg_help = 
-"    Place the job identified by JOB_SPEC in the foreground, making it the\n"
-"    current job.  If JOB_SPEC is not present, the shell's notion of the\n"
-"    current job is used.\n\n"
-"    Exit Status:\n"
-"    Status of command placed in foreground, or failure if an error occurs or job control is not enabled\n";
+char *fg_use = "fg [jobspec]";
+char *fg_description = "Move job to the foreground.";
+char *fg_help =
+    "    Place the job identified by JOB_SPEC in the foreground, making it the\n"
+    "    current job.  If JOB_SPEC is not present, the shell's notion of the\n"
+    "    current job is used.\n\n"
+    "    Exit Status:\n"
+    "    Status of command placed in foreground, or failure if an error occurs or job control is not enabled\n";
 
 static int out_fd;
 static int err_fd;
 
-static int help() {
+static int
+help()
+{
 	dprintf(out_fd, "fg: %s\n", fg_use);
 	dprintf(out_fd, "    %s\n\n%s", fg_description, fg_help);
 	return EXIT_SUCCESS;
 }
 
-static int usage() {
-  dprintf(err_fd,"Usage: %s\n",fg_use);
+static int
+usage()
+{
+	dprintf(err_fd, "Usage: %s\n", fg_use);
 	return EXIT_FAILURE;
 }
 
-int fg(int argc, char *argv[], int stdout_fd, int stderr_fd) {
-  argc--;argv++;
-  Job * job;
-  int exit_code = EXIT_SUCCESS;
+int
+fg(int argc, char *argv[], int stdout_fd, int stderr_fd)
+{
+	argc--;
+	argv++;
+	Job *job;
+	int exit_code = EXIT_SUCCESS;
 
 	out_fd = stdout_fd;
 	err_fd = stderr_fd;
 
-  if (!use_job_control) {
+	if (!use_job_control) {
 		return no_job_control(err_fd);
 	}
 
-
-  if (argc == 0) {
-    job = get_job(get_relevance_job_pid(0));
-  } else if (argc == 1) {
-    if (strcmp(argv[0],"--help") == 0) {
+	if (argc == 0) {
+		job = get_job(get_relevance_job_pid(0));
+	} else if (argc == 1) {
+		if (strcmp(argv[0], "--help") == 0) {
 			return help();
 		}
-    job = get_job(substitute_jobspec(argv[0]));
-  } else {
-    return usage();
-  }
-  if (job == NULL) {
-    return no_job("fg", err_fd); 
-  }
-  job->state = RUNNING;
-  dprintf(out_fd, "%s\n", job->command);
-  kill(job->pid, SIGTTIN);
-  kill(job->pid, SIGCONT);
-  signal(SIGTTOU, SIG_IGN);
-  signal(SIGTTIN, SIG_IGN);
-  setpgid(job->pid,0);
-  tcsetpgrp(0, job->pid);  //traspaso el foreground a ese
-  exit_code = wait_job(job);
-  tcsetpgrp(0, getpgrp());  //recupero el foreground
-  signal(SIGTTOU, SIG_DFL);
-  signal(SIGTTIN, SIG_DFL);
-  return exit_code;
+		job = get_job(substitute_jobspec(argv[0]));
+	} else {
+		return usage();
+	}
+	if (job == NULL) {
+		return no_job("fg", err_fd);
+	}
+	job->state = RUNNING;
+	dprintf(out_fd, "%s\n", job->command);
+	kill(job->pid, SIGTTIN);
+	kill(job->pid, SIGCONT);
+	signal(SIGTTOU, SIG_IGN);
+	signal(SIGTTIN, SIG_IGN);
+	setpgid(job->pid, 0);
+	tcsetpgrp(0, job->pid);	//traspaso el foreground a ese
+	exit_code = wait_job(job);
+	tcsetpgrp(0, getpgrp());	//recupero el foreground
+	signal(SIGTTOU, SIG_DFL);
+	signal(SIGTTIN, SIG_DFL);
+	return exit_code;
 }

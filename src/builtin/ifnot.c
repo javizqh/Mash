@@ -19,52 +19,59 @@
 #include "builtin/command.h"
 #include "builtin/ifnot.h"
 
-char * ifnot_use = "ifnot command [arg ..]";
-char * ifnot_description = "Execute the command if previous command failed.";
-char * ifnot_help = 
-"    Runs COMMAND with ARGS if the last executed command finished with\n"
-"    failure.\n\n"
-"    Exit Status:\n"
-"    Returns exit status of COMMAND, or success if last command ended with success.\n"
-"    If enviroment variable 'result' does not exist returns failure.\n";
+char *ifnot_use = "ifnot command [arg ..]";
+char *ifnot_description = "Execute the command if previous command failed.";
+char *ifnot_help =
+    "    Runs COMMAND with ARGS if the last executed command finished with\n"
+    "    failure.\n\n"
+    "    Exit Status:\n"
+    "    Returns exit status of COMMAND, or success if last command ended with success.\n"
+    "    If enviroment variable 'result' does not exist returns failure.\n";
 
-static int help() {
+static int
+help()
+{
 	printf("ifnot: %s\n", ifnot_use);
 	printf("    %s\n\n%s", ifnot_description, ifnot_help);
 	return CMD_EXIT_NOT_EXECUTE;
 }
 
-static int usage() {
-	fprintf(stderr,"Usage: %s\n",ifnot_use);
+static int
+usage()
+{
+	fprintf(stderr, "Usage: %s\n", ifnot_use);
 	return CMD_EXIT_FAILURE;
 }
 
-int ifnot(Command * command) {
-  int i;
-  char* result = getenv("result");
-  if (result == NULL) {
-    fprintf(stderr,"error: var result does not exist");
-    return CMD_EXIT_FAILURE;
-  }
+int
+ifnot(Command * command)
+{
+	int i;
+	char *result = getenv("result");
 
-  if (command->argc < 2) {
-    return usage();
-  }
+	if (result == NULL) {
+		fprintf(stderr, "error: var result does not exist");
+		return CMD_EXIT_FAILURE;
+	}
+
+	if (command->argc < 2) {
+		return usage();
+	}
 
 	if (command->argc == 2) {
-    if (strcmp(command->argv[1],"--help") == 0) {
+		if (strcmp(command->argv[1], "--help") == 0) {
 			return help();
 		}
 	}
 
-  if (atoi(result) != 0) {
-    for (i = 1; i < command->argc; i++)
-    {
-      strcpy(command->argv[i - 1], command->argv[i]);
-    }
-    strcpy(command->argv[command->argc - 1], command->argv[command->argc]);
-    command->argc--;
-    return CMD_EXIT_SUCCESS;
-  }
-  return CMD_EXIT_NOT_EXECUTE;
+	if (atoi(result) != 0) {
+		for (i = 1; i < command->argc; i++) {
+			strcpy(command->argv[i - 1], command->argv[i]);
+		}
+		strcpy(command->argv[command->argc - 1],
+		       command->argv[command->argc]);
+		command->argc--;
+		return CMD_EXIT_SUCCESS;
+	}
+	return CMD_EXIT_NOT_EXECUTE;
 }
