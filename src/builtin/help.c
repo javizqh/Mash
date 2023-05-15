@@ -37,6 +37,7 @@
 #include "builtin/jobs.h"
 #include "builtin/builtin.h"
 #include "builtin/help.h"
+#include "mash.h"
 
 char * help_use = "help [-dms] [pattern ...]";
 char * help_description = "Display information about builtin commands.";
@@ -69,7 +70,7 @@ static void print_help_header() {
     "These shell commands are defined internally.  Type `help' to see this list.\n"
     "Type `help name' to find out more about the function `name'.\n"
     "Use `info mash' to find out more about the shell in general.\n"
-    "Use `man -k' or `info' to find out more about commands not in this list.\n\n", "1.0.1");
+    "Use `man -k' or `info' to find out more about commands not in this list.\n\n", version);
 }
 
 static int print_usage(char *name) {
@@ -588,7 +589,7 @@ static int print_help_man(char *name) {
     use[i],
     description[i],
     help_str[i],
-    "1.0.1");
+    version);
   }
   return n_matches;
 }

@@ -15,6 +15,7 @@
 extern int reading_from_file;
 extern int writing_to_file;
 extern char flags[3];
+extern char version[32];
 
 int set_arguments(char *argv[]);
 int init_mash();
