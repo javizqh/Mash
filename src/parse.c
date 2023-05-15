@@ -30,6 +30,7 @@
 #include "parse_line.h"
 #include "show_prompt.h"
 #include "exec_cmd.h"
+#include "mash.h"
 
 int syntax_mode = EXTENDED_SYNTAX;
 
@@ -517,10 +518,19 @@ substitute(char *to_substitute)
 			return 2;
 		} else if (*to_substitute == '#') {
 			memset(to_substitute, 0, MAX_ENV_SIZE);
+			// TODO: do not hardcode
 			strcpy(to_substitute, "0");
 			return 2;
+		} else if (*to_substitute == '@') {
+			memset(to_substitute, 0, MAX_ENV_SIZE);
+			// TODO: do not hardcode
+			strcpy(to_substitute, " ");
+			return 2;
+		} else if (*to_substitute == '-' || *to_substitute == '_') {
+			memset(to_substitute, 0, MAX_ENV_SIZE);
+			strcpy(to_substitute, flags);
+			return 2;
 		}
-		// TODO: add all of them
 	} else if (strlen(to_substitute) == 0) {
 		memset(to_substitute, 0, MAX_ENV_SIZE);
 		strcpy(to_substitute, "$");
@@ -646,7 +656,6 @@ subexec(char *line, ExecInfo * exec_info)
 void
 new_argument(ExecInfo * exec_info)
 {
-	// TODO: clean
 	Command *cmd = exec_info->last_command;
 
 	if (require_glob) {
@@ -998,7 +1007,7 @@ background(char *line, ExecInfo * exec_info)
 	command->do_wait = DO_NOT_WAIT_TO_FINISH;
 
 	if (command->input == STDIN_FILENO) {
-		if (set_file_cmd(command, INPUT_READ, "/dev/null") < 0) {
+		if (set_file_cmd(exec_info->command, INPUT_READ, "/dev/null") < 0) {
 			return NULL;
 		}
 	}
@@ -1021,7 +1030,7 @@ basic_background(char *line, ExecInfo * exec_info)
 	command->do_wait = DO_NOT_WAIT_TO_FINISH;
 
 	if (command->input == STDIN_FILENO) {
-		if (set_file_cmd(command, INPUT_READ, "/dev/null") < 0) {
+		if (set_file_cmd(exec_info->command, INPUT_READ, "/dev/null") < 0) {
 			return NULL;
 		}
 	}

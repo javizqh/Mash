@@ -42,12 +42,22 @@ pid_t active_command = 0;
 int
 find_path(Command * command)
 {
+	int i;
+	char *cwd;
+	char *cwd_ptr;
+
+	char *path, *orig_path;
+	char *path_ptr;
+	int path_len = 0;
+	char path_tok[MAX_PATH_LOCATIONS][MAX_ENV_SIZE];
+	char *token;
+
 	// Check if the first character is /
 	if (*command->argv[0] == '/') {
 		return command_exists(command->argv[0]);
 	}
 	// CHECK IN PWD
-	char *cwd = malloc(MAX_ENV_SIZE);
+	cwd = malloc(MAX_ENV_SIZE);
 
 	if (cwd == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
@@ -58,7 +68,7 @@ find_path(Command * command)
 		free(cwd);
 		return -1;
 	}
-	char *cwd_ptr = cwd;
+	cwd_ptr = cwd;
 
 	strcat(cwd_ptr, "/");
 	strcat(cwd_ptr, command->argv[0]);
@@ -72,32 +82,27 @@ find_path(Command * command)
 
 	// SEARCH IN PATH
 	// First get the path from env PATH
-	char *path = malloc(MAX_ENV_SIZE * MAX_PATH_SIZE);
+	path = malloc(MAX_PATH_SIZE);
 
 	if (path == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-	memset(path, 0, MAX_ENV_SIZE * MAX_PATH_SIZE);
+	memset(path, 0, MAX_PATH_SIZE);
 	// Copy the path
-	strcpy(path, getenv("PATH"));
-	if (path == NULL) {
+	orig_path = getenv("PATH");
+	if (orig_path == NULL || strlen(orig_path) > MAX_PATH_SIZE - 1) {
 		free(path);
 		return -1;
 	}
-	char *path_ptr = path;
+	strcpy(path, orig_path);
+	path_ptr = path;
 
 	// Then separate the path by : using strtok
-	char path_tok[MAX_ENV_SIZE][MAX_PATH_SIZE];
-
-	char *token;
-	int path_len = 0;
-
 	while ((token = strtok_r(path_ptr, ":", &path_ptr))) {
 		strcpy(path_tok[path_len], token);
 		path_len++;
 	}
 	// Loop through the path until we find an exec
-	int i;
 
 	for (i = 0; i < path_len; i++) {
 		strcat(path_tok[i], "/");
@@ -259,14 +264,14 @@ redirect_stdin(Command * command, Command * start_command)
 	if (command->pid != start_command->pid
 	    || start_command->input == HERE_DOC_FILENO) {
 		if (dup2(command->fd_pipe_input[0], STDIN_FILENO) == -1) {
-			err(EXIT_FAILURE, "Failed to dup stdin %i",
+			err(EXIT_FAILURE, "Failed to dup stdin a%i",
 			    command->fd_pipe_input[0]);
 		}
 		close_fd(command->fd_pipe_input[0]);
 	}
 	if (command->input != STDIN_FILENO && command->input != HERE_DOC_FILENO) {
 		if (dup2(command->input, STDIN_FILENO) == -1) {
-			err(EXIT_FAILURE, "Failed to dup stdin %i",
+			err(EXIT_FAILURE, "Failed to dup stdin b%i",
 			    command->input);
 		}
 		close_fd(command->input);

@@ -13,8 +13,9 @@
 // limitations under the License.
 
 enum {
-  MAX_ENV_SIZE = 256,
-  MAX_PATH_SIZE = 256
+  MAX_ENV_SIZE = 512,
+  MAX_PATH_SIZE = MAX_ENV_SIZE * 32,
+  MAX_PATH_LOCATIONS = 128
 };
 
 extern char * export_use;

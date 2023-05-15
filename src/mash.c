@@ -36,6 +36,7 @@
 
 int reading_from_file = 0;
 int writing_to_file = 0;
+char flags[3];
 
 static void
 usage()
@@ -86,6 +87,23 @@ main(int argc, char *argv[])
 	return status;
 }
 
+static void set_flag_string() {
+	if (syntax_mode == BASIC_SYNTAX) {
+		flags[0] = 'b';
+	} else {
+		flags[0] = 'e';
+	}
+
+	if (shell_mode == INTERACTIVE_MODE) {
+		flags[1] = 'i';
+	} else {
+		flags[1] = '\0';
+	}
+
+	flags[2] = '\0';
+	return;
+}
+
 int
 set_arguments(char *argv[])
 {
@@ -117,6 +135,7 @@ set_arguments(char *argv[])
 			usage();
 		}
 	}
+	set_flag_string();
 	return 1;
 }
 
