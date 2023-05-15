@@ -20,9 +20,9 @@ enum {
 };
 
 extern struct alias *aliases[ALIAS_MAX];
-extern char * alias_use;
-extern char * alias_description;
-extern char * alias_help;
+extern char *alias_use;
+extern char *alias_description;
+extern char *alias_help;
 
 struct alias {
 	char command[ALIAS_MAX_COMMAND];
@@ -34,5 +34,5 @@ struct alias *new_alias(const char *command, char *reference);
 int alias(int argc, char *argv[], int stdout_fd, int stderr_fd);
 
 int add_alias(char *command);
-char* get_alias(const char* name);
+char *get_alias(const char *name);
 void print_aliases();

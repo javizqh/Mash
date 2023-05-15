@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern char * disown_use;
-extern char * disown_description;
-extern char * disown_help;
+extern char *disown_use;
+extern char *disown_description;
+extern char *disown_help;
 
 int disown(int argc, char *argv[], int stdout_fd, int stderr_fd);

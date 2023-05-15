@@ -13,21 +13,21 @@
 // limitations under the License.
 
 enum {
-  MAX_ENV_SIZE = 512,
-  MAX_PATH_SIZE = MAX_ENV_SIZE * 32,
-  MAX_PATH_LOCATIONS = 128
+	MAX_ENV_SIZE = 512,
+	MAX_PATH_SIZE = MAX_ENV_SIZE * 32,
+	MAX_PATH_LOCATIONS = 128
 };
 
-extern char * export_use;
-extern char * export_description;
-extern char * export_help;
+extern char *export_use;
+extern char *export_description;
+extern char *export_help;
 
-int export(int argc, char* argv[], int stdout_fd, int stderr_fd);
+int export(int argc, char *argv[], int stdout_fd, int stderr_fd);
 
-int add_env(const char * line);
+int add_env(const char *line);
 
 int add_env_by_name(const char *key, const char *value);
 
-char * get_env_by_name(const char *key);
+char *get_env_by_name(const char *key);
 
 void print_env();

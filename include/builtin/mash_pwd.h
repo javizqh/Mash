@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern char * pwd_use;
-extern char * pwd_description;
-extern char * pwd_help;
+extern char *pwd_use;
+extern char *pwd_description;
+extern char *pwd_help;
 
 int pwd(int argc, char *argv[]);

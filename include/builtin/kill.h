@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern char * kill_use;
-extern char * kill_description;
-extern char * kill_help;
+extern char *kill_use;
+extern char *kill_description;
+extern char *kill_help;
 
 int kill_job(int argc, char *argv[], int stdout_fd, int stderr_fd);

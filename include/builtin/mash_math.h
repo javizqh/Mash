@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern char * math_use;
-extern char * math_description;
-extern char * math_help;
+extern char *math_use;
+extern char *math_description;
+extern char *math_help;
 
-int math(int argc, char* argv[]);
+int math(int argc, char *argv[]);

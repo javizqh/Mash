@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern char * wait_use;
-extern char * wait_description;
-extern char * wait_help;
+extern char *wait_use;
+extern char *wait_description;
+extern char *wait_help;
 
 int wait_for_job(int argc, char *argv[], int stdout_fd, int stderr_fd);

@@ -17,7 +17,7 @@ enum {
 	MAX_ARGUMENTS = 128
 };
 
-enum wait{
+enum wait {
 	WAIT_TO_FINISH,
 	DO_NOT_WAIT_TO_FINISH
 };
@@ -58,18 +58,17 @@ typedef struct Command {
 	int fd_pipe_output[2];
 	struct Command *pipe_next;
 	// Only used when $()
-	char * output_buffer;
+	char *output_buffer;
 } Command;
 
-
 // Builtin command
-extern char * command_use;
-extern char * command_description;
-extern char * command_help;
+extern char *command_use;
+extern char *command_description;
+extern char *command_help;
 
-int command(Command * command);
+int command(Command *command);
+
 // ---------------
-
 
 Command *new_command();
 
@@ -84,12 +83,12 @@ int add_arg(Command *command);
 
 int reset_last_arg(Command *command);
 
-int set_file_cmd(Command *command,int file_type, char *file);
+int set_file_cmd(Command *command, int file_type, char *file);
 
 int set_buffer_cmd(Command *command, char *buffer);
 
 int set_to_background_cmd(Command *command);
 
-Command * get_last_command(Command *command);
+Command *get_last_command(Command *command);
 
-int pipe_command(Command *in_command, Command * out_command);
+int pipe_command(Command *in_command, Command *out_command);

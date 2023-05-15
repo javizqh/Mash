@@ -14,16 +14,16 @@
 
 enum {
 	MAX_SOURCE_FILES = 64,	// In bytes
-	MAX_FILE_LENGTH = 256  // In bytes
+	MAX_FILE_LENGTH = 256	// In bytes
 };
 
 struct source_file {
 	char file[MAX_FILE_LENGTH];
 };
 
-extern char * source_use;
-extern char * source_description;
-extern char * source_help;
+extern char *source_use;
+extern char *source_description;
+extern char *source_help;
 
 int source(int argc, char *argv[], int stdout_fd, int stderr_fd);
 

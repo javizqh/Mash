@@ -13,55 +13,56 @@
 // limitations under the License.
 
 enum exec_state {
-  RUNNING = -2,
-  STOPPED = -1,
-  DONE = 0,
-  ALL,
-  FOREGROUND,
-  BACKGROUND,
-  SUB_EXECUTION
+	RUNNING = -2,
+	STOPPED = -1,
+	DONE = 0,
+	ALL,
+	FOREGROUND,
+	BACKGROUND,
+	SUB_EXECUTION
 };
 typedef struct Job {
-  int execution; 
-  int pos;
-  int relevance;
-  pid_t pid;
-  pid_t end_pid;
-  int state;
-  char *command;
-  struct Job *next_job;
+	int execution;
+	int pos;
+	int relevance;
+	pid_t pid;
+	pid_t end_pid;
+	int state;
+	char *command;
+	struct Job *next_job;
 } Job;
 
 typedef struct JobList {
-  Job * head;
-  Job * last;
-  int n_jobs;
+	Job *head;
+	Job *last;
+	int n_jobs;
 } JobList;
 
-extern char * jobs_use;
-extern char * jobs_description;
-extern char * jobs_help;
+extern char *jobs_use;
+extern char *jobs_description;
+extern char *jobs_help;
 
 extern int use_job_control;
 
 int jobs(int argc, char *argv[]);
-int no_job(char * command, int error_fd);
+int no_job(char *command, int error_fd);
 int no_job_control(int error_fd);
-pid_t substitute_jobspec(char* jobspec);
+pid_t substitute_jobspec(char *jobspec);
 
-int launch_job(FILE * src_file, ExecInfo *exec_info, char * to_free_excess);
-int exec_job(FILE * src_file, ExecInfo *exec_info, Job * job, char * to_free_excess);
-int wait_job(Job * job);
+int launch_job(FILE * src_file, ExecInfo * exec_info, char *to_free_excess);
+int exec_job(FILE * src_file, ExecInfo * exec_info, Job *job,
+	     char *to_free_excess);
+int wait_job(Job *job);
 
-Job * new_job(char * line);
-void print_job(Job * job, int print_id);
+Job *new_job(char *line);
+void print_job(Job *job, int print_id);
 
 int init_jobs_list();
 void free_jobs_list();
 
-int add_job(Job * job);
-Job * get_job(pid_t job_pid);
-int remove_job(Job * job);
+int add_job(Job *job);
+Job *get_job(pid_t job_pid);
+int remove_job(Job *job);
 int remove_all_status_jobs(int status);
 pid_t get_pos_job_pid(int pos);
 pid_t get_relevance_job_pid(int relevance);

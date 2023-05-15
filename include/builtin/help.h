@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern char * help_use;
-extern char * help_description;
-extern char * help_help;
+extern char *help_use;
+extern char *help_description;
+extern char *help_help;
 
 enum help_mode {
-  HELP_DESCRIPTION = 1,
-  HELP_MANPAGE,
-  HELP_USE
+	HELP_DESCRIPTION = 1,
+	HELP_MANPAGE,
+	HELP_USE
 };
 
 int help(int argc, char *argv[]);
