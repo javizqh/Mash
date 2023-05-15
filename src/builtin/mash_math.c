@@ -150,7 +150,9 @@ tokenize(char * expression) {
     } else if (is_symbol(*expression)) {
       if (!current_token->type) {
         if (*expression != '-' && *expression != '+') {
-          fprintf(stderr,"mash: error: math: incorrect character '%c' at the beginning of expression '%s'\n", *expression, line);
+          fprintf(stderr,
+						"mash: error: math: incorrect character '%c' at the beginning of expression '%s'\n",
+						*expression, line);
           free_all_tokens(first_token);
           return NULL;
         }
@@ -160,11 +162,23 @@ tokenize(char * expression) {
       current_token->type = MATH_SYMBOL;
       strncat(current_token->data, expression, 1);
     } else if (*expression == '(') {
-      total_priority++;
+			if (!current_token->type) {
+				current_token->priority++;
+			}
+			total_priority++;
     } else if (*expression == ')') {
+			if (!current_token->type) {
+				fprintf(stderr,
+					"mash: error: math: incorrect character '%c' in expression '%s'\n",
+					*expression, line);
+				free_all_tokens(first_token);
+				return NULL;
+			}
       total_priority--;
     } else if (*expression != ' ' && *expression != '\t') {
-      fprintf(stderr,"mash: error: math: incorrect character '%c' in expression '%s'\n", *expression, line);
+      fprintf(stderr,
+				"mash: error: math: incorrect character '%c' in expression '%s'\n",
+				*expression, line);
       free_all_tokens(first_token);
       return NULL;
     }
@@ -175,7 +189,9 @@ tokenize(char * expression) {
     return NULL;
   }
   if (current_token->type == MATH_SYMBOL) {
-    fprintf(stderr,"mash: error: math: incorrect symbol '%s' at the end of expression\n", line);
+    fprintf(stderr,
+			"mash: error: math: incorrect symbol '%s' at the end of expression\n",
+			line);
     free_all_tokens(first_token);
     return NULL;
   }
