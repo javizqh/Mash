@@ -107,6 +107,7 @@ exec_pipe(ExecInfo * exec_info)
 			close(null);
 		}
 		exec_cmd(current_command, start_command);
+		free_command(start_command);
 		err(EXIT_FAILURE, "Failed to exec");
 		break;
 	default:
