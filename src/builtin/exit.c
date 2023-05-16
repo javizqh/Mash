@@ -15,17 +15,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "open_files.h"
-#include "builtin/command.h"
-#include "builtin/builtin.h"
-#include "builtin/export.h"
-#include "builtin/source.h"
-#include "builtin/alias.h"
-#include "parse.h"
-#include "exec_info.h"
-#include "parse_line.h"
-#include "builtin/jobs.h"
 #include "builtin/exit.h"
+#include "builtin/export.h"
 
 // DECLARE GLOBAL VARIABLE
 char *exit_use = "exit [n]";
@@ -58,19 +49,22 @@ exit_mash(int argc, char *argv[], int stdout_fd, int stderr_fd)
 {
 	argc--;
 	argv++;
-	int i;
-	char *result = get_env_by_name("result");
+
+	// TODO: test this
+	char *result = get_env_by_name("results");
 	int exit_status;
-
-	if (result == NULL) {
-		dprintf(err_fd, "error: var result does not exist\n");
-	}
-
-	exit_status = atoi(result);
-	free(result);
 
 	out_fd = stdout_fd;
 	err_fd = stderr_fd;
+
+	// TODO: add to main
+	if (result == NULL) {
+		dprintf(err_fd, "error: var result does not exist\n");
+		exit_status = EXIT_FAILURE;
+	} else {
+		exit_status = atoi(result);
+		free(result);
+	}
 
 	if (argc == 1) {
 		if (strcmp(argv[0], "--help") == 0) {
@@ -83,16 +77,6 @@ exit_mash(int argc, char *argv[], int stdout_fd, int stderr_fd)
 	} else if (argc > 1) {
 		return usage();
 	}
-
-	for (i = 0; i < ALIAS_MAX; i++) {
-		if (aliases[i] == NULL)
-			break;
-		free(aliases[i]);
-	}
-
-	free_source_file();
-
-	free_jobs_list();
 
 	has_to_exit = 1;
 	return exit_status;

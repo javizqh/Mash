@@ -21,8 +21,6 @@ enum prompt {
 
 void set_prompt_mode(int mode);
 
-int prompt(char *line);
+int prompt();
 
 int prompt_request();
-
-int parse_prompt(char *prompt, char *line);

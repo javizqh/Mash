@@ -32,21 +32,12 @@
 #include "exec_cmd.h"
 #include "mash.h"
 
-int syntax_mode = EXTENDED_SYNTAX;
-
 // DECLARE STATIC FUNCTIONS
 static char *copy(char *line, ExecInfo * exec_info);
 static char *copy_and_end_sub(char *line, ExecInfo * exec_info);
 static char *do_glob(char *line, ExecInfo * exec_info);
-static char *start_squote(char *line, ExecInfo * exec_info);
-static char *end_squote(char *line, ExecInfo * exec_info);
-static char *start_dquote(char *line, ExecInfo * exec_info);
-static char *end_dquote(char *line, ExecInfo * exec_info);
-static char *start_sub(char *line, ExecInfo * exec_info);
 static char *basic_start_sub(char *line, ExecInfo * exec_info);
-static char *tilde_tok(char *line, ExecInfo * exec_info);
 static char *end_sub(char *line, ExecInfo * exec_info);
-static char *pipe_tok(char *line, ExecInfo * exec_info);
 static char *basic_pipe_tok(char *line, ExecInfo * exec_info);
 static char *start_file_in(char *line, ExecInfo * exec_info);
 static char *basic_start_file_in(char *line, ExecInfo * exec_info);
@@ -58,16 +49,8 @@ static char *end_basic_file(char *line, ExecInfo * exec_info);
 static char *end_file_started(char *line, ExecInfo * exec_info);
 static char *end_basic_file_started(char *line, ExecInfo * exec_info);
 static char *blank(char *line, ExecInfo * exec_info);
-static char *escape(char *line, ExecInfo * exec_info);
-static char *esp_escape(char *line, ExecInfo * exec_info);
-static char *background(char *line, ExecInfo * exec_info);
 static char *basic_background(char *line, ExecInfo * exec_info);
-static char *subexec(char *line, ExecInfo * exec_info);
-static char *or(char *line, ExecInfo * exec_info);
-static char *and(char *line, ExecInfo * exec_info);
-static char *end_pipe(char *line, ExecInfo * exec_info);
 static char *end_line(char *line, ExecInfo * exec_info);
-static char *comment(char *line, ExecInfo * exec_info);
 static char *request_new_line(char *line, ExecInfo * exec_info);
 static char *error(char *line, ExecInfo * exec_info);
 
@@ -80,38 +63,19 @@ static char *error_token(char token, char *line);
 static int seek(char *line);
 static int seekcmd(char *line);
 static int seekfile(char *line, char filetype);
-static int seeksubexec(char *line);
 
-static int load_std_table();
 static int load_basic_std_table();
 static int load_sub_table();
-static int load_file_table();
 static int load_basic_file_table();
-static int load_sq_table();
-static int load_dq_table();
 
 // GLOBAL VARIABLES
 static int has_redirect_to_file = 0;
 static int require_glob = 0;
 static int syntax_error = 0;
-static int exec_depth = 0;
 
 static spec_char std[ASCII_CHARS];
 static spec_char sub[ASCII_CHARS];
 static spec_char file[ASCII_CHARS];
-static spec_char sq[ASCII_CHARS];
-static spec_char dq[ASCII_CHARS];
-
-int
-load_lex_tables()
-{
-	load_std_table();
-	load_sub_table();
-	load_file_table();
-	load_sq_table();
-	load_dq_table();
-	return 0;
-}
 
 int
 load_basic_lex_tables()
@@ -119,34 +83,6 @@ load_basic_lex_tables()
 	load_basic_std_table();
 	load_sub_table();
 	load_basic_file_table();
-	return 0;
-}
-
-int
-load_std_table()
-{
-	std['\0'] = end_line;
-	std['\t'] = blank;
-	std['\n'] = blank;
-	std[' '] = blank;
-	std['"'] = start_dquote;
-	std['#'] = comment;
-	std['$'] = start_sub;
-	std['&'] = background;
-	std['\''] = start_squote;
-	std['('] = error;
-	std[')'] = error;
-	std['*'] = do_glob;
-	std[';'] = end_pipe;
-	std['<'] = start_file_in;
-	std['>'] = start_file_out;
-	std['?'] = do_glob;
-	std['['] = do_glob;
-	std['\\'] = escape;
-	std['{'] = here_doc;
-	std['}'] = error;
-	std['|'] = pipe_tok;
-	std['~'] = tilde_tok;
 	return 0;
 }
 
@@ -202,33 +138,6 @@ load_sub_table()
 }
 
 int
-load_file_table()
-{
-	file['\0'] = end_file;
-	file['\t'] = end_file_started;
-	file['\n'] = end_file;
-	file[' '] = end_file_started;
-	file['"'] = start_dquote;
-	file['#'] = end_file;
-	file['$'] = start_sub;
-	file['&'] = end_file;
-	file['\''] = start_squote;
-	file['('] = error;
-	file[')'] = error;
-	file['*'] = do_glob;
-	file[';'] = end_file;
-	file['<'] = end_file;
-	file['>'] = end_file;
-	file['?'] = do_glob;
-	file['['] = do_glob;
-	file['\\'] = escape;
-	file['{'] = error;
-	file['}'] = error;
-	file['|'] = end_file;
-	return 0;
-}
-
-int
 load_basic_file_table()
 {
 	file['\0'] = end_basic_file;
@@ -236,7 +145,7 @@ load_basic_file_table()
 	file['\n'] = end_basic_file;
 	file[' '] = end_basic_file_started;
 	file['#'] = end_basic_file;
-	file['$'] = start_sub;
+	file['$'] = basic_start_sub;
 	file['&'] = end_basic_file;
 	file['('] = error;
 	file[')'] = error;
@@ -249,25 +158,6 @@ load_basic_file_table()
 	file['{'] = error;
 	file['}'] = error;
 	file['|'] = end_basic_file;
-	file['~'] = tilde_tok;
-	return 0;
-}
-
-int
-load_sq_table()
-{
-	sq['\0'] = request_new_line;
-	sq['\''] = end_squote;
-	return 0;
-}
-
-int
-load_dq_table()
-{
-	dq['\0'] = request_new_line;
-	dq['"'] = end_dquote;
-	dq['$'] = start_sub;
-	dq['\\'] = esp_escape;
 	return 0;
 }
 
@@ -281,7 +171,6 @@ new_parse_info()
 		err(EXIT_FAILURE, "malloc failed");
 	}
 	memset(parse_info, 0, sizeof(ParseInfo));
-	parse_info->exec_depth = 0;
 	parse_info->request_line = 0;
 	parse_info->has_arg_started = 0;
 	parse_info->finished = 0;
@@ -295,7 +184,6 @@ new_parse_info()
 void
 restore_parse_info(ParseInfo * parse_info)
 {
-	parse_info->exec_depth = 0;
 	parse_info->request_line = 0;
 	parse_info->has_arg_started = 0;
 	parse_info->finished = 0;
@@ -313,8 +201,6 @@ parse(char *ptr, ExecInfo * exec_info)
 	has_redirect_to_file = 0;
 	syntax_error = 0;
 	parse_info->finished = 0;
-
-	parse_info->exec_depth = exec_depth;
 
 	// IF first char is \0 exit immediately
 	if (ptr == NULL)
@@ -368,79 +254,6 @@ parse_ch(char *line, ExecInfo * exec_info)
 	} else {
 		line = copy(line, exec_info);
 	}
-	return line;
-}
-
-char *
-start_squote(char *line, ExecInfo * exec_info)
-{
-	ParseInfo *parse_info = exec_info->parse_info;
-
-	parse_info->old_lexer = parse_info->curr_lexer;
-	parse_info->curr_lexer = &sq;
-
-	parse_info->has_arg_started = 1;
-	return line;
-}
-
-char *
-end_squote(char *line, ExecInfo * exec_info)
-{
-	ParseInfo *parse_info = exec_info->parse_info;
-
-	spec_char(*tmp_lexer)[256] = parse_info->curr_lexer;
-
-	parse_info->curr_lexer = parse_info->old_lexer;
-	parse_info->old_lexer = tmp_lexer;
-	return line;
-}
-
-char *
-start_dquote(char *line, ExecInfo * exec_info)
-{
-	ParseInfo *parse_info = exec_info->parse_info;
-
-	parse_info->old_lexer = parse_info->curr_lexer;
-	parse_info->curr_lexer = &dq;
-
-	parse_info->has_arg_started = 1;
-
-	return line;
-}
-
-char *
-end_dquote(char *line, ExecInfo * exec_info)
-{
-	ParseInfo *parse_info = exec_info->parse_info;
-
-	spec_char(*tmp_lexer)[256] = parse_info->curr_lexer;
-
-	parse_info->curr_lexer = parse_info->old_lexer;
-	parse_info->old_lexer = tmp_lexer;
-	return line;
-}
-
-char *
-start_sub(char *line, ExecInfo * exec_info)
-{
-	ParseInfo *parse_info = exec_info->parse_info;
-	SubInfo *sub_info = exec_info->sub_info;
-
-	memset(sub_info->buffer, 0, MAX_ENV_SIZE);
-
-	parse_info->has_arg_started = 1;
-
-	if (strstr(line, "$(") == line) {
-		line++;
-		return subexec(line, exec_info);
-	}
-
-	sub_info->old_ptr = parse_info->copy;
-	parse_info->copy = sub_info->buffer;
-
-	sub_info->old_lexer = parse_info->curr_lexer;
-	parse_info->curr_lexer = &sub;
-
 	return line;
 }
 
@@ -549,110 +362,6 @@ substitute(char *to_substitute)
 	return 1;
 }
 
-char *
-subexec(char *line, ExecInfo * exec_info)
-{
-	ParseInfo *parse_info = exec_info->parse_info;
-	Command *cmd = exec_info->last_command;
-	int n_parenthesis = 1;
-	int in_math = 0;
-
-	exec_depth++;
-
-	// Read again and parse until )
-	char *buffer = malloc(1024);
-
-	if (buffer == NULL)
-		err(EXIT_FAILURE, "malloc failed");
-	memset(buffer, 0, 1024);
-
-	// Store all in line_buf
-	char *line_buf = malloc(1024);
-
-	// Check if malloc failed
-	if (line_buf == NULL) {
-		err(EXIT_FAILURE, "malloc failed");
-	}
-	memset(line_buf, 0, 1024);
-
-	char *ptr;
-	char *old_ptr = parse_info->copy;
-
-	parse_info->copy = line_buf;
-
-	if (strstr(line, "((") == line) {
-		strcpy(line_buf, "math \"");
-		parse_info->copy += strlen(line_buf);
-		line++;
-		in_math = 1;
-	}
-
-	line++;
-	for (ptr = line; ptr != NULL; ptr++) {
-		switch (*ptr) {
-		case '\0':
-			ptr = request_new_line(ptr, exec_info);
-
-			break;
-		case '(':
-			n_parenthesis++;
-			ptr = copy(ptr, exec_info);
-
-			break;
-		case ')':
-			if (!in_math || n_parenthesis > 1) {
-				n_parenthesis--;
-				ptr = copy(ptr, exec_info);
-			} else {
-				in_math = 0;
-				*exec_info->parse_info->copy++ = '"';
-				ptr++;
-				if (*ptr != ')') {
-					return error(line, exec_info);
-				}
-				ptr--;
-			}
-			break;
-		default:
-			ptr = copy(ptr, exec_info);
-
-			break;
-		}
-		if (n_parenthesis <= 0) {
-			*--parse_info->copy = '\0';
-			break;
-		}
-	}
-	find_command(line_buf, buffer, stdin, exec_info, NULL);
-
-	if (syntax_error) {
-		parse_info->finished = 1;
-		free(line_buf);
-		free(buffer);
-		return NULL;
-	}
-
-	exec_depth--;
-	parse_info->copy = old_ptr;
-
-	if (parse_info->curr_lexer != &std || seeksubexec(++ptr)) {
-		if (buffer[strlen(buffer) - 1] == '\n') {
-			buffer[strlen(buffer) - 1] = '\0';
-		}
-		strcpy(parse_info->copy, buffer);
-		cmd->current_arg += strlen(cmd->current_arg);
-		parse_info->copy = cmd->current_arg;
-	} else {
-		parse(buffer, exec_info);
-		parse_info->has_arg_started = 0;
-	}
-	ptr--;
-
-	free(line_buf);
-	free(buffer);
-	return ptr;
-}
-
 void
 new_argument(ExecInfo * exec_info)
 {
@@ -687,18 +396,6 @@ new_argument(ExecInfo * exec_info)
 		return;
 	}
 
-	if (strcmp(exec_info->sub_info->last_alias, cmd->argv[0]) != 0) {
-		if (check_alias_cmd(cmd)) {
-			strcpy(exec_info->sub_info->last_alias, cmd->argv[0]);
-
-			reset_last_arg(cmd);
-			cmd->argc = 0;
-			cmd->current_arg = cmd->argv[0];
-			parse(get_alias(exec_info->sub_info->last_alias),
-			      exec_info);
-			return;
-		}
-	}
 	add_arg(exec_info->last_command);
 }
 
@@ -892,68 +589,6 @@ end_basic_file_started(char *line, ExecInfo * exec_info)
 }
 
 char *
-tilde_tok(char *line, ExecInfo * exec_info)
-{
-	ParseInfo *parse_info = exec_info->parse_info;
-
-	// Check if next is ' ' '\n' or '/'then ok if not as '\'                       
-	if (parse_info->has_arg_started) {
-		line = copy(line, exec_info);
-
-		return line;
-	}
-
-	line++;
-	if (*line == '/' || *line == ' ' || *line == '\n' || *line == '\t') {
-		line--;
-		line = start_sub("HOME", exec_info);
-	} else {
-		line--;
-		line = copy(line, exec_info);
-
-		line++;
-		line = copy(line, exec_info);
-	}
-
-	parse_info->has_arg_started = 1;
-	return line;
-}
-
-char *
-pipe_tok(char *line, ExecInfo * exec_info)
-{
-	ParseInfo *parse_info = exec_info->parse_info;
-	Command *old_cmd = exec_info->last_command;
-
-	// Check if next char is |
-	if (strstr(line, "||") == line) {
-		return or(line, exec_info);
-	}
-
-	if (strlen(old_cmd->argv[0]) == 0) {
-		return error_token('|', line);
-	}
-
-	if (parse_info->has_arg_started) {
-		new_argument(exec_info);
-	}
-
-	if (!seekcmd(line)) {
-		exec_info->parse_info->request_line = 1;
-	}
-
-	exec_info->last_command = new_command();
-
-	// Update old_cmd pipe
-	strcpy(exec_info->sub_info->last_alias, "");
-	pipe_command(old_cmd, exec_info->last_command);
-	parse_info->copy = exec_info->last_command->current_arg;
-
-	parse_info->has_arg_started = 0;
-	return line;
-}
-
-char *
 basic_pipe_tok(char *line, ExecInfo * exec_info)
 {
 	ParseInfo *parse_info = exec_info->parse_info;
@@ -983,40 +618,6 @@ basic_pipe_tok(char *line, ExecInfo * exec_info)
 }
 
 char *
-background(char *line, ExecInfo * exec_info)
-{
-	ParseInfo *parse_info = exec_info->parse_info;
-	Command *command = exec_info->last_command;
-
-	// Check if next char is & or >
-	if (strstr(line, "&&") == line) {
-		return and(line, exec_info);
-	} else if (strstr(line, "&>") == line) {
-		line = copy(line, exec_info);
-
-		parse_info->has_arg_started = 1;
-		return line;
-	}
-
-	line++;
-	if (seek(line)) {
-		return error_token('&', line);
-	}
-	line--;
-
-	command->do_wait = DO_NOT_WAIT_TO_FINISH;
-
-	if (command->input == STDIN_FILENO) {
-		if (set_file_cmd(exec_info->command, INPUT_READ, "/dev/null") <
-		    0) {
-			return NULL;
-		}
-	}
-	parse_info->has_arg_started = 0;
-	return line;
-}
-
-char *
 basic_background(char *line, ExecInfo * exec_info)
 {
 	ParseInfo *parse_info = exec_info->parse_info;
@@ -1037,42 +638,6 @@ basic_background(char *line, ExecInfo * exec_info)
 		}
 	}
 	parse_info->has_arg_started = 0;
-	return line;
-}
-
-char *
-escape(char *line, ExecInfo * exec_info)
-{
-	ParseInfo *parse_info = exec_info->parse_info;
-
-	line++;
-	// if escape \n do not copy
-	if (*line != '\n') {
-		line = copy(line, exec_info);
-	}
-
-	parse_info->has_arg_started = 1;
-	return line;
-}
-
-char *
-esp_escape(char *line, ExecInfo * exec_info)
-{
-	ParseInfo *parse_info = exec_info->parse_info;
-
-	line++;
-
-	if (*line == '$' || *line == '"') {
-		line = copy(line, exec_info);
-	} else if (*line != '\n') {
-		line--;
-		line = copy(line, exec_info);
-
-		line++;
-		line = copy(line, exec_info);
-	}
-
-	parse_info->has_arg_started = 1;
 	return line;
 }
 
@@ -1113,46 +678,6 @@ end_line(char *line, ExecInfo * exec_info)
 }
 
 char *
-comment(char *line, ExecInfo * exec_info)
-{
-	char *line_buf = malloc(1024);
-
-	if (line_buf == NULL) {
-		err(EXIT_FAILURE, "malloc failed");
-	}
-	memset(line_buf, 0, 1024);
-	while (!exec_info->parse_info->request_line) {
-		fgets(line_buf, MAX_ARGUMENT_SIZE, stdin);
-
-		if (ferror(stdin)) {
-			fprintf(stderr, "Error: fgets failed");
-			return NULL;
-		}
-		if (strlen(line_buf) < MAX_ARGUMENT_SIZE - 1) {
-			exec_info->parse_info->request_line = 0;
-		}
-	}
-
-	free(line_buf);
-	exec_info->parse_info->finished = 1;
-
-	line--;
-	return line;
-}
-
-char *
-end_pipe(char *line, ExecInfo * exec_info)
-{
-	ParseInfo *parse_info = exec_info->parse_info;
-
-	if (parse_info->has_arg_started) {
-		new_argument(exec_info);
-	}
-	parse_info->finished = 1;
-	return line;
-}
-
-char *
 copy(char *line, ExecInfo * exec_info)
 {
 	*exec_info->parse_info->copy++ = *line;
@@ -1189,34 +714,6 @@ do_glob(char *line, ExecInfo * exec_info)
 	require_glob = 1;
 	exec_info->parse_info->has_arg_started = 1;
 	return copy(line, exec_info);
-}
-
-char *
-and(char *line, ExecInfo * exec_info)
-{
-	line++;
-	// Add an argument to old command
-	if (exec_info->parse_info->has_arg_started) {
-		new_argument(exec_info);
-	}
-	exec_info->last_command->next_status_needed_to_exec =
-	    EXECUTE_IN_SUCCESS;
-	exec_info->parse_info->finished = 1;
-	return ++line;
-}
-
-char *
-or(char *line, ExecInfo * exec_info)
-{
-	line++;
-	// Add an argument to old command
-	if (exec_info->parse_info->has_arg_started) {
-		new_argument(exec_info);
-	}
-	exec_info->last_command->next_status_needed_to_exec =
-	    EXECUTE_IN_FAILURE;
-	exec_info->parse_info->finished = 1;
-	return line;
 }
 
 char *
@@ -1282,24 +779,6 @@ seekfile(char *line, char filetype)
 	for (ptr = line; *ptr != '\0'; ptr++) {
 		if (*ptr != ' ' && *ptr != '\n' && *ptr != '\t') {
 			if (*ptr == filetype || *ptr == '&') {
-				return 0;
-			} else {
-				return 1;
-			}
-		}
-	}
-	return 0;
-}
-
-int
-seeksubexec(char *line)
-{
-	char *ptr;
-
-	for (ptr = line; *ptr != '\0'; ptr++) {
-		if (*ptr != ' ' && *ptr != '\n' && *ptr != '\t') {
-			if (*ptr == '|' || *ptr == ';' || *ptr == '&'
-			    || *ptr == '>' || *ptr == '<' || *ptr == '#') {
 				return 0;
 			} else {
 				return 1;

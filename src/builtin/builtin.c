@@ -40,23 +40,14 @@
 #include "parse_line.h"
 #include "mash.h"
 #include "exec_cmd.h"
-#include "builtin/jobs.h"
-#include "builtin/fg.h"
-#include "builtin/bg.h"
-#include "builtin/wait.h"
-#include "builtin/kill.h"
-#include "builtin/disown.h"
 #include "builtin/builtin.h"
 
 char *builtins_modify_cmd[4] = { "ifnot", "ifok", "builtin", "command" };
 
-char *builtins_in_shell[10] =
-    { "disown", "kill", "wait", "bg", "fg", "cd", "export", "alias", "exit",
-	"source"
-};
-char *builtins_fork[6] = { "math", "help", "sleep", "pwd", "echo", "jobs" };
+char *builtins_in_shell[4] = { "cd", "export", "alias", "exit" };
+char *builtins_fork[5] = { "math", "help", "sleep", "pwd", "echo" };
 
-int N_BUILTINS = 4 + 10 + 6;
+int N_BUILTINS = 4 + 4 + 5;
 
 // Builtin command
 char *builtin_use = "builtin shell-builtin [arg ..]";
@@ -152,7 +143,7 @@ found_builtin_exec_in_shell(Command * command)
 		return 1;
 	}
 
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < 4; i++) {
 		if (strcmp(command->argv[0], builtins_in_shell[i]) == 0) {
 			return 1;
 		}
@@ -234,26 +225,9 @@ exec_builtin_in_shell(Command * command, int is_pipe)
 	} else if (strcmp(command->argv[0], "export") == 0) {
 		exit_code = export(i, args, cmd_out, cmd_err);
 	} else if (strcmp(command->argv[0], "exit") == 0) {
-		if (are_jobs_stopped()) {
-			dprintf(cmd_err,
-				"Mash: couldn't exit because there are stopped jobs\n");
-		}
-		wait_all_jobs();
 		exit_code = exit_mash(i, args, cmd_out, cmd_err);
-	} else if (strcmp(command->argv[0], "source") == 0) {
-		exit_code = source(i, args, cmd_out, cmd_err);
 	} else if (strcmp(command->argv[0], "cd") == 0) {
 		exit_code = cd(i, args, cmd_out, cmd_err);
-	} else if (strcmp(command->argv[0], "fg") == 0) {
-		exit_code = fg(i, args, cmd_out, cmd_err);
-	} else if (strcmp(command->argv[0], "bg") == 0) {
-		exit_code = bg(i, args, cmd_out, cmd_err);
-	} else if (strcmp(args[0], "wait") == 0) {
-		exit_code = wait_for_job(i, args, cmd_out, cmd_err);
-	} else if (strcmp(args[0], "kill") == 0) {
-		exit_code = kill_job(i, args, cmd_out, cmd_err);
-	} else if (strcmp(args[0], "disown") == 0) {
-		exit_code = disown(i, args, cmd_out, cmd_err);
 	}
 
 	if (!is_pipe) {
@@ -273,7 +247,7 @@ find_builtin(Command * command)
 {
 	int i;
 
-	for (i = 0; i < 6; i++) {
+	for (i = 0; i < 5; i++) {
 		if (strcmp(command->argv[0], builtins_fork[i]) == 0) {
 			return 1;
 		}
@@ -304,8 +278,6 @@ exec_builtin(Command * start_scommand, Command * command)
 	args[i] = NULL;
 	if (strcmp(args[0], "echo") == 0) {
 		return_value = echo(i, args);
-	} else if (strcmp(args[0], "jobs") == 0) {
-		return_value = jobs(i, args);
 	} else if (strcmp(args[0], "pwd") == 0) {
 		return_value = pwd(i, args);
 	} else if (strcmp(args[0], "sleep") == 0) {

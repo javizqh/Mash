@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-extern int syntax_mode;
-
-enum syntax_mode {
-	BASIC_SYNTAX,
-	EXTENDED_SYNTAX
-};
-
 enum ascii {
 	ASCII_CHARS = 256
 };
@@ -27,11 +20,9 @@ struct ExecInfo;
 
 typedef char *(*spec_char)(char *, struct ExecInfo *);
 
-int load_lex_tables();
 int load_basic_lex_tables();
 
 typedef struct ParseInfo {
-	int exec_depth;
 	int request_line;
 	int has_arg_started;
 	int finished;

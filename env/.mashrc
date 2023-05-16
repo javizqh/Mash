@@ -1,7 +1,0 @@
-alias ls='ls --color=auto'
-alias grep='grep --color=auto'
-alias fgrep='fgrep --color=auto'
-alias egrep='egrep --color=auto'
-source 'env/.mash_aliases'
-#export PATH='/usr/local/bin:/usr/bin'
-export PROMPT='@ifcustom@custom@else@green@user@@host@nocolor:@blue@where@nocolor @ifgit@gitstatuscolor(@branch@gitstatus)@nocolor @endif@endif@nocolor$ '

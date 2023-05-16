@@ -38,7 +38,6 @@ find_command(char *line, char *buffer, FILE * src_file,
 	     ExecInfo * prev_exec_info, char *to_free_excess)
 {
 	int status = 0;
-	int status_for_next_cmd = DO_NOT_MATTER_TO_EXEC;
 	char *orig_line_ptr = line;
 	char cwd[MAX_ENV_SIZE];
 	char result[4];
@@ -54,48 +53,8 @@ find_command(char *line, char *buffer, FILE * src_file,
 // ---------------------------------------------------------------
 
 	while ((line = parse(line, exec_info))) {
-		switch (status_for_next_cmd) {
-		case DO_NOT_MATTER_TO_EXEC:
-			if (use_job_control) {
-				status =
-				    launch_job(src_file, exec_info,
-					       to_free_excess);
-			} else {
-				status = launch_pipe(src_file, exec_info,
-						     to_free_excess);
-			}
-			break;
-		case EXECUTE_IN_SUCCESS:
-			if (status == 0) {
-				if (use_job_control) {
-					status =
-					    launch_job(src_file, exec_info,
-						       to_free_excess);
-				} else {
-					status =
-					    launch_pipe(src_file, exec_info,
-							to_free_excess);
-				}
-			}
-			break;
-		case EXECUTE_IN_FAILURE:
-			if (status != 0) {
-				if (use_job_control) {
-					status =
-					    launch_job(src_file, exec_info,
-						       to_free_excess);
-				} else {
-					status =
-					    launch_pipe(src_file, exec_info,
-							to_free_excess);
-				}
-			} else {
-				status = 0;
-			}
-			break;
-		}
-		status_for_next_cmd =
-		    exec_info->command->next_status_needed_to_exec;
+		status = launch_pipe(src_file, exec_info, to_free_excess);
+
 		sprintf(result, "%d", status);
 		add_env_by_name("result", result);
 		// Update cwd

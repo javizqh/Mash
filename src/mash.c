@@ -36,13 +36,13 @@
 
 int reading_from_file = 0;
 int writing_to_file = 0;
-char flags[3];
-char version[32] = "1.0.0";
+char flags[2];
+char version[32] = "1.1.0";
 
 static void
 usage()
 {
-	fprintf(stderr, "Usage: mash [-ibej]\n");
+	fprintf(stderr, "Usage: mash [-i]\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -50,9 +50,8 @@ static void
 help()
 {
 	printf("Mash, version %s\n", version);
-	printf("Usage: mash [-ibe]\n\n");
-	printf("Options:\n\t-i\tInteractive mode\n");
-	printf("\t-b\tBasic syntax\n\t-e\tExtended syntax\n\n");
+	printf("Usage: mash [-i]\n\n");
+	printf("Options:\n\t-i\tInteractive mode\n\n");
 	printf
 	    ("Enter mash and type `help' for more information about shell builtin commands.\n\n");
 	printf("Mash source code: <https://github.com/javizqh/Mash>\n");
@@ -90,8 +89,7 @@ main(int argc, char *argv[])
 		if (has_to_exit) {
 			break;
 		}
-		update_jobs();
-		prompt(buf);
+		prompt();
 	}
 
 	if (ferror(stdin)) {
@@ -108,19 +106,13 @@ main(int argc, char *argv[])
 static void
 set_flag_string()
 {
-	if (syntax_mode == BASIC_SYNTAX) {
-		flags[0] = 'b';
-	} else {
-		flags[0] = 'e';
-	}
-
 	if (shell_mode == INTERACTIVE_MODE) {
-		flags[1] = 'i';
+		flags[0] = 'i';
 	} else {
-		flags[1] = '\0';
+		flags[0] = '\0';
 	}
 
-	flags[2] = '\0';
+	flags[1] = '\0';
 	return;
 }
 
@@ -137,14 +129,6 @@ set_arguments(char *argv[])
 				switch (*arg_ptr) {
 				case 'i':
 					shell_mode = INTERACTIVE_MODE;
-					break;
-				case 'b':
-					syntax_mode = BASIC_SYNTAX;
-					use_job_control = 0;
-					break;
-				case 'e':
-					syntax_mode = EXTENDED_SYNTAX;
-					use_job_control = 1;
 					break;
 				default:
 					usage();
@@ -172,19 +156,7 @@ init_mash()
 		writing_to_file = 1;
 	}
 
-	if (syntax_mode == BASIC_SYNTAX) {
-		load_basic_lex_tables();
-	} else {
-		signal(SIGINT, sig_handler);
-		signal(SIGTSTP, sig_handler);
-		load_lex_tables();
-		add_source("env/.mashrc", STDERR_FILENO);
-		exec_sources();
-	}
-
-	if (use_job_control) {
-		init_jobs_list();
-	}
+	load_basic_lex_tables();
 
 	add_env_by_name("HOME", getpwuid(getuid())->pw_dir);
 
