@@ -79,7 +79,7 @@ new_exec_info(char *line)
 	ExecInfo *exec_info = malloc(sizeof(ExecInfo));
 
 	if (exec_info == NULL) {
-		err(EXECUTE_IN_FAILURE, "malloc failed");
+		err(EXIT_FAILURE, "malloc failed");
 	}
 	memset(exec_info, 0, sizeof(ExecInfo));
 	exec_info->command = new_command();
