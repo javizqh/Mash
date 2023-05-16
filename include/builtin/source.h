@@ -36,3 +36,7 @@ int add_source(char *source_file_name, int error_fd);
 int exec_sources();
 
 int read_source_file(char *filename);
+
+int find_path_srcfile(char *filename);
+
+int file_exists(char *path);

@@ -63,7 +63,6 @@ source(int argc, char *argv[], int stdout_fd, int stderr_fd)
 {
 	argc--;
 	argv++;
-	struct stat buffer;
 
 	out_fd = stdout_fd;
 	err_fd = stderr_fd;
@@ -74,12 +73,7 @@ source(int argc, char *argv[], int stdout_fd, int stderr_fd)
 	if (strcmp(argv[0], "--help") == 0) {
 		return help();
 	}
-	// Check if file exists
-	if (stat(argv[0], &buffer) < 0) {
-		dprintf(err_fd, "Mash: source: %s no such file in directory\n",
-			argv[0]);
-		return EXIT_FAILURE;
-	}
+
 	return add_source(argv[0], stderr_fd);
 }
 
@@ -114,7 +108,26 @@ int
 add_source(char *source_file_name, int error_fd)
 {
 	int index;
-	struct source_file *source_file = new_source_file(source_file_name);
+
+	char *source_name = malloc(MAX_FILE_LENGTH);
+
+	if (source_name == NULL) {
+		err(EXIT_FAILURE, "malloc failed");
+	}
+	memset(source_name, 0, MAX_FILE_LENGTH);
+
+	strcpy(source_name, source_file_name);
+
+	if (!find_path_srcfile(source_name)) {
+		dprintf(err_fd, "Mash: source: %s no such file in directory\n",
+			source_file_name);
+		free(source_name);
+		return EXIT_FAILURE;
+	}
+
+	struct source_file *source_file = new_source_file(source_name);
+
+	free(source_name);
 
 	for (index = 0; index < MAX_SOURCE_FILES; index++) {
 		if (sources[index] == NULL) {
@@ -163,4 +176,90 @@ read_source_file(char *filename)
 	fclose(f);
 	free(buf);
 	return 1;
+}
+
+int
+find_path_srcfile(char *filename)
+{
+	int i;
+	char *cwd;
+	char *cwd_ptr;
+
+	char *path, *orig_path;
+	char *path_ptr;
+	int path_len = 0;
+	char path_tok[MAX_PATH_LOCATIONS][MAX_ENV_SIZE];
+	char *token;
+
+	// Check if the first character is /
+	if (*filename == '/' && file_exists(filename)) {
+		return 1;
+	}
+	// CHECK IN CWD
+	cwd = malloc(MAX_ENV_SIZE);
+
+	if (cwd == NULL) {
+		err(EXIT_FAILURE, "malloc failed");
+	}
+	memset(cwd, 0, MAX_ENV_SIZE);
+	// Copy the path
+	if (getcwd(cwd, MAX_ENV_SIZE) == NULL) {
+		free(cwd);
+		return 0;
+	}
+	cwd_ptr = cwd;
+
+	strcat(cwd_ptr, "/");
+	strcat(cwd_ptr, filename);
+
+	if (file_exists(cwd_ptr)) {
+		strcpy(filename, cwd_ptr);
+		free(cwd);
+		return 1;
+	}
+	free(cwd);
+
+	// SEARCH IN PATH
+	// First get the path from env PATH
+	path = malloc(MAX_PATH_SIZE);
+
+	if (path == NULL) {
+		err(EXIT_FAILURE, "malloc failed");
+	}
+	memset(path, 0, MAX_PATH_SIZE);
+	// Copy the path
+	orig_path = getenv("PATH");
+	if (orig_path == NULL || strlen(orig_path) > MAX_PATH_SIZE - 1) {
+		free(path);
+		return 0;
+	}
+	strcpy(path, orig_path);
+	path_ptr = path;
+
+	// Then separate the path by : using strtok
+	while ((token = strtok_r(path_ptr, ":", &path_ptr))) {
+		strcpy(path_tok[path_len], token);
+		path_len++;
+	}
+	// Loop through the path until we find an exec
+
+	for (i = 0; i < path_len; i++) {
+		strcat(path_tok[i], "/");
+		strcat(path_tok[i], filename);
+		if (file_exists(path_tok[i])) {
+			strcpy(filename, path_tok[i]);
+			free(path);
+			return 1;
+		}
+	}
+	free(path);
+	return 0;
+}
+
+int
+file_exists(char *path)
+{
+	struct stat buf;
+
+	return (stat(path, &buf) == 0);
 }

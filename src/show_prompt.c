@@ -48,7 +48,11 @@ prompt(char *line)
 		if (syntax_mode == BASIC_SYNTAX) {
 			printf("$ ");
 		} else {
-			parse_prompt(prompt, line);
+			if (prompt) {
+				parse_prompt(prompt, line);
+			} else {
+				printf("$ ");
+			}
 		}
 		fflush(stdout);
 	}
