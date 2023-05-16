@@ -1,12 +1,12 @@
 #!/bin/bash
 
-NAME="Mash" 
+NAME="mash" 
 
 mkdir build/
 make
-chmod +x build/main
+chmod +x build/mash
 
-echo -e '#!/bin/bash\nOLDDIR="$PWD"\ncd "'$PWD'"\n ./build/main $@\nP_STATUS=$(echo $?)\ncd "$OLDDIR"\nexit $P_STATUS' > /usr/bin/$NAME
+cp $PWD/build/mash /usr/bin/mash
 #cp CLI/$NAME.1.gz /usr/share/man/man1/$NAME.1.gz
 
 chmod +x /usr/bin/$NAME

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NAME="Mash" 
+NAME="mash" 
 
 make clean
 
