@@ -54,14 +54,16 @@ enum math_size {
   MAX_OPERAND_SIZE = 32
 };
 
-typedef struct token {
+struct token {
   char data[MAX_OPERAND_SIZE];
   double value;
   int type;
   int priority;
   int symbol_priority;
   struct token * next;
-} Token;
+};
+
+typedef struct token Token;
 
 Token * 
 newToken() {
