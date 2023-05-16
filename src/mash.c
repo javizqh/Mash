@@ -84,7 +84,7 @@ main(int argc, char *argv[])
 	// ------------
 	prompt(buf);
 	while (fgets(buf, MAX_ARGUMENT_SIZE, stdin) != NULL) {	/* break with ^D or ^Z */
-		status = find_command(buf, NULL, stdin, NULL, NULL);
+		status = find_command(buf);
 
 		if (has_to_exit) {
 			break;

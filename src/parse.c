@@ -51,7 +51,6 @@ static char *end_basic_file_started(char *line, ExecInfo * exec_info);
 static char *blank(char *line, ExecInfo * exec_info);
 static char *basic_background(char *line, ExecInfo * exec_info);
 static char *end_line(char *line, ExecInfo * exec_info);
-static char *request_new_line(char *line, ExecInfo * exec_info);
 static char *error(char *line, ExecInfo * exec_info);
 
 static char *parse_ch(char *line, ExecInfo * exec_info);
@@ -212,7 +211,7 @@ parse(char *ptr, ExecInfo * exec_info)
 	parse_info->copy = cmd->current_arg;
 
 	if (strlen(ptr) == MAX_ARGUMENT_SIZE - 1) {
-		exec_info->parse_info->request_line = 1;
+		parse_info->request_line = 1;
 	}
 
 	for (; !parse_info->finished; ptr++) {
@@ -660,6 +659,7 @@ end_line(char *line, ExecInfo * exec_info)
 {
 	if (exec_info->parse_info->request_line) {
 		memset(exec_info->line, 0, MAX_ARGUMENT_SIZE);
+		prompt_request();
 		fgets(exec_info->line, MAX_ARGUMENT_SIZE, stdin);
 
 		if (ferror(stdin)) {
@@ -692,20 +692,6 @@ copy_and_end_sub(char *line, ExecInfo * exec_info)
 	line = copy(line, exec_info);
 	line = end_sub(line, exec_info);
 	return ++line;
-}
-
-char *
-request_new_line(char *line, ExecInfo * exec_info)
-{
-	prompt_request();
-	fgets(line, MAX_ARGUMENT_SIZE, stdin);
-	if (ferror(stdin)) {
-		fprintf(stderr, "Error: fgets failed");
-		return NULL;
-	}
-	exec_info->parse_info->has_arg_started = 0;
-
-	return --line;
 }
 
 static char *

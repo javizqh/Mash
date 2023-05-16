@@ -196,7 +196,7 @@ exec_builtin_in_shell(Command * command, int is_pipe)
 	int i;
 	int exit_code = EXIT_FAILURE;
 	int cmd_out = command->output;
-	int cmd_err = command->err_output;
+	int cmd_err = STDERR_FILENO;
 
 	if (command->argc == 1 && strrchr(command->argv[0], '=')) {
 		strcpy(command->argv[1], command->argv[0]);
@@ -292,7 +292,7 @@ exec_builtin(Command * start_scommand, Command * command)
 		}
 		modify_cmd_builtin(command);
 	}
-	free_command_with_buf(start_scommand);
+	free_command(start_scommand);
 	exit_mash(0, NULL, STDOUT_FILENO, STDERR_FILENO);
 	exit(return_value);
 	signal(SIGPIPE, SIG_DFL);

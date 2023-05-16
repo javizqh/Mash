@@ -34,8 +34,7 @@
 #include "exec_pipe.h"
 
 int
-find_command(char *line, char *buffer, FILE * src_file,
-	     ExecInfo * prev_exec_info, char *to_free_excess)
+find_command(char *line)
 {
 	int status = 0;
 	char *orig_line_ptr = line;
@@ -43,17 +42,10 @@ find_command(char *line, char *buffer, FILE * src_file,
 	char result[4];
 	ExecInfo *exec_info = new_exec_info(orig_line_ptr);
 
-	if (prev_exec_info != NULL) {
-		exec_info->prev_exec_info = prev_exec_info;
-	}
-
-	if (buffer != NULL) {
-		set_buffer_cmd(exec_info->command, buffer);
-	}
 // ---------------------------------------------------------------
 
 	while ((line = parse(line, exec_info))) {
-		status = launch_pipe(src_file, exec_info, to_free_excess);
+		status = launch_pipe(exec_info);
 
 		sprintf(result, "%d", status);
 		add_env_by_name("result", result);

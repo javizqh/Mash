@@ -38,7 +38,7 @@
 #include "exec_pipe.h"
 
 int
-launch_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
+launch_pipe(ExecInfo * exec_info)
 {
 	Command *cmd = exec_info->command;
 
@@ -60,11 +60,11 @@ launch_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 		return exec_builtin_in_shell(cmd, 0);
 	}
 
-	return exec_pipe(src_file, exec_info, to_free_excess);;
+	return exec_pipe(exec_info);
 }
 
 int
-exec_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
+exec_pipe(ExecInfo * exec_info)
 {
 	int null = open("/dev/null", O_RDONLY);
 	Command *current_command;
@@ -74,8 +74,7 @@ exec_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 		return EXIT_FAILURE;
 	}
 
-	if (set_input_shell_pipe(exec_info->command)
-	    || set_output_shell_pipe(exec_info->command)) {
+	if (set_input_shell_pipe(exec_info->command)) {
 		return 1;
 	}
 	// Make a loop fork each command
@@ -100,9 +99,6 @@ exec_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 		Command * start_command = exec_info->command;
 
 		free_exec_info(exec_info);
-		free(to_free_excess);
-		if (src_file != stdin)
-			fclose(src_file);
 		if (reading_from_file) {
 			//FIX: temporary read from /dev/null
 			if (dup2(null, STDIN_FILENO) == -1) {
@@ -110,8 +106,7 @@ exec_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 			}
 			close(null);
 		}
-		exec_cmd(current_command, start_command,
-			 current_command->pipe_next);
+		exec_cmd(current_command, start_command);
 		err(EXIT_FAILURE, "Failed to exec");
 		break;
 	default:

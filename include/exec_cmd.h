@@ -17,8 +17,7 @@ extern pid_t active_command;
 int find_path(Command * command);
 int command_exists(char *path);
 
-void exec_cmd(Command * command, Command * start_command,
-	      Command * last_command);
+void exec_cmd(Command * command, Command * start_command);
 
 // Redirect input and output: Parent
 enum iobuffer {

@@ -133,7 +133,7 @@ command_exists(char *path)
 }
 
 void
-exec_cmd(Command * cmd, Command * start_cmd, Command * last_cmd)
+exec_cmd(Command * cmd, Command * start_cmd)
 {
 	int i;
 	char *args[cmd->argc + 1];
@@ -260,16 +260,17 @@ redirect_stdout(Command * command)
 		close_fd(command->output);
 	}
 }
+
 // NOTE: this is for stderr output  
 //void
 //redirect_stderr(Command * command)
 //{
-//	if (command->err_output != STDERR_FILENO) {
-//		if (dup2(command->err_output, STDERR_FILENO) == -1) {
-//			err(EXIT_FAILURE, "Failed to dup stdout");
-//		}
-//		close_fd(command->err_output);
-//	}
+//      if (command->err_output != STDERR_FILENO) {
+//              if (dup2(command->err_output, STDERR_FILENO) == -1) {
+//                      err(EXIT_FAILURE, "Failed to dup stdout");
+//              }
+//              close_fd(command->err_output);
+//      }
 //}
 
 // File descriptor
@@ -282,7 +283,7 @@ set_input_shell_pipe(Command * start_command)
 		int fd_write_shell[2] = { -1, -1 };
 		if (pipe(fd_write_shell) < 0) {
 			fprintf(stderr, "Failed to pipe to stdin");
-			free_command_with_buf(start_command);
+			free_command(start_command);
 			return 1;
 		}
 		start_command->fd_pipe_input[0] = fd_write_shell[0];
@@ -314,7 +315,7 @@ close_all_fd(Command * start_command)
 			close_fd(command->output);
 		}
 		//if (command->err_output != STDERR_FILENO) {
-		//	close_fd(command->err_output);
+		//      close_fd(command->err_output);
 		//}
 		close_fd(command->fd_pipe_input[0]);
 		close_fd(command->fd_pipe_input[1]);
@@ -364,7 +365,7 @@ close_all_fd_io(Command * start_command, Command * last_command)
 			close_fd(command->output);
 		}
 		//if (command->err_output != STDERR_FILENO) {
-		//	close_fd(command->err_output);
+		//      close_fd(command->err_output);
 		//}
 		command = command->pipe_next;
 	}

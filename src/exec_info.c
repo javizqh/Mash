@@ -110,7 +110,7 @@ free_exec_info(ExecInfo * exec_info)
 	free(exec_info->line);
 
 	if (exec_info->prev_exec_info != NULL) {
-		free_command_with_buf(exec_info->prev_exec_info->command);
+		free_command(exec_info->prev_exec_info->command);
 		free_exec_info(exec_info->prev_exec_info);
 	}
 	free(exec_info);

@@ -57,7 +57,7 @@ int
 prompt_request()
 {
 	if (shell_mode == INTERACTIVE_MODE) {
-		if (reading_from_file) {
+		if (!reading_from_file) {
 			printf("> ");
 		}
 		fflush(stdout);
