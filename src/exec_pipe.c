@@ -112,6 +112,8 @@ exec_pipe(FILE * src_file, ExecInfo * exec_info, char *to_free_excess)
 		}
 		exec_cmd(current_command, start_command,
 			 current_command->pipe_next);
+		// FIX: free command
+		free_command(start_command);
 		err(EXIT_FAILURE, "Failed to exec");
 		break;
 	default:

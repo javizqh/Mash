@@ -325,6 +325,8 @@ exec_job(FILE * src_file, ExecInfo * exec_info, Job * job, char *to_free_excess)
 			close(null);
 		}
 		exec_cmd(cmd, start_command, cmd->pipe_next);
+		// FIX: free command
+		free_command(start_command);
 		err(EXIT_FAILURE, "Failed to exec");
 		break;
 	default:
