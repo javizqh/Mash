@@ -50,14 +50,12 @@ exit_mash(int argc, char *argv[], int stdout_fd, int stderr_fd)
 	argc--;
 	argv++;
 
-	// TODO: test this
-	char *result = get_env_by_name("results");
+	char *result = get_env_by_name("result");
 	int exit_status;
 
 	out_fd = stdout_fd;
 	err_fd = stderr_fd;
 
-	// TODO: add to main
 	if (result == NULL) {
 		dprintf(err_fd, "error: var result does not exist\n");
 		exit_status = EXIT_FAILURE;

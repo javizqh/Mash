@@ -22,12 +22,6 @@ enum wait {
 	DO_NOT_WAIT_TO_FINISH
 };
 
-enum status {
-	DO_NOT_MATTER_TO_EXEC,
-	EXECUTE_IN_SUCCESS,
-	EXECUTE_IN_FAILURE
-};
-
 enum exit_code {
 	CMD_EXIT_SUCCESS,
 	CMD_EXIT_FAILURE,
@@ -46,19 +40,14 @@ typedef struct Command {
 	char *current_arg;
 	pid_t pid;
 	int search_location;
-	// Only used for the first command in pipe
-	int next_status_needed_to_exec;
 	// Execute in background Only in first command in pipe
 	int do_wait;
 	// Pipes
 	int input;
 	int output;
-	int err_output;
 	int fd_pipe_input[2];
 	int fd_pipe_output[2];
 	struct Command *pipe_next;
-	// Only used when $()
-	char *output_buffer;
 } Command;
 
 // Builtin command
@@ -75,7 +64,6 @@ Command *new_command();
 void reset_command(Command *command);
 
 void free_command(Command *command);
-void free_command_with_buf(Command *command);
 
 int check_alias_cmd(Command *command);
 
@@ -84,8 +72,6 @@ int add_arg(Command *command);
 int reset_last_arg(Command *command);
 
 int set_file_cmd(Command *command, int file_type, char *file);
-
-int set_buffer_cmd(Command *command, char *buffer);
 
 int set_to_background_cmd(Command *command);
 

@@ -97,17 +97,14 @@ new_command()
 	command->current_arg = command->argv[0];
 	command->pid = 0;
 	command->search_location = SEARCH_CMD_EVERYWHERE;
-	command->next_status_needed_to_exec = DO_NOT_MATTER_TO_EXEC;
 	command->do_wait = WAIT_TO_FINISH;
 	command->input = STDIN_FILENO;
 	command->output = STDOUT_FILENO;
-	command->err_output = STDERR_FILENO;
 	command->fd_pipe_input[0] = -1;
 	command->fd_pipe_input[1] = -1;
 	command->fd_pipe_output[0] = -1;
 	command->fd_pipe_output[1] = -1;
 	command->pipe_next = NULL;
-	command->output_buffer = NULL;
 
 	return command;
 }
@@ -121,17 +118,14 @@ reset_command(Command * command)
 	command->current_arg = command->argv[0];
 	command->pid = 0;
 	command->search_location = SEARCH_CMD_EVERYWHERE;
-	command->next_status_needed_to_exec = DO_NOT_MATTER_TO_EXEC;
 	command->do_wait = WAIT_TO_FINISH;
 	command->input = STDIN_FILENO;
 	command->output = STDOUT_FILENO;
-	command->err_output = STDERR_FILENO;
 	command->fd_pipe_input[0] = -1;
 	command->fd_pipe_input[1] = -1;
 	command->fd_pipe_output[0] = -1;
 	command->fd_pipe_output[1] = -1;
 	command->pipe_next = NULL;
-	command->output_buffer = NULL;
 };
 
 void
@@ -143,20 +137,6 @@ free_command(Command * command)
 	while (next != NULL) {
 		to_free = next;
 		next = to_free->pipe_next;
-		free(to_free);
-	}
-}
-
-void
-free_command_with_buf(Command * command)
-{
-	Command *to_free = command;
-	Command *next = command;
-
-	while (next != NULL) {
-		to_free = next;
-		next = to_free->pipe_next;
-		free(to_free->output_buffer);
 		free(to_free);
 	}
 }
@@ -216,34 +196,8 @@ set_file_cmd(Command * command, int file_type, char *file)
 		last_cmd->output = open_write_file(file);
 		return last_cmd->output;
 		break;
-	case ERROR_WRITE:
-		// GO TO LAST CMD IN PIPE
-		Command * last_err_cmd = get_last_command(command);
-		if (last_err_cmd->err_output != STDERR_FILENO) {
-			close(last_err_cmd->err_output);
-		}
-		last_err_cmd->err_output = open_write_file(file);
-		return last_err_cmd->err_output;
-		break;
-	case ERROR_AND_OUTPUT_WRITE:
-		// GO TO LAST CMD IN PIPE
-		Command * last_err_out_cmd = get_last_command(command);
-		if (last_err_out_cmd->output != STDOUT_FILENO) {
-			close(last_err_out_cmd->output);
-		}
-		last_err_out_cmd->output = open_write_file(file);
-		last_err_out_cmd->err_output = last_err_out_cmd->output;
-		return last_err_out_cmd->err_output;
-		break;
 	}
 	return -1;
-}
-
-int
-set_buffer_cmd(Command * command, char *buffer)
-{
-	get_last_command(command)->output_buffer = buffer;
-	return 1;
 }
 
 int
@@ -280,6 +234,5 @@ pipe_command(Command * in_command, Command * out_command)
 	in_command->fd_pipe_output[1] = fd[1];
 	out_command->fd_pipe_input[0] = fd[0];
 	out_command->fd_pipe_input[1] = fd[1];
-	out_command->output_buffer = in_command->output_buffer;
 	return 1;
 }

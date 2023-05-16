@@ -141,16 +141,9 @@ exec_cmd(Command * cmd, Command * start_cmd, Command * last_cmd)
 	close_all_fd_cmd(cmd, start_cmd);
 	redirect_stdin(cmd, start_cmd);
 	redirect_stdout(cmd);
-	redirect_stderr(cmd);
 	// Check if builtin
 	if (cmd->search_location != SEARCH_CMD_ONLY_COMMAND
 	    && find_builtin(cmd)) {
-		if (last_cmd != NULL || cmd->output_buffer != NULL
-		    || cmd->output != STDOUT_FILENO
-		    || cmd->err_output != STDERR_FILENO
-		    || cmd->output != cmd->err_output) {
-			close_fd(cmd->fd_pipe_output[1]);
-		}
 		exec_builtin(start_cmd, cmd);
 	} else {
 		exit_mash(0, NULL, STDOUT_FILENO, STDERR_FILENO);
@@ -158,15 +151,8 @@ exec_cmd(Command * cmd, Command * start_cmd, Command * last_cmd)
 			fprintf(stderr, "%s: cmd not found\n", cmd->argv[0]);
 			close_fd(cmd->fd_pipe_input[0]);
 			close_fd(cmd->fd_pipe_output[1]);
-			free_command_with_buf(start_cmd);
+			free_command(start_cmd);
 			exit(EXIT_FAILURE);
-		}
-
-		if (last_cmd != NULL || cmd->output_buffer != NULL
-		    || cmd->output != STDOUT_FILENO
-		    || cmd->err_output != STDERR_FILENO
-		    || cmd->output != cmd->err_output) {
-			close_fd(cmd->fd_pipe_output[1]);
 		}
 
 		for (i = 0; i < cmd->argc; i++) {
@@ -233,31 +219,6 @@ read_from_here_doc(Command * start_command)
 	free(here_doc_buffer);
 }
 
-void
-write_to_buffer(Command * last_command)
-{
-	ssize_t count = MAX_BUFFER_IO_SIZE;
-	ssize_t bytes_stdout;
-
-	// Create stdout buffer
-	char *buffer_stdout = malloc(sizeof(char[MAX_BUFFER_IO_SIZE]));
-
-	if (buffer_stdout == NULL) {
-		err(EXIT_FAILURE, "malloc failed");
-	}
-	memset(buffer_stdout, 0, MAX_BUFFER_IO_SIZE);
-
-	do {
-		bytes_stdout =
-		    read(last_command->fd_pipe_output[0], buffer_stdout, count);
-		if (bytes_stdout > 0) {
-			strcat(last_command->output_buffer, buffer_stdout);
-		}
-	} while (bytes_stdout > 0);
-	free(buffer_stdout);
-	close_fd(last_command->fd_pipe_output[0]);
-}
-
 // Redirect input and output: Child
 void
 redirect_stdin(Command * command, Command * start_command)
@@ -284,33 +245,32 @@ void
 redirect_stdout(Command * command)
 {
 	// NOT LAST COMMAND OR LAST COMMAND WITH FILE OR BUFFER
-	if (command->pipe_next || command->output_buffer) {
+	if (command->pipe_next) {
 		// redirect stdout
 		if (dup2(command->fd_pipe_output[1], STDOUT_FILENO) == -1) {
 			err(EXIT_FAILURE, "Failed to dup stdout");
 		}
+		close_fd(command->fd_pipe_output[1]);
 	}
 
 	if (command->output != STDOUT_FILENO) {
 		if (dup2(command->output, STDOUT_FILENO) == -1) {
 			err(EXIT_FAILURE, "Failed to dup stdout");
 		}
-		if (command->output != command->err_output) {
-			close_fd(command->output);
-		}
+		close_fd(command->output);
 	}
 }
-
-void
-redirect_stderr(Command * command)
-{
-	if (command->err_output != STDERR_FILENO) {
-		if (dup2(command->err_output, STDERR_FILENO) == -1) {
-			err(EXIT_FAILURE, "Failed to dup stdout");
-		}
-		close_fd(command->err_output);
-	}
-}
+// NOTE: this is for stderr output  
+//void
+//redirect_stderr(Command * command)
+//{
+//	if (command->err_output != STDERR_FILENO) {
+//		if (dup2(command->err_output, STDERR_FILENO) == -1) {
+//			err(EXIT_FAILURE, "Failed to dup stdout");
+//		}
+//		close_fd(command->err_output);
+//	}
+//}
 
 // File descriptor
 
@@ -327,26 +287,6 @@ set_input_shell_pipe(Command * start_command)
 		}
 		start_command->fd_pipe_input[0] = fd_write_shell[0];
 		start_command->fd_pipe_input[1] = fd_write_shell[1];
-	}
-	return 0;
-}
-
-int
-set_output_shell_pipe(Command * start_command)
-{
-	// SET OUTOUT PIPE
-	// Find last one and add it
-	Command *last_command = get_last_command(start_command);
-
-	if (last_command->output_buffer) {
-		int fd_read_shell[2] = { -1, -1 };
-		if (pipe(fd_read_shell) < 0) {
-			fprintf(stderr, "Failed to pipe to stdout");
-			free_command_with_buf(start_command);
-			return 1;
-		}
-		last_command->fd_pipe_output[0] = fd_read_shell[0];
-		last_command->fd_pipe_output[1] = fd_read_shell[1];
 	}
 	return 0;
 }
@@ -373,9 +313,9 @@ close_all_fd(Command * start_command)
 		if (command->output != STDOUT_FILENO) {
 			close_fd(command->output);
 		}
-		if (command->err_output != STDERR_FILENO) {
-			close_fd(command->err_output);
-		}
+		//if (command->err_output != STDERR_FILENO) {
+		//	close_fd(command->err_output);
+		//}
 		close_fd(command->fd_pipe_input[0]);
 		close_fd(command->fd_pipe_input[1]);
 		close_fd(command->fd_pipe_output[0]);
@@ -413,8 +353,7 @@ close_all_fd_io(Command * start_command, Command * last_command)
 		    || command->input != HERE_DOC_FILENO) {
 			close_fd(command->fd_pipe_input[1]);
 		}
-		if (command->pid != last_command->pid
-		    || command->output_buffer == NULL) {
+		if (command->pid != last_command->pid) {
 			close_fd(command->fd_pipe_output[0]);
 		}
 		close_fd(command->fd_pipe_output[1]);
@@ -424,9 +363,9 @@ close_all_fd_io(Command * start_command, Command * last_command)
 		if (command->output != STDOUT_FILENO) {
 			close_fd(command->output);
 		}
-		if (command->err_output != STDERR_FILENO) {
-			close_fd(command->err_output);
-		}
+		//if (command->err_output != STDERR_FILENO) {
+		//	close_fd(command->err_output);
+		//}
 		command = command->pipe_next;
 	}
 
