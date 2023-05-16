@@ -39,14 +39,11 @@ static char *do_glob(char *line, ExecInfo * exec_info);
 static char *basic_start_sub(char *line, ExecInfo * exec_info);
 static char *end_sub(char *line, ExecInfo * exec_info);
 static char *basic_pipe_tok(char *line, ExecInfo * exec_info);
-static char *start_file_in(char *line, ExecInfo * exec_info);
 static char *basic_start_file_in(char *line, ExecInfo * exec_info);
-static char *start_file_out(char *line, ExecInfo * exec_info);
 static char *basic_start_file_out(char *line, ExecInfo * exec_info);
 static char *here_doc(char *line, ExecInfo * exec_info);
 static char *end_file(char *line, ExecInfo * exec_info);
 static char *end_basic_file(char *line, ExecInfo * exec_info);
-static char *end_file_started(char *line, ExecInfo * exec_info);
 static char *end_basic_file_started(char *line, ExecInfo * exec_info);
 static char *blank(char *line, ExecInfo * exec_info);
 static char *basic_background(char *line, ExecInfo * exec_info);
@@ -449,37 +446,10 @@ start_file(ExecInfo * exec_info)
 }
 
 char *
-start_file_in(char *line, ExecInfo * exec_info)
+basic_start_file_in(char *line, ExecInfo * exec_info)
 {
 	start_file(exec_info);
 	exec_info->file_info->mode = INPUT_READ;
-
-	return line;
-}
-
-char *
-basic_start_file_in(char *line, ExecInfo * exec_info)
-{
-	return start_file_in(line, exec_info);
-}
-
-char *
-start_file_out(char *line, ExecInfo * exec_info)
-{
-	FileInfo *file_info = exec_info->file_info;
-	Command *cmd = exec_info->last_command;
-
-	start_file(exec_info);
-	file_info->mode = OUTPUT_WRITE;
-	if (strcmp(cmd->current_arg, "2") == 0) {
-		reset_last_arg(cmd);
-		file_info->mode = ERROR_WRITE;
-	} else if (strcmp(cmd->current_arg, "&") == 0) {
-		reset_last_arg(cmd);
-		file_info->mode = ERROR_AND_OUTPUT_WRITE;
-	} else if (strcmp(cmd->current_arg, "1") == 0) {
-		reset_last_arg(cmd);
-	}
 
 	return line;
 }
@@ -565,15 +535,6 @@ end_basic_file(char *line, ExecInfo * exec_info)
 	}
 	if (seekfile(line, filetype)) {
 		return error_token(*line, line);
-	}
-	return end_file(line, exec_info);
-}
-
-char *
-end_file_started(char *line, ExecInfo * exec_info)
-{
-	if (!exec_info->parse_info->has_arg_started) {
-		return line;
 	}
 	return end_file(line, exec_info);
 }
