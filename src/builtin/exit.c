@@ -62,16 +62,17 @@ exit_mash(int argc, char *argv[], int stdout_fd, int stderr_fd)
 	char *result = get_env_by_name("result");
 	int exit_status;
 
-	if (result == NULL) {
-		dprintf(err_fd, "error: var result does not exist\n");
-	}
-
-	exit_status = atoi(result);
-	free(result);
-
 	out_fd = stdout_fd;
 	err_fd = stderr_fd;
 
+	if (result == NULL) {
+		dprintf(err_fd, "error: var result does not exist\n");
+		exit_status = EXIT_FAILURE;
+	} else {
+		exit_status = atoi(result);
+		free(result);
+	}
+	
 	if (argc == 1) {
 		if (strcmp(argv[0], "--help") == 0) {
 			return help();
