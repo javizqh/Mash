@@ -19,7 +19,6 @@
 #include "builtin/command.h"
 #include "builtin/builtin.h"
 #include "builtin/export.h"
-#include "builtin/alias.h"
 #include "open_files.h"
 #include "parse.h"
 #include "exec_info.h"
@@ -43,7 +42,6 @@ new_sub_info()
 void
 restore_sub_info(SubInfo * sub_info)
 {
-	//memset(sub_info->last_alias, 0, MAX_ARGUMENT_SIZE);
 	memset(sub_info->buffer, 0, MAX_ENV_SIZE);
 	sub_info->old_ptr = NULL;
 	sub_info->old_lexer = NULL;
@@ -88,7 +86,6 @@ new_exec_info(char *line)
 	exec_info->sub_info = new_sub_info();
 	exec_info->file_info = new_file_info();
 	exec_info->line = line;
-	exec_info->prev_exec_info = NULL;
 	return exec_info;
 }
 
@@ -108,10 +105,5 @@ free_exec_info(ExecInfo * exec_info)
 	free(exec_info->file_info);
 	free(exec_info->sub_info);
 	free(exec_info->line);
-
-	if (exec_info->prev_exec_info != NULL) {
-		free_command(exec_info->prev_exec_info->command);
-		free_exec_info(exec_info->prev_exec_info);
-	}
 	free(exec_info);
 };

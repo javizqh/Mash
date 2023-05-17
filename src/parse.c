@@ -22,7 +22,6 @@
 #include "builtin/command.h"
 #include "builtin/builtin.h"
 #include "builtin/export.h"
-#include "builtin/alias.h"
 #include "builtin/exit.h"
 #include "open_files.h"
 #include "parse.h"
@@ -34,7 +33,8 @@
 
 // DECLARE STATIC FUNCTIONS
 static char *copy(char *line, ExecInfo * exec_info);
-static char *copy_and_end_sub(char *line, ExecInfo * exec_info);
+
+// static char *copy_and_end_sub(char *line, ExecInfo * exec_info);
 static char *do_glob(char *line, ExecInfo * exec_info);
 static char *basic_start_sub(char *line, ExecInfo * exec_info);
 static char *end_sub(char *line, ExecInfo * exec_info);
@@ -48,7 +48,8 @@ static char *end_basic_file_started(char *line, ExecInfo * exec_info);
 static char *blank(char *line, ExecInfo * exec_info);
 static char *basic_background(char *line, ExecInfo * exec_info);
 static char *end_line(char *line, ExecInfo * exec_info);
-static char *error(char *line, ExecInfo * exec_info);
+
+// static char *error(char *line, ExecInfo * exec_info);
 
 static char *parse_ch(char *line, ExecInfo * exec_info);
 
@@ -91,15 +92,12 @@ load_basic_std_table()
 	std[' '] = blank;
 	std['$'] = basic_start_sub;
 	std['&'] = basic_background;
-	std['('] = error;
-	std[')'] = error;
 	std['*'] = do_glob;
 	std['<'] = basic_start_file_in;
 	std['>'] = basic_start_file_out;
 	std['?'] = do_glob;
 	std['['] = do_glob;
 	std['{'] = here_doc;
-	std['}'] = error;
 	std['|'] = basic_pipe_tok;
 	return 0;
 }
@@ -111,25 +109,12 @@ load_sub_table()
 	sub['\t'] = end_sub;
 	sub['\n'] = end_sub;
 	sub[' '] = end_sub;
-	sub['"'] = end_sub;
-	sub['#'] = copy_and_end_sub;
-	sub['$'] = copy_and_end_sub;
 	sub['&'] = end_sub;
 	sub['\''] = end_sub;
-	sub['('] = end_sub;
-	sub[')'] = end_sub;
-	sub['-'] = copy_and_end_sub;
-	sub[';'] = end_sub;
 	sub['<'] = end_sub;
 	sub['>'] = end_sub;
-	sub['?'] = copy_and_end_sub;
-	sub['@'] = copy_and_end_sub;
-	sub['\\'] = end_sub;
-	sub['_'] = copy_and_end_sub;
 	sub['{'] = end_sub;
-	sub['}'] = end_sub;
 	sub['|'] = end_sub;
-	sub['~'] = end_sub;
 	return 0;
 }
 
@@ -140,19 +125,13 @@ load_basic_file_table()
 	file['\t'] = end_basic_file_started;
 	file['\n'] = end_basic_file;
 	file[' '] = end_basic_file_started;
-	file['#'] = end_basic_file;
 	file['$'] = basic_start_sub;
 	file['&'] = end_basic_file;
-	file['('] = error;
-	file[')'] = error;
 	file['*'] = do_glob;
-	file[';'] = end_basic_file;
 	file['<'] = end_basic_file;
 	file['>'] = end_basic_file;
 	file['?'] = do_glob;
 	file['['] = do_glob;
-	file['{'] = error;
-	file['}'] = error;
 	file['|'] = end_basic_file;
 	return 0;
 }
@@ -311,36 +290,7 @@ substitute(char *to_substitute)
 {
 	char *sub_result;
 
-	if (strlen(to_substitute) == 1) {
-		// Could be ? or $ or # or @
-		if (*to_substitute == '$') {
-			memset(to_substitute, 0, MAX_ENV_SIZE);
-			sprintf(to_substitute, "%d", getpid());
-			return 2;
-		} else if (*to_substitute == '?') {
-			sub_result = getenv("result");
-			if (sub_result == NULL) {
-				return 0;
-			}
-			memset(to_substitute, 0, MAX_ENV_SIZE);
-			strcpy(to_substitute, sub_result);
-			return 2;
-		} else if (*to_substitute == '#') {
-			memset(to_substitute, 0, MAX_ENV_SIZE);
-			// TODO: do not hardcode
-			strcpy(to_substitute, "0");
-			return 2;
-		} else if (*to_substitute == '@') {
-			memset(to_substitute, 0, MAX_ENV_SIZE);
-			// TODO: do not hardcode
-			strcpy(to_substitute, " ");
-			return 2;
-		} else if (*to_substitute == '-' || *to_substitute == '_') {
-			memset(to_substitute, 0, MAX_ENV_SIZE);
-			strcpy(to_substitute, flags);
-			return 2;
-		}
-	} else if (strlen(to_substitute) == 0) {
+	if (strlen(to_substitute) == 0) {
 		memset(to_substitute, 0, MAX_ENV_SIZE);
 		strcpy(to_substitute, "$");
 		return 2;
@@ -569,7 +519,6 @@ basic_pipe_tok(char *line, ExecInfo * exec_info)
 	exec_info->last_command = new_command();
 
 	// Update old_cmd pipe
-	strcpy(exec_info->sub_info->last_alias, "");
 	pipe_command(old_cmd, exec_info->last_command);
 	parse_info->copy = exec_info->last_command->current_arg;
 
@@ -619,15 +568,15 @@ char *
 end_line(char *line, ExecInfo * exec_info)
 {
 	if (exec_info->parse_info->request_line) {
-		memset(exec_info->line, 0, MAX_ARGUMENT_SIZE);
+		memset(exec_info->line, 0, LINE_SIZE);
 		prompt_request();
-		fgets(exec_info->line, MAX_ARGUMENT_SIZE, stdin);
+		fgets(exec_info->line, LINE_SIZE, stdin);
 
 		if (ferror(stdin)) {
 			fprintf(stderr, "Error: fgets failed");
 			return NULL;
 		}
-		if (strlen(exec_info->line) < MAX_ARGUMENT_SIZE - 1) {
+		if (strlen(exec_info->line) < LINE_SIZE - 1) {
 			exec_info->parse_info->request_line = 0;
 		}
 		line = exec_info->line;
@@ -647,13 +596,14 @@ copy(char *line, ExecInfo * exec_info)
 	return line;
 }
 
-char *
-copy_and_end_sub(char *line, ExecInfo * exec_info)
-{
-	line = copy(line, exec_info);
-	line = end_sub(line, exec_info);
-	return ++line;
-}
+// TODO: maybe
+//char *
+//copy_and_end_sub(char *line, ExecInfo * exec_info)
+//{
+//      line = copy(line, exec_info);
+//      line = end_sub(line, exec_info);
+//      return ++line;
+//}
 
 static char *
 do_glob(char *line, ExecInfo * exec_info)
@@ -663,13 +613,14 @@ do_glob(char *line, ExecInfo * exec_info)
 	return copy(line, exec_info);
 }
 
-char *
-error(char *line, ExecInfo * exec_info)
-{
-	exec_info->parse_info->finished = 1;
-	error_token(*line, line);
-	return NULL;
-}
+// TODO: maybe
+//char *
+//error(char *line, ExecInfo * exec_info)
+//{
+//      exec_info->parse_info->finished = 1;
+//      error_token(*line, line);
+//      return NULL;
+//}
 
 char *
 error_token(char token, char *line)

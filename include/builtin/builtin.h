@@ -18,6 +18,12 @@ extern char *builtin_help;
 
 extern int N_BUILTINS;
 
+enum n_builtins {
+	BUILTINS_MODCMD = 4,
+	BUILTINS_SH = 3,
+	BUILTINS_FORK = 5
+};
+
 // Builtin command
 int builtin(Command * command);
 

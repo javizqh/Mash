@@ -24,8 +24,6 @@
 #include "open_files.h"
 #include "builtin/command.h"
 #include "builtin/export.h"
-#include "builtin/source.h"
-#include "builtin/alias.h"
 #include "builtin/exit.h"
 #include "builtin/mash_pwd.h"
 #include "builtin/echo.h"
@@ -42,12 +40,12 @@
 #include "exec_cmd.h"
 #include "builtin/builtin.h"
 
-char *builtins_modify_cmd[4] = { "ifnot", "ifok", "builtin", "command" };
+char *builtins_modify_cmd[BUILTINS_MODCMD] =
+    { "ifnot", "ifok", "builtin", "command" };
+char *builtins_in_shell[BUILTINS_SH] = { "cd", "export", "exit" };
+char *builtins_fork[BUILTINS_FORK] = { "math", "help", "sleep", "pwd", "echo" };
 
-char *builtins_in_shell[4] = { "cd", "export", "alias", "exit" };
-char *builtins_fork[5] = { "math", "help", "sleep", "pwd", "echo" };
-
-int N_BUILTINS = 4 + 4 + 5;
+int N_BUILTINS = BUILTINS_MODCMD + BUILTINS_SH + BUILTINS_FORK;
 
 // Builtin command
 char *builtin_use = "builtin shell-builtin [arg ..]";
@@ -111,7 +109,7 @@ has_builtin_modify_cmd(Command * command)
 {
 	int i;
 
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < BUILTINS_MODCMD; i++) {
 		if (strcmp(command->argv[0], builtins_modify_cmd[i]) == 0) {
 			return 1;
 		}
@@ -143,7 +141,7 @@ found_builtin_exec_in_shell(Command * command)
 		return 1;
 	}
 
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < BUILTINS_SH; i++) {
 		if (strcmp(command->argv[0], builtins_in_shell[i]) == 0) {
 			return 1;
 		}
@@ -167,14 +165,16 @@ wait_for_heredoc()
 	int has_max_length = 0;
 
 	// MINIMUM size of buffer = 4
-	char *buf = malloc(4);
+	int min_buffer_size = 4;
+
+	char *buf = malloc(min_buffer_size);
 
 	if (buf == NULL)
 		err(EXIT_FAILURE, "malloc failed");
-	memset(buf, 0, 4);
+	memset(buf, 0, min_buffer_size);
 
-	while (fgets(buf, 4, stdin) != NULL) {
-		if (strlen(buf) >= 4 - 1) {
+	while (fgets(buf, min_buffer_size, stdin) != NULL) {
+		if ((int)strlen(buf) >= min_buffer_size - 1) {
 			has_max_length = 1;
 		} else {
 			if (!has_max_length && (strcmp(buf, "}\n") == 0 ||
@@ -225,9 +225,7 @@ exec_builtin_in_shell(Command * command, int is_a_pipe)
 		cmd_out = STDOUT_FILENO;
 	}
 
-	if (strcmp(command->argv[0], "alias") == 0) {
-		exit_code = alias(i, args, cmd_out, cmd_err);
-	} else if (strcmp(command->argv[0], "export") == 0) {
+	if (strcmp(command->argv[0], "export") == 0) {
 		exit_code = export(i, args, cmd_out, cmd_err);
 	} else if (strcmp(command->argv[0], "exit") == 0) {
 		exit_code = exit_mash(i, args, cmd_out, cmd_err);
@@ -252,7 +250,7 @@ find_builtin(Command * command)
 {
 	int i;
 
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < BUILTINS_FORK; i++) {
 		if (strcmp(command->argv[0], builtins_fork[i]) == 0) {
 			return 1;
 		}

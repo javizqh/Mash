@@ -12,21 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <err.h>
-#include "builtin/command.h"
-#include "builtin/export.h"
-#include "builtin/alias.h"
-#include "builtin/source.h"
-#include "parse.h"
-#include "exec_info.h"
-#include "parse_line.h"
 #include "show_prompt.h"
 #include "mash.h"
 

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 typedef struct SubInfo {
-	char last_alias[ALIAS_MAX_COMMAND];
 	char *old_ptr;
 	char buffer[MAX_ARGUMENT_SIZE];
 	 spec_char(*old_lexer)[ASCII_CHARS];
@@ -38,7 +37,6 @@ typedef struct ExecInfo {
 	FileInfo *file_info;
 	SubInfo *sub_info;
 	char *line;
-	struct ExecInfo *prev_exec_info;
 } ExecInfo;
 
 ExecInfo *new_exec_info(char *line);

@@ -15,7 +15,6 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
-#include "builtin/alias.h"
 #include "builtin/cd.h"
 #include "builtin/command.h"
 #include "builtin/echo.h"
@@ -82,10 +81,6 @@ print_usage(char *name)
 		printf("$(( expression ))\n");
 		matched++;
 	}
-	if (name == NULL || strncmp("alias", name, strlen(name)) == 0) {
-		printf("alias: %s\n", alias_use);
-		matched++;
-	}
 	if (name == NULL || strncmp("builtin", name, strlen(name)) == 0) {
 		printf("builtin: %s\n", builtin_use);
 		matched++;
@@ -149,10 +144,6 @@ print_description(char *name)
 {
 	int matched = 0;
 
-	if (strncmp("alias", name, strlen(name)) == 0) {
-		printf("alias - %s\n", alias_description);
-		matched++;
-	}
 	if (strncmp("builtin", name, strlen(name)) == 0) {
 		printf("builtin - %s\n", builtin_description);
 		matched++;
@@ -221,13 +212,6 @@ print_default_help(char *name)
 	char *description[N_BUILTINS];
 	char *help_str[N_BUILTINS];
 
-	if (strncmp("alias", name, strlen(name)) == 0) {
-		builtin[n_matches] = "alias";
-		use[n_matches] = alias_use;
-		description[n_matches] = alias_description;
-		help_str[n_matches] = alias_help;
-		n_matches++;
-	}
 	if (strncmp("builtin", name, strlen(name)) == 0) {
 		builtin[n_matches] = "builtin";
 		use[n_matches] = builtin_use;
@@ -336,13 +320,6 @@ print_help_man(char *name)
 	char *description[N_BUILTINS];
 	char *help_str[N_BUILTINS];
 
-	if (strncmp("alias", name, strlen(name)) == 0) {
-		builtin[n_matches] = "alias";
-		use[n_matches] = alias_use;
-		description[n_matches] = alias_description;
-		help_str[n_matches] = alias_help;
-		n_matches++;
-	}
 	if (strncmp("builtin", name, strlen(name)) == 0) {
 		builtin[n_matches] = "builtin";
 		use[n_matches] = builtin_use;

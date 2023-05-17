@@ -22,7 +22,6 @@
 #include "builtin/command.h"
 #include "builtin/builtin.h"
 #include "builtin/export.h"
-#include "builtin/alias.h"
 #include "builtin/exit.h"
 #include "open_files.h"
 #include "parse.h"
@@ -30,7 +29,6 @@
 #include "parse_line.h"
 #include "show_prompt.h"
 #include "exec_cmd.h"
-#include "builtin/jobs.h"
 #include "exec_pipe.h"
 
 int

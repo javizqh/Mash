@@ -23,8 +23,6 @@
 #include <string.h>
 #include "builtin/command.h"
 #include "builtin/export.h"
-#include "builtin/alias.h"
-#include "builtin/source.h"
 #include "parse.h"
 #include "exec_info.h"
 #include "parse_line.h"
@@ -32,7 +30,6 @@
 #include "builtin/exit.h"
 #include "exec_cmd.h"
 #include "mash.h"
-#include "builtin/jobs.h"
 
 int reading_from_file = 0;
 int writing_to_file = 0;
@@ -75,15 +72,15 @@ main(int argc, char *argv[])
 
 	// ---------- Read command line
 	// ------ Buffer
-	char *buf = malloc(MAX_ARGUMENT_SIZE);
+	char *buf = malloc(LINE_SIZE);
 
 	if (buf == NULL) {
 		err(EXIT_FAILURE, "malloc failed");
 	}
-	memset(buf, 0, MAX_ARGUMENT_SIZE);
+	memset(buf, 0, LINE_SIZE);
 	// ------------
 	prompt(buf);
-	while (fgets(buf, MAX_ARGUMENT_SIZE, stdin) != NULL) {	/* break with ^D or ^Z */
+	while (fgets(buf, LINE_SIZE, stdin) != NULL) {	/* break with ^D or ^Z */
 		status = find_command(buf);
 
 		if (has_to_exit) {

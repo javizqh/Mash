@@ -12,4 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+enum line_size {
+	LINE_SIZE = 1024,	// In bytes
+};
+
 int find_command(char *line);

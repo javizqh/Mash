@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "open_files.h"
-#include "builtin/alias.h"
 #include "builtin/command.h"
 
 // Builtin command
@@ -140,17 +139,6 @@ free_command(Command * command)
 		free(to_free);
 	}
 }
-
-extern int
-check_alias_cmd(Command * command)
-{
-	if (command->argc == 0) {
-		if (get_alias(command->argv[0]) != NULL) {
-			return 1;
-		}
-	}
-	return 0;
-};
 
 int
 add_arg(Command * command)

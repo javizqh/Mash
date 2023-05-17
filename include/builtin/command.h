@@ -65,8 +65,6 @@ void reset_command(Command *command);
 
 void free_command(Command *command);
 
-int check_alias_cmd(Command *command);
-
 int add_arg(Command *command);
 
 int reset_last_arg(Command *command);

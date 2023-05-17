@@ -27,8 +27,6 @@
 #include "builtin/command.h"
 #include "builtin/builtin.h"
 #include "builtin/export.h"
-#include "builtin/source.h"
-#include "builtin/alias.h"
 #include "builtin/exit.h"
 #include "parse.h"
 #include "exec_info.h"
