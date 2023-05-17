@@ -55,7 +55,7 @@ static char *parse_ch(char *line, ExecInfo * exec_info);
 
 static int substitute(char *to_substitute);
 static void start_file(ExecInfo * exec_info);
-static void new_argument(ExecInfo * exec_info);
+static int new_argument(ExecInfo * exec_info);
 static char *error_token(char token, char *line);
 static int seek(char *line);
 static int seekcmd(char *line);
@@ -202,7 +202,9 @@ parse(char *ptr, ExecInfo * exec_info)
 	cmd = exec_info->last_command;
 
 	if (strlen(cmd->current_arg) > 0) {
-		new_argument(exec_info);
+		if (!new_argument(exec_info)) {
+			return NULL;
+		}
 	} else {
 		reset_last_arg(cmd);
 	}
@@ -308,10 +310,16 @@ substitute(char *to_substitute)
 	return 1;
 }
 
-void
+int
 new_argument(ExecInfo * exec_info)
 {
 	Command *cmd = exec_info->last_command;
+
+	if (cmd->argc > MAX_ARGUMENTS - 1) {
+		syntax_error = 1;
+		fprintf(stderr, "Mash: exceeded max arguments number\n");
+		return 0;
+	}
 
 	if (require_glob) {
 		require_glob = 0;
@@ -322,7 +330,7 @@ new_argument(ExecInfo * exec_info)
 		    GLOB_NOESCAPE) {
 			fprintf(stderr, "Error: glob failed");
 			globfree(&gstruct);
-			return;
+			return 0;
 		}
 
 		char **found;
@@ -339,10 +347,10 @@ new_argument(ExecInfo * exec_info)
 
 		globfree(&gstruct);
 		add_arg(cmd);
-		return;
 	}
 
 	add_arg(exec_info->last_command);
+	return 1;
 }
 
 char *
@@ -509,7 +517,9 @@ basic_pipe_tok(char *line, ExecInfo * exec_info)
 	}
 
 	if (parse_info->has_arg_started) {
-		new_argument(exec_info);
+		if (!new_argument(exec_info)) {
+			return NULL;
+		}
 	}
 
 	if (!seekcmd(line)) {
@@ -556,7 +566,9 @@ blank(char *line, ExecInfo * exec_info)
 	ParseInfo *parse_info = exec_info->parse_info;
 
 	if (parse_info->has_arg_started) {
-		new_argument(exec_info);
+		if (!new_argument(exec_info)) {
+			return NULL;
+		}
 		parse_info->copy = exec_info->last_command->current_arg;
 
 		parse_info->has_arg_started = 0;
@@ -590,6 +602,11 @@ end_line(char *line, ExecInfo * exec_info)
 char *
 copy(char *line, ExecInfo * exec_info)
 {
+	if (strlen(exec_info->parse_info->copy) > MAX_ARGUMENT_SIZE - 1) {
+		syntax_error = 1;
+		fprintf(stderr, "Mash: exceeded max argument size\n");
+		return NULL;
+	}
 	*exec_info->parse_info->copy++ = *line;
 	exec_info->parse_info->has_arg_started = 1;
 
