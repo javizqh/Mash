@@ -19,5 +19,3 @@ extern char version[32];
 
 int set_arguments(char *argv[]);
 int init_mash();
-
-void sig_handler(int sig);

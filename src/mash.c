@@ -166,13 +166,3 @@ init_mash()
 
 	return 1;
 }
-
-void
-sig_handler(int sig)
-{
-	// Do nothing
-	switch (sig) {
-	default:
-		break;
-	}
-}
