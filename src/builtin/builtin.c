@@ -230,6 +230,10 @@ exec_builtin_in_shell(Command * command, int is_a_pipe)
 		wait_for_heredoc();
 	}
 
+	if (is_pipe) {
+		cmd_out = STDOUT_FILENO;
+	}
+
 	if (strcmp(command->argv[0], "alias") == 0) {
 		exit_code = alias(i, args, cmd_out, cmd_err);
 	} else if (strcmp(command->argv[0], "export") == 0) {
