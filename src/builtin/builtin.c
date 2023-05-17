@@ -200,9 +200,10 @@ wait_for_heredoc()
 }
 
 int
-exec_builtin_in_shell(Command * command, int is_pipe)
+exec_builtin_in_shell(Command * command, int is_a_pipe)
 {
 	int i;
+	int is_pipe = is_a_pipe;
 	int exit_code = EXIT_FAILURE;
 	int cmd_out = command->output;
 	int cmd_err = command->err_output;
