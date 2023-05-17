@@ -191,9 +191,10 @@ wait_for_heredoc()
 }
 
 int
-exec_builtin_in_shell(Command * command, int is_pipe)
+exec_builtin_in_shell(Command * command, int is_a_pipe)
 {
 	int i;
+	int is_pipe = is_a_pipe;
 	int exit_code = EXIT_FAILURE;
 	int cmd_out = command->output;
 	int cmd_err = STDERR_FILENO;
@@ -218,6 +219,10 @@ exec_builtin_in_shell(Command * command, int is_pipe)
 
 	if (!is_pipe && command->input == HERE_DOC_FILENO) {
 		wait_for_heredoc();
+	}
+
+	if (is_pipe) {
+		cmd_out = STDOUT_FILENO;
 	}
 
 	if (strcmp(command->argv[0], "alias") == 0) {
